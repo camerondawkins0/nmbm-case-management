@@ -1,0 +1,17 @@
+{
+  "name": "nmbm-case-management",
+  "private": true,
+  "workspaces": [
+    "packages/*"
+  ],
+  "scripts": {
+    "build": "npm run build -w @nmbm/shared -w @nmbm/db -w @nmbm/api -w @nmbm/web",
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "test": "npm run test --workspaces --if-present",
+    "dev:api": "npm run dev -w @nmbm/api",
+    "dev:web": "npm run dev -w @nmbm/web"
+  },
+  "devDependencies": {
+    "typescript": "^5.6.0"
+  }
+}

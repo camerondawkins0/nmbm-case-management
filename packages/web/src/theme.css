@@ -1,0 +1,22 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* NMBM palette — see tailwind.config.js for the token values this
+   mirrors as CSS custom properties, for anything that can't reach
+   Tailwind's config directly (e.g. an inline SVG's fill). */
+:root {
+  --nmbm-ink: #0a0a0a;
+  --nmbm-gold: #b8860b;
+  --nmbm-gold-light: #f5d576;
+  --nmbm-paper: #ffffff;
+}
+
+body {
+  background: var(--nmbm-paper);
+  color: var(--nmbm-ink);
+  font-family:
+    "Segoe UI",
+    system-ui,
+    sans-serif;
+}

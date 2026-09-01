@@ -1,1 +1,48 @@
-# nmbm-case-management
+# NMBM Case Management
+
+A case management system for NMBM, adapted from the WSL case management
+system's architecture and hosted on Google Cloud (Cloud Run + Cloud SQL,
+under NMBM's Google Workspace BAA).
+
+**Status: scaffold.** This repository was seeded from NMBM's discovery
+document, not from a signed-off spec. Core structure (monorepo layout,
+auth/authorize pattern, module split, base schema) is real and working;
+most domain modules are stubs. See `docs/ARCHITECTURE.md` for what's built
+vs. planned, and `docs/DISCOVERY_FOLLOWUP.md` for the discovery questions
+that are still open and should close before further build-out — in
+particular the compliance questions in Part 3 and the billing layout
+question (M23), which affects scope more than anything else on the doc.
+
+## Stack
+
+npm workspaces monorepo, Fastify + Drizzle + Postgres API, React SPA,
+one Cloud Run service serving both — same shape as the WSL system this
+was adapted from.
+
+```
+packages/
+  shared/   zod schemas, enums, permission codes — built to dist, consumed by api and web
+  db/       Drizzle schema, migrations, seeds — built to dist, consumed by api
+  api/      Fastify server: plugins (auth, authorize, audit, errors) + modules (routes/service/repository)
+  web/      React SPA (Vite + Tailwind)
+```
+
+## Commands
+
+```bash
+npm install
+npm run build                 # shared, db, api, web (dist is what others import)
+npm run typecheck             # all workspaces
+DATABASE_URL=... npm test     # all workspaces; api/db need Postgres
+npm run dev:api               # :8080
+npm run dev:web               # :5173, proxies /api to :8080
+DATABASE_URL=... npm run -w @nmbm/db migrate
+```
+
+## Branding
+
+`packages/web/src/theme.css` carries the NMBM palette (black + gold, on
+white — mountain mark, "Make Your Next Move Your Best Move"). The actual
+logo files (black and gold circular marks) were shared as images in chat,
+not as uploadable assets, so they still need to be dropped into
+`packages/web/public/branding/` — see the README there.
