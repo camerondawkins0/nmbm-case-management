@@ -16,6 +16,7 @@ and what's specific to NMBM.
 | Changing domain behaviour | `docs/agent/invariants.md` |
 | What's built vs. stubbed, and why it's shaped this way | `docs/ARCHITECTURE.md` |
 | What NMBM hasn't answered yet | `docs/DISCOVERY_FOLLOWUP.md` |
+| Touching colors, fonts, or the logo | `docs/BRANDING.md` |
 
 ## Commands
 

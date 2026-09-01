@@ -41,8 +41,7 @@ DATABASE_URL=... npm run -w @nmbm/db migrate
 
 ## Branding
 
-`packages/web/src/theme.css` carries the NMBM palette (black + gold, on
-white — mountain mark, "Make Your Next Move Your Best Move"). The actual
-logo files (black and gold circular marks) were shared as images in chat,
-not as uploadable assets, so they still need to be dropped into
-`packages/web/public/branding/` — see the README there.
+See `docs/BRANDING.md` for the palette, typography, and mark-usage notes
+(approximated from chat-shared images, not sampled from source files —
+that doc says exactly what's left to finish). The actual logo files
+still need to be dropped into `packages/web/public/branding/`.
