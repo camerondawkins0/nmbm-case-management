@@ -1,5 +1,11 @@
 import { z } from "zod";
-import { EPISODE_STATUSES, CONTACT_RESULTS, CARE_PLAN_STATUSES } from "./enums.js";
+import {
+  EPISODE_STATUSES,
+  CONTACT_RESULTS,
+  CARE_PLAN_STATUSES,
+  FEEDBACK_CATEGORIES,
+  FEEDBACK_STATUSES,
+} from "./enums.js";
 
 export const participantCreateSchema = z.object({
   firstName: z.string().min(1),
@@ -32,3 +38,16 @@ export const carePlanUpdateSchema = z.object({
   goals: z.string().min(1),
 });
 export type CarePlanUpdate = z.infer<typeof carePlanUpdateSchema>;
+
+export const feedbackCreateSchema = z.object({
+  category: z.enum(FEEDBACK_CATEGORIES),
+  subject: z.string().min(1).max(200),
+  description: z.string().min(1),
+});
+export type FeedbackCreate = z.infer<typeof feedbackCreateSchema>;
+
+export const feedbackStatusUpdateSchema = z.object({
+  status: z.enum(FEEDBACK_STATUSES),
+  resolutionNote: z.string().min(1).optional(),
+});
+export type FeedbackStatusUpdate = z.infer<typeof feedbackStatusUpdateSchema>;

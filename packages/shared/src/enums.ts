@@ -45,3 +45,24 @@ export type Payer = (typeof PAYERS)[number];
 
 export const CONSENT_STATUSES = ["active", "expired", "revoked"] as const;
 export type ConsentStatus = (typeof CONSENT_STATUSES)[number];
+
+// NMBM has no dedicated IT/dev staff (discovery M31) — every logged-in
+// user can submit a ticket, and it's triaged externally. See
+// docs/SUPPORT.md for who's expected to look at these and how.
+export const FEEDBACK_CATEGORIES = [
+  "bug",
+  "feature_request",
+  "question",
+  "other",
+] as const;
+export type FeedbackCategory = (typeof FEEDBACK_CATEGORIES)[number];
+
+// Status only ever moves forward through triage — never deleted, per
+// CLAUDE.md hard rule 1.
+export const FEEDBACK_STATUSES = [
+  "open",
+  "in_review",
+  "resolved",
+  "wont_fix",
+] as const;
+export type FeedbackStatus = (typeof FEEDBACK_STATUSES)[number];

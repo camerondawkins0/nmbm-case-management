@@ -20,8 +20,9 @@ depends on `db`; `db` depends on `shared`. Nothing depends on `web`.
 - `service.ts` — rules and transactions. Never touches HTTP objects.
 - `repository.ts` — Drizzle queries. Never holds a rule.
 
-Scaffolded so far: `health`, `participants`, `episodes`. Everything else
-in `docs/ARCHITECTURE.md`'s "explicitly not started" list gets a module
+Scaffolded so far: `health`, `participants`, `episodes`, `feedback` (see
+`docs/SUPPORT.md` for what that one's for). Everything else in
+`docs/ARCHITECTURE.md`'s "explicitly not started" list gets a module
 directory the same shape when it's built.
 
 ## API plugins

@@ -17,6 +17,7 @@ and what's specific to NMBM.
 | What's built vs. stubbed, and why it's shaped this way | `docs/ARCHITECTURE.md` |
 | What NMBM hasn't answered yet | `docs/DISCOVERY_FOLLOWUP.md` |
 | Touching colors, fonts, or the logo | `docs/BRANDING.md` |
+| Reviewing user-submitted tickets/feedback | `docs/SUPPORT.md` |
 
 ## Commands
 
