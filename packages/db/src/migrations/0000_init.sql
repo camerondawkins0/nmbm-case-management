@@ -7,7 +7,7 @@ CREATE TYPE "role" AS ENUM ('clinical_director', 'billing_coordinator', 'intake_
 CREATE TYPE "episode_status" AS ENUM ('open', 'closed');
 CREATE TYPE "contact_result" AS ENUM ('contacted', 'no_contact');
 CREATE TYPE "care_plan_status" AS ENUM ('draft', 'pending_review', 'approved', 'needs_revision', 'closed');
-CREATE TYPE "payer" AS ENUM ('medicare', 'medi_cal', 'molina', 'full_circle_health_net', 'kaiser', 'blue_shield', 'self_pay');
+CREATE TYPE "payer" AS ENUM ('medicare', 'medi_cal', 'molina', 'kaiser', 'blue_shield', 'la_health_net', 'self_pay');
 CREATE TYPE "consent_status" AS ENUM ('active', 'expired', 'revoked');
 
 CREATE TABLE "users" (

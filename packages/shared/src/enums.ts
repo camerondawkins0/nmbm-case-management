@@ -24,13 +24,21 @@ export type CarePlanStatus = (typeof CARE_PLAN_STATUSES)[number];
 // letter requirement at the 3rd no-contact (see docs/agent/invariants.md)
 // — this list exists so that branch can be conditioned on payer, not
 // hardcoded to a string comparison scattered through the codebase.
+//
+// Full Circle Health Net is NOT a payer — it's a billing intermediary
+// NMBM's follow-up reply named for Kaiser Medi-Cal, Molina, Blue Shield,
+// and LA Health Net (Molina reportedly still self-bills despite that).
+// Kaiser Independent Living Services is billed separately, under a
+// direct MCP contract, distinct from Kaiser-via-FCHN. Don't model payer
+// and billing channel as the same field once the billing module is
+// scoped (blocked on M23) — see docs/ARCHITECTURE.md.
 export const PAYERS = [
   "medicare",
   "medi_cal",
   "molina",
-  "full_circle_health_net",
   "kaiser",
   "blue_shield",
+  "la_health_net",
   "self_pay",
 ] as const;
 export type Payer = (typeof PAYERS)[number];

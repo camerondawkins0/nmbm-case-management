@@ -1,108 +1,124 @@
-# Discovery follow-up — open items
+# Discovery follow-up — status
 
-Everything below is a question from the NMBM discovery session that wasn't
-answered, or was answered by "we're planning this out" / "are we in
-agreement" without a decision landing. Send this back before design work
-starts on the pieces it touches — each one changes either scope, cost, or
-where the system can legally be hosted.
+NMBM replied to the compliance/billing follow-up (Part 3 + M23) inline on
+the doc we sent. Answers below are recorded as given; codes still match
+the original discovery document.
 
-Codes match the original discovery document so replies can reference them
-directly.
+## Answered — Part 3 compliance
 
-## Compliance — blocks hosting and contract decisions (Part 3)
+- **R2 / R3** — The Google Workspace Business Standard BAA is **signed and
+  obtained**. Dayna Moore (CEO) signed it. This clears the hosting
+  question that R2/R3 were blocking — Google Cloud hosting can proceed.
+- **R5** — 42 CFR Part 2 is a real requirement, not a hypothetical: NMBM
+  expects SUD referrals soon (mental health referrals generally already
+  happen; DV-specific referrals are on hold pending LA County approval).
+  NMBM asked directly whether this can be built and acknowledged it may
+  cost extra. **Answer: yes, plan for it** — Part 2 needs its own
+  consent/re-disclosure handling, separate from standard HIPAA-level
+  consent, scoped as additional work once billing (M23) sets the
+  baseline estimate. Exact activation timing still depends on the LA
+  County DV approval.
+- **R6** — Client records are kept per California's 7-year retention
+  requirement. No other rulebook (FERPA, etc.) applies — contracts just
+  require the system to be state/federal PHI-compliant generally.
+- **R10** — Disenrollment should **immediately** move a participant out
+  of the active-caseload view (so "who's active right now" stays
+  accurate without manual cleanup), while the record stays fully
+  retrievable — for a returning participant (the readmission-date case
+  already discussed) or for a contractor/grantor request. This is a
+  behavior requirement, not just a retention window: episodes already
+  carry `status`/`endDate` (`packages/db/src/schema/episodes.ts`); the
+  caseload/dashboard queries need to filter closed episodes out by
+  default once they're built, while every read path still reaches
+  closed records on request. See `docs/agent/invariants.md`.
+- **R11** — No prior incident. Response owner is QA/HR, who would notify
+  affected participants by mail to the address on file. NMBM suggested
+  signing that correspondence with a role name ("Quality Assurance
+  Team") rather than an individual's name — use that as the default
+  sender identity for any breach-notification template.
 
-These are the highest priority. R2 says NMBM is getting a Google Workspace
-Business Standard BAA, which is *why* Google-hosted was chosen — but the
-rest of Part 3 is open, and R5/R9/R10 each independently change what the
-system has to do.
+## Still needed
 
-- **R3** — Who signs the BAA on NMBM's side, and how long does that take?
-  Needed before a hosting/build timeline can be set.
-- **R4** — Does NMBM need a BAA covering *this system specifically* and
-  whoever hosts/operates it (separate from the Workspace BAA)? If a
-  contractor or hosting vendor other than Google touches the data, this
-  is a second signature, not a formality.
-- **R5** — Does 42 CFR Part 2 apply to any program? Substance use
-  treatment records carry stricter consent and re-disclosure rules than
-  HIPAA. Anger Management and DV programs sometimes touch this depending
-  on referral source — needs a definite yes/no per program, not a guess.
-- **R6** — Any student records or other data with its own rulebook
-  (FERPA, etc.)?
-- **R7** — What data leaves the system on a schedule, to whom, in what
-  format, how often? (Distinct from M22/M23 billing exports — this is
-  everything else: funder reports, HMIS, county.)
-- **R8** — Does any payer or funder require a specific file layout, a
-  portal upload, or manual entry into their system? Directly shapes the
-  reporting/export module.
-- **R9** — Bring the actual security/data clauses from contracts that
-  have them. "Do any of your contracts carry security or data terms" was
-  asked but no contract was produced.
-- **R10** — Retention period, and what happens at the end of it (destroy,
-  archive, hand off)? Nothing in this system is hard-deleted by design,
-  so this mostly determines *when something moves out of active view*,
-  not when it's destroyed.
-- **R11** — Named incident-response owner if data leaks. Has anything
-  like that happened before?
+- **R4** — NMBM is still deciding whether a BAA is needed covering this
+  system specifically (separate from the Workspace BAA), given a
+  contractor other than Google will touch the data during build/hosting.
+  Their answer: "we would look into that" — not yet resolved.
+- **R7** — KPIs are due out of the system by the 5th of every month for
+  one contract, believed to be Full Circle Health Net. The exact fields
+  are "in the contract" — **not yet delivered**, promised same-day as
+  the reply.
+- **R8** — Confirmed multiple distinct submission channels, not one:
+  Kaiser ILS, Medicare, Medi-Cal, and Molina each have their own format
+  or portal; Kaiser Medi-Cal, Blue Shield, and LA Health Net go through
+  FCHN's Exym instead. Exact due dates per channel still to be gathered.
+  **This means M23 is really several formats, not one** — see the
+  updated billing note in `docs/ARCHITECTURE.md`.
+- **R9** — NMBM confirmed they'll send the funder contract with the
+  security/data clauses ("Ok") — **not yet received**.
+- **M23** — Still open. NMBM named Dayna Moore as the person who can
+  answer the payer file-layout/rejection-handling question. This is
+  still the single biggest scope driver — nothing beyond the schema
+  placeholder should be built until it lands.
 
-## Billing — the single biggest cost driver (Part 2)
+## M22 — funding picture is more complex than first described
 
-- **M23** — What line/file layout does Full Circle Health Net (and any
-  direct Medi-Cal/Medicare submission) require, and what's the current
-  process when a line gets rejected? M22 already confirms billing is
-  in scope; **M23 is what turns that into an estimate.** Nothing else on
-  the discovery doc swings scope as much as this one answer.
+NMBM's expanded answer, worth carrying into billing design once M23
+unblocks it:
+
+- Medicare and Medi-Cal are billed **directly** by NMBM.
+- Kaiser Independent Living Services (ILS) is billed under a separate
+  **MCP contract**, for ILS/Community Supports work only — this is not
+  routed through Full Circle Health Net.
+- Full Circle Health Net (FCHN) is the billing channel for Kaiser
+  Medi-Cal, Molina, Blue Shield, and **LA Health Net** (not previously
+  named — add to the payer list).
+- Molina, despite going through FCHN, appears to require NMBM to handle
+  its own billing separately — NMBM flagged this as still unclear on
+  their own end ("we are still navigating how to do each thing
+  effectively").
+
+Net effect: FCHN is a billing intermediary for *some* payers, not a
+payer itself, and at least one of those (Molina) may not actually follow
+the FCHN path in practice. Don't model "payer" and "billing channel" as
+the same thing when M23 work starts.
 
 ## Reporting
 
-- **M25** — Which report currently takes the longest to put together,
-  and where does the time actually go? Answered for M26 (what a director
-  wants Monday morning) but M25 itself — the pain point that justifies
-  building a report builder instead of a fixed dashboard — wasn't.
+- **M25** — Still unanswered: which report currently takes longest to
+  put together, and where the time goes.
 
-## Decision, ownership, timing (Part 4) — all six open
+## Decision, ownership, timing (Part 4) — all six still open
 
 - **D1** — Who approves this going ahead? Board vote? When does the
   board next meet?
 - **D2** — Budget to build, and separately, budget to run per year after
-  launch (hosting + support are ongoing, not one-time).
-- **D3** — Target live date, and what's actually driving that date
-  (a grant start date, a funder deadline, an audit)?
-- **D4** — Who owns the system after launch, by name? What else is on
-  their plate, and who trains new hires? (The doc flags this as the
-  single most informative answer on the page — a shrug here is itself
-  useful information.)
+  launch.
+- **D3** — Target live date, and what's driving it?
+- **D4** — Who owns the system after launch, by name?
 - **D5** — Who owns the software, and who owns the data?
 - **D6** — One year out, what would make this a failure?
 
 ## Smaller loose ends inside otherwise-answered items
 
-- **U1/U3** — "Dayna, can you please review and change this information?"
-  and "are we missing anything?" are open inside the answer itself —
-  the department/role list should be confirmed as final before
-  permissions are designed against it (per the doc's own U5 framing:
-  cheap now, expensive later).
-- **M1** — "Clients" vs. "cases" as the record name — needs one answer,
-  used consistently in the UI.
-- **M3** — Never answered: what has to be known before intake can
-  proceed, and which of those items a funder specifically requires.
-- **M12** — The 3/5/9/12-month follow-up cadence is described but marked
-  "are we all in agreement" — confirm before it's built as a fixed
-  schedule.
-- **M16** — One-year consent expiry marked "are we in agreement" —
-  confirm.
+- **U1/U3** — Department/role list still needs final confirmation before
+  permissions are designed against it.
+- **M1** — "Clients" vs. "cases" as the record name — still needs one
+  answer.
+- **M3** — What has to be known before intake can proceed, and which of
+  those a funder specifically requires — never answered.
+- **M12** — 3/5/9/12-month follow-up cadence — still marked "are we all
+  in agreement," not confirmed.
+- **M16** — One-year consent expiry — still marked "are we in
+  agreement," not confirmed.
 
 ## What to bring to the next meeting
 
-Per the discovery doc itself:
-1. Last quarter's report to NMBM's biggest funder, as sent.
-2. A blank intake packet and each consent form.
-3. One funder contract, with the reporting and data clauses (this also
-   answers R9).
-4. An export from Exym/current system, or a screenshot.
-5. A list of positions and who reports to whom.
-6. A second meeting with someone who does the daily work — not a
-   manager describing it.
+1. The funder contract with the reporting and data clauses (R9 — NMBM
+   said yes, still pending delivery).
+2. The FCHN KPI reporting spec (R7 — promised, still pending).
+3. Payer file-layout/rejection documentation for Kaiser ILS, Medicare,
+   Medi-Cal, Molina, and FCHN/Exym (M23 — Dayna Moore).
+4. A blank intake packet and each consent form.
+5. An export from Exym/current system, or a screenshot.
 
-No price or date should go out before M22/M23 and D2/D3 land — the
-document is explicit that M22 alone swings the estimate more than
-everything else combined.
+No price or date should go out before M23 and D2/D3 land.

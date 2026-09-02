@@ -1,8 +1,10 @@
 # Architecture — NMBM Case Management
 
-Status: **scoping draft**, written from the discovery document only. Nothing
-here is a commitment until Part 3 (compliance) and D2/D3 (budget, timeline)
-close — see `docs/DISCOVERY_FOLLOWUP.md`.
+Status: **scoping draft**, written from the discovery document plus NMBM's
+follow-up reply on compliance. The BAA is signed (see below), so hosting
+can proceed; D2/D3 (budget, timeline) and M23 (billing) still aren't
+closed — see `docs/DISCOVERY_FOLLOWUP.md` for current status on every
+item.
 
 ## Why this looks like the WSL system
 
@@ -19,11 +21,15 @@ prompts NMBM described that WSL doesn't have.**
 ## Hosting: Google Cloud, not Azure
 
 The WSL system runs on Cloud Run against a plain (no-BAA) setup, with an
-Azure port documented separately (`docs/AZURE.md` in that repo). NMBM is
-getting a **Google Workspace Business Standard BAA** (R2) specifically so
-this system can run under it — that decision is *why* Google was picked,
-not an afterthought, so the hosting plan below assumes it holds and needs
-re-checking the moment R3/R4 come back.
+Azure port documented separately (`docs/AZURE.md` in that repo). NMBM's
+**Google Workspace Business Standard BAA is signed** (R2/R3 — CEO Dayna
+Moore signed it) specifically so this system can run under it — that
+decision is *why* Google was picked, not an afterthought, and it's now
+confirmed rather than pending. R4 (whether a *second* BAA is needed
+covering this system and whoever builds/hosts it, since a contractor
+other than Google touches the data during build) is still open — NMBM is
+looking into it. Don't treat "the BAA is signed" as "hosting is fully
+cleared" until R4 closes.
 
 | Concern | Choice | Why |
 |---|---|---|
@@ -42,6 +48,19 @@ which is usually what makes that answer stop being "not right now." Build
 for covered-entity-grade handling regardless (encryption at rest and in
 transit, audit log, BAA-covered services only) — it costs little extra now
 and a lot to retrofit.
+
+**42 CFR Part 2 (R5) is now a real, near-term requirement, not a
+hypothetical.** NMBM expects SUD referrals soon and already receives
+general mental-health referrals (DV-specific referrals are on hold
+pending LA County approval). They asked directly whether this can be
+built and acknowledged it's likely additional cost — treat that as a
+yes: Part 2 needs its own consent and re-disclosure handling, distinct
+from standard HIPAA-level consent (`packages/db/src/schema/consents.ts`
+will need a Part-2-specific flag and a stricter disclosure-gate rule
+once this is scoped), priced as an add-on once M23 sets the baseline
+estimate. Retention separately confirmed at 7 years, per California
+state requirement (R6) — feeds directly into whatever the R10 archive
+behavior below computes against.
 
 ## What carries over from the WSL pattern directly
 
@@ -63,14 +82,35 @@ and a lot to retrofit.
 
 ## Where NMBM diverges from WSL
 
-**Billing is new and is the biggest single piece.** WSL doesn't bill a
-payer per unit of service; NMBM bills Medicare, Medi-Cal, and health plans
-through Full Circle Health Net (M22). This is real eligibility checking,
-code lookup, encounter recording, and payer-specific batch export — and
-the discovery doc is explicit that **M23 (the payer's required layout, and
-what happens on a rejected line) is unanswered and is the one item that
-swings the estimate most.** Nothing beyond a schema placeholder should be
-built here until M23 comes back.
+**Billing is new and is the biggest single piece — and it's more layered
+than the first pass suggested.** WSL doesn't bill a payer per unit of
+service; NMBM's follow-up on M22 broke the funding picture into four
+distinct channels, not one:
+
+- Medicare and Medi-Cal, billed **directly** by NMBM.
+- Kaiser Independent Living Services (ILS), billed under a separate
+  **MCP contract**, for ILS/Community Supports work only — not routed
+  through Full Circle Health Net at all.
+- Kaiser Medi-Cal, Molina, Blue Shield, and LA Health Net, billed
+  through **Full Circle Health Net (FCHN)** as the intermediary.
+- Molina, though nominally under the FCHN contract, appears to actually
+  require NMBM to self-bill — which NMBM themselves flagged as still
+  unclear on their end.
+
+FCHN is a billing channel for *some* payers, not a payer itself, and at
+least one payer under it may not really follow that path. Don't model
+`funding_sources` as one payer = one channel when this module gets
+built. R8 confirmed the same fragmentation from the submission side:
+Kaiser ILS, Medicare, Medi-Cal, and Molina each have their own file
+format or portal; the rest go through FCHN's Exym instead.
+
+This is real eligibility checking, code lookup, encounter recording, and
+payer-specific batch export, times at least four channels — and **M23
+(each channel's required layout, and what happens on a rejected line) is
+still unanswered and is still the one item that swings the estimate
+most**, more so now that it's confirmed to be plural, not singular.
+Nothing beyond a schema placeholder should be built here until M23 comes
+back.
 
 **Automated prompts that don't exist in WSL, described specifically by
 NMBM:**
@@ -92,6 +132,12 @@ NMBM:**
   potentially leading to re-enrollment. This is a participant lifecycle
   state WSL doesn't have — closed-but-being-followed-up — and needs its
   own status rather than overloading "closed."
+- Disenrollment **immediately** moves a participant out of the active
+  caseload view (R10) — not a batch job, not eventual, so "who's active
+  right now" is never stale. The record itself stays fully retrievable
+  (a returning participant, or a contractor/grantor request) — this is
+  about default query scope, not access. See
+  `docs/agent/invariants.md`.
 
 **Smaller-scale, but not smaller-complexity.** 10 total users (U8) means
 the permission *grid* still needs to be right (U2–U7 describe real

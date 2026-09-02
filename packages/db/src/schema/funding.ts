@@ -9,6 +9,15 @@ import { payerEnum } from "./enums.js";
 // now"). Scaffolded so `services` has somewhere to point once more
 // grants exist, per M8 ("most services should be attached to the
 // grant or contract").
+//
+// `payer` is a single column on purpose, for now — real billing (M22
+// follow-up) turned up at least four distinct billing channels (direct
+// Medicare/Medi-Cal, a Kaiser ILS MCP contract, FCHN as intermediary
+// for several other payers, and Molina self-billing despite nominally
+// being under FCHN). Modeling that split is billing-module work,
+// blocked on M23 — see docs/ARCHITECTURE.md and
+// docs/DISCOVERY_FOLLOWUP.md. Don't add a "billing channel" concept
+// here speculatively.
 export const fundingSources = pgTable("funding_sources", {
   id: uuid("id").primaryKey().defaultRandom(),
   name: text("name").notNull(),

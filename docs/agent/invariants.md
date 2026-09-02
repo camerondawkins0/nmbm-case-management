@@ -54,6 +54,20 @@ expired (does the gated action block, or just warn) is still open per
 `docs/DISCOVERY_FOLLOWUP.md` — don't hardcode a hard block until that's
 confirmed.
 
+## Disenrollment archives immediately, but never hides the record (R10)
+
+When an episode closes, the participant has to drop out of the active
+caseload view *right away* — not on a nightly job, not eventually.
+NMBM's own framing: they want "active" to stay accurate without having
+to check by hand. This is a default-query-scope rule, not an access
+rule: `repository.ts` queries for caseload/dashboard views should filter
+`episodes.status = 'closed'` out by default, but every direct lookup
+(the returning-participant case already covered by the readmission date,
+or a contractor/grantor record request) still reaches the full record.
+Retention is separately confirmed at 7 years (R6, California state
+requirement) — that's what eventually governs when a closed record
+leaves cold storage, not when it leaves the active view.
+
 ## Money is a string end to end
 
 `numeric` Postgres columns, string in Zod schemas, string across the API
