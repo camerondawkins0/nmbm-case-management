@@ -48,8 +48,11 @@ of leaving system-ui as the permanent choice.
 - **Circular badge, not a wordmark alone.** Both logo versions are the
   full circular lockup (ring + mountain + NMBM + motto) — there's no
   evidence of a simplified icon-only mark for small spaces like a
-  favicon. `brand-mark.tsx`'s stand-in only reproduces the mountain
-  glyph, scaled down, as a stopgap for exactly that gap.
+  favicon. `brand-mark.tsx`'s stand-in reproduces the badge's
+  construction (double ring, white mountain range clipped into a filled
+  circle) as that reduction, and takes a `variant` prop for the ink and
+  gold versions. The brush wordmark isn't reproducible in SVG here and
+  is set as text beside the mark instead.
 - **Two color versions, one background.** Black-on-white for standard
   use; the gold-foil version reads as an emphasis/premium variant (the
   kind of thing you'd put on a printed certificate, not a nav bar).
