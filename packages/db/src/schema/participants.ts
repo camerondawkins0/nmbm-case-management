@@ -1,5 +1,6 @@
 import { pgTable, uuid, text, date, timestamp } from "drizzle-orm/pg-core";
 import { users } from "./users.js";
+import { payerEnum } from "./enums.js";
 
 // M1: internal name stays `participants` regardless of whether NMBM
 // settles on "Client" or "Case" for the UI label — see
@@ -9,6 +10,8 @@ export const participants = pgTable("participants", {
   firstName: text("first_name").notNull(),
   lastName: text("last_name").notNull(),
   dateOfBirth: date("date_of_birth").notNull(),
+  // M6: the Molina branch of the no-contact rule keys off this.
+  payer: payerEnum("payer"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 

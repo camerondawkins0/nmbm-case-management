@@ -17,6 +17,17 @@ export default {
           },
           paper: "#ffffff",
         },
+        // Functional, not brand. The logo is a two-colour mark and
+        // inventing brand colours to signal "overdue" would misrepresent
+        // it — docs/BRANDING.md says to keep state colours separate.
+        state: {
+          alert: "#b91c1c",
+          "alert-bg": "#fef2f2",
+          warn: "#b45309",
+          "warn-bg": "#fffbeb",
+          ok: "#15803d",
+          "ok-bg": "#f0fdf4",
+        },
       },
       fontFamily: {
         display: ["'Segoe UI'", "system-ui", "sans-serif"],

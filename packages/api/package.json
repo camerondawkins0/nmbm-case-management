@@ -15,7 +15,8 @@
     "@fastify/cookie": "^9.4.0",
     "@fastify/session": "^10.9.0",
     "fastify": "^4.28.0",
-    "zod": "^3.23.0"
+    "zod": "^3.23.0",
+    "google-auth-library": "^9.14.0"
   },
   "devDependencies": {
     "@types/node": "^20.16.0",

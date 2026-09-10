@@ -15,6 +15,13 @@
       "when": 1757894400000,
       "tag": "0001_add_feedback",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1757980800000,
+      "tag": "0002_case_management_rules",
+      "breakpoints": true
     }
   ]
 }

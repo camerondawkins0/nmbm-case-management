@@ -2,6 +2,7 @@ import { pgEnum } from "drizzle-orm/pg-core";
 import {
   ROLES,
   EPISODE_STATUSES,
+  EPISODE_CLOSURE_REASONS,
   CONTACT_RESULTS,
   CARE_PLAN_STATUSES,
   PAYERS,
@@ -14,6 +15,7 @@ import {
 // bare pgEnum literal list, so schema and application code can't drift.
 export const roleEnum = pgEnum("role", ROLES);
 export const episodeStatusEnum = pgEnum("episode_status", EPISODE_STATUSES);
+export const episodeClosureReasonEnum = pgEnum("episode_closure_reason", EPISODE_CLOSURE_REASONS);
 export const contactResultEnum = pgEnum("contact_result", CONTACT_RESULTS);
 export const carePlanStatusEnum = pgEnum("care_plan_status", CARE_PLAN_STATUSES);
 export const payerEnum = pgEnum("payer", PAYERS);

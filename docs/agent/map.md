@@ -20,19 +20,26 @@ depends on `db`; `db` depends on `shared`. Nothing depends on `web`.
 - `service.ts` — rules and transactions. Never touches HTTP objects.
 - `repository.ts` — Drizzle queries. Never holds a rule.
 
-Scaffolded so far: `health`, `participants`, `episodes`, `feedback` (see
-`docs/SUPPORT.md` for what that one's for). Everything else in
-`docs/ARCHITECTURE.md`'s "explicitly not started" list gets a module
-directory the same shape when it's built.
+Built so far: `health`, `me`, `participants`, `episodes`, `notes`,
+`care-plans`, `dashboard`, `feedback` (see `docs/SUPPORT.md` for that
+one). Everything else in `docs/ARCHITECTURE.md`'s "explicitly not
+started" list gets a module directory the same shape when it's built.
+
+## API libs
+
+| File | What it is |
+|---|---|
+| `lib/caseload.ts` | `resolveScope`, `caseloadParticipantIds`, `canSeeParticipant` — U5 scoping |
+| `lib/rules.ts` | The M6 no-contact ladder and M9 care plan clocks, derived in one place |
 
 ## API plugins
 
 | File | What it is |
 |---|---|
 | `plugins/auth.ts` | Google OIDC (Workspace SSO), sessions, `requireUser` |
-| `plugins/authorize.ts` | `authorize(code)` preHandler, checks the caller's permission codes |
+| `plugins/authorize.ts` | `authorize(code)`, `authorizeAny([...])`, `CAN_READ_PARTICIPANTS`, `getPermissions` |
 | `plugins/audit.ts` | `writeAudit(db, entry)` — append-only |
-| `plugins/errors.ts` | `AppError` plus `badRequest`/`notFound`/`conflict`/`forbidden` |
+| `plugins/errors.ts` | `AppError` plus `badRequest`/`notFound`/`conflict`/`forbidden`/`unprocessable`, and `registerErrorHandler` |
 
 ## Database
 
@@ -42,4 +49,11 @@ module layout above. `enums.ts` wraps `as const` arrays from
 places — same convention as the WSL system this was adapted from.
 
 Migrations are hand-written SQL in `packages/db/src/migrations/`, listed
-in order in `meta/_journal.json`.
+in order in `meta/_journal.json`. `v_no_contact_counts` (migration 0002)
+derives the consecutive failed-contact run per participant; it's declared
+to Drizzle in `schema/views.ts` with `.existing()`.
+
+Seeds live in `packages/db/src/seed/`. `reference.ts` is required — it
+writes the roles, permissions and grants that `authorize()` reads, and
+without it every route 403s. `synthetic.ts` is invented demo data whose
+fixtures are shaped to exercise each rule.

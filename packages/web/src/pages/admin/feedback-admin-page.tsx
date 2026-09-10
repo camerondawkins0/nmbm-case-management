@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
 import type { FeedbackCategory, FeedbackStatus } from "@nmbm/shared";
-import { BrandMark } from "../../components/brand-mark.js";
 
 type FeedbackItem = {
   id: string;
@@ -52,13 +51,9 @@ export default function FeedbackAdminPage() {
   }
 
   return (
-    <div className="min-h-screen bg-nmbm-paper">
-      <header className="flex items-center gap-3 border-b border-nmbm-ink/10 px-6 py-4">
-        <BrandMark size={36} />
-        <span className="font-semibold tracking-wide text-nmbm-ink">Feedback queue</span>
-      </header>
-
-      <main className="px-6 py-8">
+    <div className="mx-auto max-w-5xl">
+      <h1 className="text-2xl font-semibold text-nmbm-ink">Feedback queue</h1>
+      <div className="mt-6">
         {error && <p className="text-sm text-red-600">{error}</p>}
 
         <div className="overflow-x-auto">
@@ -99,7 +94,7 @@ export default function FeedbackAdminPage() {
             </tbody>
           </table>
         </div>
-      </main>
+      </div>
     </div>
   );
 }

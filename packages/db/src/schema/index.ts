@@ -7,3 +7,4 @@ export * from "./care-plans.js";
 export * from "./consents.js";
 export * from "./funding.js";
 export * from "./feedback.js";
+export * from "./views.js";

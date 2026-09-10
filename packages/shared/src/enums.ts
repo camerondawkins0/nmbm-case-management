@@ -5,6 +5,28 @@
 export const EPISODE_STATUSES = ["open", "closed"] as const;
 export type EpisodeStatus = (typeof EPISODE_STATUSES)[number];
 
+// M6: closing for "no_contact" is the one reason the disenrollment gate
+// applies to — the others are ordinary exits and aren't blocked.
+export const EPISODE_CLOSURE_REASONS = [
+  "completed",
+  "no_contact",
+  "participant_declined",
+  "moved",
+  "other",
+] as const;
+export type EpisodeClosureReason = (typeof EPISODE_CLOSURE_REASONS)[number];
+
+// M6: 3 consecutive failed attempts triggers exit-documentation prep
+// (and, for Molina, a required warning letter); 2 more after that
+// before disenrollment is allowed at all.
+export const NO_CONTACT_WARNING_THRESHOLD = 3;
+export const NO_CONTACT_DISENROLLMENT_THRESHOLD = 5;
+
+// M9: the care plan has to exist within 30 days of enrollment, and gets
+// re-reviewed every 2 weeks while services are ongoing.
+export const CARE_PLAN_COMPLETION_DAYS = 30;
+export const CARE_PLAN_REVIEW_INTERVAL_DAYS = 14;
+
 // M6: contact attempts are logged individually so consecutive no-contacts
 // can be counted; "contacted" resets the count.
 export const CONTACT_RESULTS = ["contacted", "no_contact"] as const;

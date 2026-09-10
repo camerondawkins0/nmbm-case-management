@@ -1,8 +1,10 @@
 import { z } from "zod";
 import {
   EPISODE_STATUSES,
+  EPISODE_CLOSURE_REASONS,
   CONTACT_RESULTS,
   CARE_PLAN_STATUSES,
+  PAYERS,
   FEEDBACK_CATEGORIES,
   FEEDBACK_STATUSES,
 } from "./enums.js";
@@ -11,9 +13,30 @@ export const participantCreateSchema = z.object({
   firstName: z.string().min(1),
   lastName: z.string().min(1),
   dateOfBirth: z.string().date(),
+  payer: z.enum(PAYERS).optional(),
   assignedWorkerId: z.string().uuid().optional(),
 });
 export type ParticipantCreate = z.infer<typeof participantCreateSchema>;
+
+// M6: closing an episode carries the reason, because "no_contact" is
+// the one the disenrollment gate applies to.
+export const episodeCloseSchema = z.object({
+  closureReason: z.enum(EPISODE_CLOSURE_REASONS),
+  closureNote: z.string().min(1).optional(),
+});
+export type EpisodeClose = z.infer<typeof episodeCloseSchema>;
+
+export const carePlanCreateSchema = z.object({
+  participantId: z.string().uuid(),
+  episodeId: z.string().uuid(),
+  goals: z.string().min(1),
+});
+export type CarePlanCreate = z.infer<typeof carePlanCreateSchema>;
+
+export const carePlanReviewSchema = z.object({
+  reviewNote: z.string().min(1).optional(),
+});
+export type CarePlanReview = z.infer<typeof carePlanReviewSchema>;
 
 export const episodeCreateSchema = z.object({
   participantId: z.string().uuid(),

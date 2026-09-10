@@ -15,6 +15,8 @@ export const carePlans = pgTable("care_plans", {
   status: carePlanStatusEnum("status").notNull().default("draft"),
   goals: text("goals").notNull(),
   nextReviewDue: date("next_review_due"),
+  // Why a plan was sent back, so the author can see it.
+  reviewNote: text("review_note"),
   // U10: Clinical Director and Supervisor sign off.
   approvedById: uuid("approved_by_id").references(() => users.id),
   approvedAt: timestamp("approved_at", { withTimezone: true }),

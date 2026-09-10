@@ -1,7 +1,8 @@
 import type { FastifyInstance } from "fastify";
 import type { Db } from "@nmbm/db";
 import { participantCreateSchema } from "@nmbm/shared";
-import { authorize, getPermissions } from "../../plugins/authorize.js";
+import { authorize, authorizeAny, CAN_READ_PARTICIPANTS } from "../../plugins/authorize.js";
+import { resolveScope } from "../../lib/caseload.js";
 import * as service from "./service.js";
 
 // routes.ts: parse with Zod, authorize(), delegate. Never touches
@@ -11,14 +12,19 @@ export default async function participantRoutes(fastify: FastifyInstance, opts: 
 
   fastify.get(
     "/api/participants",
-    { preHandler: authorize("participants.read.own") },
+    { preHandler: authorizeAny(CAN_READ_PARTICIPANTS) },
     async (request) => {
-      const caller = request.currentUser!;
-      const permissions = await getPermissions(db, caller.id);
-      return service.listVisibleParticipants(db, {
-        id: caller.id,
-        canReadAll: permissions.has("participants.read.all"),
-      });
+      const caller = await resolveScope(db, request.currentUser!.id);
+      return service.listVisibleParticipants(db, caller);
+    },
+  );
+
+  fastify.get<{ Params: { id: string } }>(
+    "/api/participants/:id",
+    { preHandler: authorizeAny(CAN_READ_PARTICIPANTS) },
+    async (request) => {
+      const caller = await resolveScope(db, request.currentUser!.id);
+      return service.getParticipant(db, caller, request.params.id);
     },
   );
 

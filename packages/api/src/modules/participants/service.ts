@@ -1,7 +1,34 @@
 import type { Db } from "@nmbm/db";
 import { assignments } from "@nmbm/db";
 import type { ParticipantCreate } from "@nmbm/shared";
+import { notFound, forbidden } from "../../plugins/errors.js";
+import { caseloadParticipantIds, canSeeParticipant, type CallerScope } from "../../lib/caseload.js";
+import { participantFlags, needsAttention } from "../../lib/rules.js";
 import * as repository from "./repository.js";
+
+function decorate(row: Awaited<ReturnType<typeof repository.findById>>) {
+  const flags = participantFlags(row);
+  return { ...row, flags, needsAttention: needsAttention(flags) };
+}
+
+export async function listVisibleParticipants(db: Db, caller: CallerScope) {
+  const rows = caller.canReadAll
+    ? await repository.listAll(db)
+    : await repository.listForParticipantIds(db, await caseloadParticipantIds(db, caller.id));
+  return rows.map(decorate);
+}
+
+export async function getParticipant(db: Db, caller: CallerScope, id: string) {
+  if (!(await canSeeParticipant(db, caller, id))) {
+    // Deliberately the same shape as a genuine miss: confirming that an
+    // id exists but belongs to someone else's caseload is itself a leak.
+    throw notFound("Participant not found");
+  }
+  const row = await repository.findById(db, id);
+  if (!row) throw notFound("Participant not found");
+  const notes = await repository.listNotes(db, id);
+  return { ...decorate(row), notes };
+}
 
 export async function createParticipant(
   db: Db,
@@ -9,7 +36,7 @@ export async function createParticipant(
   createdById: string,
 ) {
   const participant = await repository.insert(db, input);
-  // M4: every participant is assigned to a named worker at intake.
+  // M4: every participant belongs to a named worker.
   if (input.assignedWorkerId) {
     await db.insert(assignments).values({
       participantId: participant.id,
@@ -20,13 +47,8 @@ export async function createParticipant(
   return participant;
 }
 
-export async function listVisibleParticipants(
-  db: Db,
-  caller: { id: string; canReadAll: boolean },
-) {
-  if (caller.canReadAll) {
-    return repository.listAll(db);
+export async function assertCanSee(db: Db, caller: CallerScope, participantId: string) {
+  if (!(await canSeeParticipant(db, caller, participantId))) {
+    throw forbidden("Not on your caseload");
   }
-  const rows = await repository.listForWorker(db, caller.id);
-  return rows.map((r) => r.participant);
 }

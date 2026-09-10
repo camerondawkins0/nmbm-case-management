@@ -102,6 +102,18 @@ the same thing when M23 work starts.
 
 - **U1/U3** — Department/role list still needs final confirmation before
   permissions are designed against it.
+- **Who closes an episode?** Surfaced while building the disenrolment
+  gate, not from the original discovery. As the grid stands, a CHW can
+  log the failed attempts and see the three-strike prompt, but cannot
+  disenrol or record the Molina warning letter — only the Clinical
+  Director and Intake Specialist hold `episodes.write`. That may well be
+  right (a supervisor executes the exit), but M6 is worded as though the
+  CHW drives it. Confirm before the grid is signed off, because it
+  changes who sees which buttons on the participant record.
+- **Who is told about a Molina letter?** The system can require the
+  letter before closing, and records that it was sent. It does not
+  generate or send it — confirm whether NMBM wants the letter text
+  produced here or kept in their own templates.
 - **M1** — "Clients" vs. "cases" as the record name — still needs one
   answer.
 - **M3** — What has to be known before intake can proceed, and which of

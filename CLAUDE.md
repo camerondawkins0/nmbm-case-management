@@ -18,6 +18,7 @@ and what's specific to NMBM.
 | What NMBM hasn't answered yet | `docs/DISCOVERY_FOLLOWUP.md` |
 | Touching colors, fonts, or the logo | `docs/BRANDING.md` |
 | Reviewing user-submitted tickets/feedback | `docs/SUPPORT.md` |
+| The no-contact ladder or care plan clocks | `packages/api/src/lib/rules.ts` |
 
 ## Commands
 
@@ -27,8 +28,19 @@ npm run typecheck             # all workspaces
 DATABASE_URL=... npm test     # all workspaces; api/db need Postgres
 npm run dev:api               # :8080
 npm run dev:web               # :5173, proxies /api to :8080
+
 DATABASE_URL=... npm run -w @nmbm/db migrate
+DATABASE_URL=... npm run -w @nmbm/db seed:reference   # roles, permissions, grants — required
+DATABASE_URL=... npm run -w @nmbm/db seed:synthetic   # invented staff and participants for demos
 ```
+
+Reference data is not optional: `authorize()` reads its grants from the
+database, so before `seed:reference` runs every authenticated route
+returns 403.
+
+For local sign-in without Google, set `ALLOW_DEV_LOGIN=true` and visit
+`/auth/dev-login?email=t.green@nmbm.example.org`. It is refused when
+`NODE_ENV=production`.
 
 ## Hard rules
 
