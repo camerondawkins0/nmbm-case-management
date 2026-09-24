@@ -42,7 +42,12 @@ the original discovery document.
 - **R4** — NMBM is still deciding whether a BAA is needed covering this
   system specifically (separate from the Workspace BAA), given a
   contractor other than Google will touch the data during build/hosting.
-  Their answer: "we would look into that" — not yet resolved.
+  Their answer: "we would look into that" — not yet resolved, and now
+  more pressing: NMBM is adding the maintainer to their Workspace as a
+  **super admin**, which reaches every user's mail and Drive, not just
+  this application. That is a much wider boundary than "a contractor who
+  builds the software", and it should be settled before real
+  participant data exists rather than after. See `docs/GOOGLE_SETUP.md`.
 - **R7** — KPIs are due out of the system by the 5th of every month for
   one contract, believed to be Full Circle Health Net. The exact fields
   are "in the contract" — **not yet delivered**, promised same-day as

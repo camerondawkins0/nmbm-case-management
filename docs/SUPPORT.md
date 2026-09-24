@@ -1,9 +1,16 @@
 # Support & feedback workflow
 
 NMBM has no dedicated IT or development staff (discovery M31: "Dayna and
-myself until we get an IT"). This system's maintainer is external — not
-an NMBM employee — so triage can't rely on someone at NMBM reading a
-ticket queue and deciding what to build. This doc is what replaces that.
+myself until we get an IT"), so triage can't rely on someone at NMBM
+reading a ticket queue and deciding what to build. This doc is what
+replaces that.
+
+The maintainer is external to NMBM as an organisation, but is being
+given an account in their Google Workspace. That means they can sign in
+to this system like any other user and hold `feedback.manage` directly —
+which is simpler than the out-of-band route this doc originally
+assumed. Both paths are described below; prefer the in-app one once the
+account exists.
 
 ## How a report gets in
 
@@ -21,21 +28,24 @@ problem shouldn't require asking for access first.
 
 ## Who looks at it, and how
 
-There's a raw admin view at `/admin/feedback`, gated server-side by the
-`feedback.manage` permission (currently only `system_administrator` —
-i.e. NMBM's own admin, Dayna once assigned). That view is for status
-housekeeping, not for deciding what to build.
+There's a raw queue at `/admin/feedback`, gated server-side by the
+`feedback.manage` permission (`system_administrator` by default — NMBM's
+own admin, and the maintainer once their Workspace account is assigned
+that role). That view is for reading the queue and moving statuses, not
+for deciding what to build.
 
-**The actual review is meant to happen externally, Claude-assisted:**
-when the maintainer wants to check in on the queue, ask Claude to pull
-the open/in-review items from `feedback_items` (direct Cloud SQL query,
-or the `GET /api/feedback` endpoint against an admin account) and
-produce a summary — grouped by category, duplicates collapsed, anything
-that looks like a data or security issue flagged first. The maintainer
-reviews that summary and decides what happens next; nothing in this
-system auto-implements a change from a ticket. Submitters find out
-something happened when its status moves, not because a decision was
-explained back to them individually.
+**Deciding what to build is a separate, Claude-assisted step.** Ask
+Claude to pull the open and in-review items — via `GET /api/feedback`
+signed in as an account holding `feedback.manage`, or a direct Cloud SQL
+query — and produce a summary: grouped by category, duplicates
+collapsed, anything that looks like a data or security issue first. The
+maintainer reads that and decides. Nothing here auto-implements a change
+from a ticket. Submitters learn something happened when the status
+moves, not because a decision is explained back to them individually.
+
+Whether NMBM's own admin should also see this queue, or whether it
+should be the maintainer's channel alone, is still an open choice — it's
+one line in `DEFAULT_ROLE_PERMISSIONS`.
 
 ## Why not email or a notification pipeline
 

@@ -18,6 +18,7 @@ and what's specific to NMBM.
 | What NMBM hasn't answered yet | `docs/DISCOVERY_FOLLOWUP.md` |
 | Touching colors, fonts, or the logo | `docs/BRANDING.md` |
 | Reviewing user-submitted tickets/feedback | `docs/SUPPORT.md` |
+| Google sign-in, OAuth clients, redirect URIs | `docs/GOOGLE_SETUP.md` |
 | The no-contact ladder or care plan clocks | `packages/api/src/lib/rules.ts` |
 
 ## Commands
