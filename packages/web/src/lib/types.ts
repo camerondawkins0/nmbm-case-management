@@ -3,6 +3,8 @@ import type {
   CarePlanStatus,
   ContactResult,
   NoteStatus,
+  ConsentType,
+  ReferralStatus,
   Permission,
 } from "@nmbm/shared";
 
@@ -91,7 +93,50 @@ export type PendingNote = {
   lastName: string;
 };
 
-export type ParticipantDetail = ParticipantRow & { notes: ParticipantNote[] };
+export type ParticipantConsent = {
+  id: string;
+  type: ConsentType;
+  formName: string;
+  signedDate: string;
+  expiresDate: string;
+  // Derived server-side from the expiry date, not read off a stored
+  // column that could disagree with it.
+  status: "active" | "expired" | "revoked";
+  revokedReason: string | null;
+  recordedByName: string | null;
+  documentUrl: string | null;
+};
+
+export type ParticipantReferral = {
+  id: string;
+  partnerName: string;
+  serviceType: string;
+  reason: string | null;
+  status: ReferralStatus;
+  referredAt: string;
+  outcomeNote: string | null;
+  outcomeRecordedAt: string | null;
+  referredByName: string;
+};
+
+export type ReferralAwaitingOutcome = {
+  id: string;
+  partnerName: string;
+  serviceType: string;
+  status: ReferralStatus;
+  referredAt: string;
+  participantId: string;
+  firstName: string;
+  lastName: string;
+  overdue: boolean;
+  daysWaiting: number;
+};
+
+export type ParticipantDetail = ParticipantRow & {
+  notes: ParticipantNote[];
+  consents: ParticipantConsent[];
+  referrals: ParticipantReferral[];
+};
 
 export type Me = {
   id: string;
@@ -108,6 +153,7 @@ export type Dashboard = {
   carePlansMissing: ParticipantRow[];
   carePlanReviewsDue: ParticipantRow[];
   carePlansReturned: ParticipantRow[];
+  referralsAwaitingOutcome: ReferralAwaitingOutcome[];
   awaitingReview: {
     id: string;
     firstName: string;

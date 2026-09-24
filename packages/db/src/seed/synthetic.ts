@@ -8,9 +8,11 @@ import {
   episodes,
   notes,
   carePlans,
+  consents,
+  referrals,
 } from "../schema/index.js";
 import type { Payer, Role, ContactResult, CarePlanStatus } from "@nmbm/shared";
-import { CARE_PLAN_REVIEW_INTERVAL_DAYS } from "@nmbm/shared";
+import { CARE_PLAN_REVIEW_INTERVAL_DAYS, CONSENT_VALID_DAYS } from "@nmbm/shared";
 
 // Invented staff and participants for local development and demos. No
 // real person appears here — every name, email and note is made up, and
@@ -53,6 +55,11 @@ type Fixture = {
   // no_contact entries since the last successful contact.
   contacts: ContactResult[];
   carePlan?: { status: CarePlanStatus; reviewDueDaysAgo: number; goals: string };
+  // M15/M16: "release" is what authorises a referral. "expired" puts
+  // one on file that no longer does, so the gate has something real to
+  // refuse.
+  release?: "valid" | "expired" | "none";
+  referral?: { partner: string; service: string; outcome: boolean; daysAgo: number };
   demonstrates: string;
 };
 
@@ -66,6 +73,8 @@ const FIXTURES: Fixture[] = [
     enrolledDaysAgo: 60,
     contacts: ["contacted", "no_contact", "contacted"],
     carePlan: { status: "approved", reviewDueDaysAgo: -3, goals: "Stable housing application submitted; diabetes check-ins every two weeks." },
+    release: "valid",
+    referral: { partner: "Long Beach Housing Collaborative", service: "Housing navigation", outcome: true, daysAgo: 30 },
     demonstrates: "healthy case — plan approved, review not yet due",
   },
   {
@@ -88,7 +97,8 @@ const FIXTURES: Fixture[] = [
     enrolledDaysAgo: 80,
     contacts: ["contacted", "no_contact", "no_contact", "no_contact", "no_contact", "no_contact"],
     carePlan: { status: "approved", reviewDueDaysAgo: 21, goals: "Transportation to dialysis appointments." },
-    demonstrates: "M6 disenrollment threshold reached",
+    release: "expired",
+    demonstrates: "M6 disenrollment threshold reached; M15 expired release blocks a new referral",
   },
   {
     first: "Dana",
@@ -98,7 +108,8 @@ const FIXTURES: Fixture[] = [
     worker: "t.green@nmbm.example.org",
     enrolledDaysAgo: 25,
     contacts: ["contacted"],
-    demonstrates: "M9 30-day care plan countdown, 5 days left",
+    release: "none",
+    demonstrates: "M9 30-day countdown; M15 no release on file at all",
   },
   {
     first: "Evelyn",
@@ -119,7 +130,9 @@ const FIXTURES: Fixture[] = [
     enrolledDaysAgo: 20,
     contacts: ["contacted"],
     carePlan: { status: "pending_review", reviewDueDaysAgo: -10, goals: "Food assistance enrollment; follow up on blood pressure readings." },
-    demonstrates: "U6 sign-off chain — waiting on Clinical Director",
+    release: "valid",
+    referral: { partner: "Wilmington Food Bank", service: "Food assistance", outcome: false, daysAgo: 21 },
+    demonstrates: "U6 sign-off chain; M17 referral with no outcome after 21 days",
   },
   {
     first: "Gloria",
@@ -238,6 +251,49 @@ async function main() {
         approvedById: supervisorApproved ? supervisorId : null,
         approvedAt: supervisorApproved ? when : null,
       });
+    }
+
+    if (fixture.release && fixture.release !== "none") {
+      const signed = daysAgo(fixture.enrolledDaysAgo - 1);
+      // M16 anchors expiry to enrolment. The "expired" fixture is
+      // backdated so its window has already closed.
+      const anchor =
+        fixture.release === "expired" ? daysAgo(CONSENT_VALID_DAYS + 40) : startDate;
+      const expires = new Date(anchor);
+      expires.setDate(expires.getDate() + CONSENT_VALID_DAYS);
+
+      const [consent] = await db
+        .insert(consents)
+        .values({
+          participantId: participant.id,
+          episodeId: episode.id,
+          type: "release_of_information",
+          formName: "Authorisation to release information",
+          signedDate: isoDate(signed),
+          expiresDate: isoDate(expires),
+          recordedById: workerId,
+        })
+        .returning();
+
+      if (fixture.referral) {
+        const referredAt = daysAgo(fixture.referral.daysAgo);
+        await db.insert(referrals).values({
+          participantId: participant.id,
+          episodeId: episode.id,
+          partnerName: fixture.referral.partner,
+          serviceType: fixture.referral.service,
+          reason: "Requested at the last home visit.",
+          consentId: consent.id,
+          referredById: workerId,
+          referredAt,
+          status: fixture.referral.outcome ? "completed" : "sent",
+          outcomeNote: fixture.referral.outcome
+            ? "Partner confirmed the client was enrolled and attended intake."
+            : null,
+          outcomeRecordedById: fixture.referral.outcome ? supervisorId : null,
+          outcomeRecordedAt: fixture.referral.outcome ? daysAgo(fixture.referral.daysAgo - 10) : null,
+        });
+      }
     }
 
     if (fixture.carePlan) {

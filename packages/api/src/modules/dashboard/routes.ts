@@ -4,6 +4,8 @@ import { authorizeAny, getPermissions, CAN_READ_PARTICIPANTS } from "../../plugi
 import { resolveScope } from "../../lib/caseload.js";
 import * as participantService from "../participants/service.js";
 import * as carePlanRepository from "../care-plans/repository.js";
+import * as referralService from "../referrals/service.js";
+import { caseloadParticipantIds } from "../../lib/caseload.js";
 
 // The discovery doc's own framing of care plans (M9): an overdue plan
 // should "turn up on the worker's home screen instead of a report
@@ -31,8 +33,16 @@ export default async function dashboardRoutes(fastify: FastifyInstance, opts: { 
         ? await carePlanRepository.listAwaitingReview(db)
         : [];
 
+      // M17: scoped the same way the caseload is — a CHW chases their
+      // own referrals, a supervisor sees all of them.
+      const referralsAwaitingOutcome = await referralService.listAwaitingOutcome(
+        db,
+        caller.canReadAll ? null : await caseloadParticipantIds(db, userId),
+      );
+
       return {
         caseloadSize: participants.length,
+        referralsAwaitingOutcome,
         needsAttention: participants.filter((p) => p.needsAttention).length,
         noContactWarnings,
         carePlansMissing,

@@ -22,8 +22,8 @@ depends on `db`; `db` depends on `shared`. Nothing depends on `web`.
 
 Built so far: `health`, `me`, `participants` (list, record, intake,
 assignment), `episodes`, `notes` (write + review), `care-plans`,
-`dashboard`, `admin` (staff, roles, audit), `feedback` (see
-`docs/SUPPORT.md` for that one). Everything else in
+`dashboard`, `consents`, `referrals`, `admin` (staff, roles, audit),
+`feedback` (see `docs/SUPPORT.md` for that one). Everything else in
 `docs/ARCHITECTURE.md`'s "explicitly not started" list gets a module
 directory the same shape when it's built.
 

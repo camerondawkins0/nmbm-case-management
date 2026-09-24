@@ -6,6 +6,8 @@ import type { AssignableWorker, Me, ParticipantDetail } from "../lib/types.js";
 import type { ContactResult, EpisodeClosureReason } from "@nmbm/shared";
 import { CarePlanPills, MolinaLetterPill, NoContactPill, Pill } from "../components/flags.js";
 import { CarePlanSection } from "../components/care-plan-section.js";
+import { ConsentsSection } from "../components/consents-section.js";
+import { ReferralsSection } from "../components/referrals-section.js";
 
 export default function ParticipantDetailPage({ me }: { me: Me }) {
   const { id } = useParams<{ id: string }>();
@@ -131,6 +133,26 @@ export default function ParticipantDetailPage({ me }: { me: Me }) {
           setNotice(message);
           load();
         }}
+      />
+
+      <ConsentsSection
+        record={record}
+        me={me}
+        onChanged={(message) => {
+          setNotice(message);
+          load();
+        }}
+        onError={setActionError}
+      />
+
+      <ReferralsSection
+        record={record}
+        me={me}
+        onChanged={(message) => {
+          setNotice(message);
+          load();
+        }}
+        onError={setActionError}
       />
 
       {can(me, "participants.assign") && (

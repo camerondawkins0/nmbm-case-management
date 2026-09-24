@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
 import { api } from "../lib/api.js";
+import { Link } from "react-router-dom";
 import type { Dashboard, Me, ParticipantRow } from "../lib/types.js";
-import { CarePlanPills, MolinaLetterPill, NoContactPill, ParticipantLink } from "../components/flags.js";
+import { CarePlanPills, MolinaLetterPill, NoContactPill, ParticipantLink, Pill } from "../components/flags.js";
 
 // M9's framing, literally: an overdue plan turns up here rather than in
 // a report nobody opens. Everything on this screen is something someone
@@ -21,6 +22,7 @@ export default function DashboardPage({ me }: { me: Me }) {
     data.carePlansMissing.length === 0 &&
     data.carePlanReviewsDue.length === 0 &&
     data.carePlansReturned.length === 0 &&
+    data.referralsAwaitingOutcome.length === 0 &&
     data.awaitingReview.length === 0;
 
   return (
@@ -40,6 +42,44 @@ export default function DashboardPage({ me }: { me: Me }) {
       <Section title="Care plan not written yet" rows={data.carePlansMissing} kind="plan-missing" />
       <Section title="Care plan review due" rows={data.carePlanReviewsDue} kind="review-due" />
       <Section title="Returned for revision" rows={data.carePlansReturned} kind="returned" />
+
+      {/* M17: a referral sent and never chased is the failure this is
+          meant to prevent, so it gets its own heading rather than
+          living inside a participant record nobody reopens. */}
+      {data.referralsAwaitingOutcome.length > 0 && (
+        <section className="mt-8">
+          <h2 className="text-sm font-semibold uppercase tracking-wide text-nmbm-ink/50">
+            Referrals waiting on an outcome{" "}
+            <span className="text-nmbm-ink/30">({data.referralsAwaitingOutcome.length})</span>
+          </h2>
+          <ul className="mt-2 divide-y divide-nmbm-ink/5 rounded border border-nmbm-ink/10">
+            {data.referralsAwaitingOutcome.map((referral) => (
+              <li
+                key={referral.id}
+                className="flex flex-wrap items-center justify-between gap-2 px-4 py-3 text-sm"
+              >
+                <span>
+                  <Link
+                    to={`/participants/${referral.participantId}`}
+                    className="font-medium text-nmbm-ink hover:underline"
+                  >
+                    {referral.firstName} {referral.lastName}
+                  </Link>
+                  <span className="text-nmbm-ink/50">
+                    {" "}
+                    — {referral.serviceType}, {referral.partnerName}
+                  </span>
+                </span>
+                <Pill tone={referral.overdue ? "warn" : "muted"}>
+                  {referral.daysWaiting === 0
+                    ? "sent today"
+                    : `${referral.daysWaiting} days waiting`}
+                </Pill>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
 
       {data.awaitingReview.length > 0 && (
         <section className="mt-8">

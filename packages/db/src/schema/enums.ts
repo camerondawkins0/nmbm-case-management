@@ -8,6 +8,8 @@ import {
   CARE_PLAN_STATUSES,
   PAYERS,
   CONSENT_STATUSES,
+  CONSENT_TYPES,
+  REFERRAL_STATUSES,
   FEEDBACK_CATEGORIES,
   FEEDBACK_STATUSES,
 } from "@nmbm/shared";
@@ -22,5 +24,7 @@ export const noteStatusEnum = pgEnum("note_status", NOTE_STATUSES);
 export const carePlanStatusEnum = pgEnum("care_plan_status", CARE_PLAN_STATUSES);
 export const payerEnum = pgEnum("payer", PAYERS);
 export const consentStatusEnum = pgEnum("consent_status", CONSENT_STATUSES);
+export const consentTypeEnum = pgEnum("consent_type", CONSENT_TYPES);
+export const referralStatusEnum = pgEnum("referral_status", REFERRAL_STATUSES);
 export const feedbackCategoryEnum = pgEnum("feedback_category", FEEDBACK_CATEGORIES);
 export const feedbackStatusEnum = pgEnum("feedback_status", FEEDBACK_STATUSES);

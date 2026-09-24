@@ -128,6 +128,30 @@ the same thing when M23 work starts.
   ~20 queued items from eight participants' seed history, which hints
   at the real volume), and whether the Clinical Director's own notes
   should be reviewed by anyone.
+- **Which consent forms do you actually use?** M15 said "we have
+  consent forms" without listing them, and the blank intake packet is
+  still outstanding. Built with four types (general services, release of
+  information, photo/media, other) — the release is the one the referral
+  gate keys on. The real list should replace this.
+- **Expiry: a year from enrolment, or from signing?** M16 says "a year
+  after the client is enrolled", which is what's built — so a release
+  signed eleven months into an episode is valid for one month, not
+  twelve. That may be exactly right, or it may be a slip in how the
+  answer was phrased. Worth one sentence of confirmation, since it
+  changes when every form on file lapses.
+- **Do referrals come in as well as go out?** M17 asked and the answer
+  only covered outbound. Inbound referrals aren't modelled. R5's answer
+  mentions expecting SUD referrals, which suggests they do arrive —
+  who sends them and what needs recording is unknown.
+- **A partner directory?** Referrals name the partner agency as free
+  text, because NMBM hasn't given their list of partners. Once they do,
+  a directory makes outcomes reportable by agency ("how many did we send
+  to X, and how many were seen").
+- **Should an accepted referral keep nagging?** A referral stays on the
+  home screen until it reaches a terminal status, so "partner accepted"
+  keeps appearing until someone records that the service happened. That
+  matches M17's "what happened with the client", but it means more
+  chasing. Flag set at 14 days, which is a guess.
 - **Who may admit a participant?** Intake currently needs
   `participants.write`, held by the Intake Specialist and Clinical
   Director — a CHW cannot admit. Consistent with U3, worth confirming

@@ -46,13 +46,39 @@ These don't collapse into one clock — a plan can be late on the
 completion deadline and still be due for its next 2-week review, and the
 UI has to be able to say both at once.
 
-## Consents expire at 1 year (M16)
+## Consents expire a year after enrolment, not after signing (M16)
 
-Every consent record needs an expiry computed from its signed date, not
-just a boolean flag. What happens when a required consent is missing or
-expired (does the gated action block, or just warn) is still open per
-`docs/DISCOVERY_FOLLOWUP.md` — don't hardcode a hard block until that's
-confirmed.
+NMBM's words were "our consents can expire at a year after the client is
+enrolled" — the anchor is the episode's start date, not the signature.
+The two differ for anything signed mid-episode, and the earlier scaffold
+had this wrong. `recordConsent` computes the expiry from the open
+episode and stores which episode it counted from, so the working can be
+shown. Still marked "are we in agreement" in discovery.
+
+Whether a consent has expired is **derived at read time** from that
+date, never read off the stored status column. A row saying "active"
+next to a date in the past is precisely the bug that lets an expired
+authorisation release someone's information, and nothing here runs a job
+to keep a stored status honest. `status` only carries a decision a
+person made: revoked.
+
+## A referral needs a signed release, and that one blocks (M15/M17)
+
+M15 asked whether a signature "unlocks something else, like a referral".
+It does, and unlike other consent gates this one refuses rather than
+warns: sending a participant's information to an outside agency without
+a current release isn't NMBM's preference to weigh, because there is
+nothing authorising the disclosure. The refusal distinguishes *no
+release on file*, *expired* and *revoked*, because those lead to
+different next actions.
+
+The open half of M16 — whether a missing form should stop other work in
+general — stays open. This rule doesn't settle it and shouldn't be read
+as having settled it.
+
+Revoking a release stops new referrals but leaves existing ones pointing
+at it. What was authorised at the time is a fact about the past, and the
+referral records which consent authorised it.
 
 ## Disenrollment archives immediately, but never hides the record (R10)
 

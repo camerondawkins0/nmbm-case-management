@@ -5,6 +5,8 @@ import { notFound, forbidden } from "../../plugins/errors.js";
 import { caseloadParticipantIds, canSeeParticipant, type CallerScope } from "../../lib/caseload.js";
 import { participantFlags, needsAttention } from "../../lib/rules.js";
 import * as repository from "./repository.js";
+import * as consentService from "../consents/service.js";
+import * as referralService from "../referrals/service.js";
 
 function decorate(row: Awaited<ReturnType<typeof repository.findById>>) {
   const flags = participantFlags(row);
@@ -26,8 +28,12 @@ export async function getParticipant(db: Db, caller: CallerScope, id: string) {
   }
   const row = await repository.findById(db, id);
   if (!row) throw notFound("Participant not found");
-  const notes = await repository.listNotes(db, id);
-  return { ...decorate(row), notes };
+  const [notes, consents, referrals] = await Promise.all([
+    repository.listNotes(db, id),
+    consentService.listForParticipant(db, id),
+    referralService.listForParticipant(db, id),
+  ]);
+  return { ...decorate(row), notes, consents, referrals };
 }
 
 export async function createParticipant(

@@ -1,5 +1,7 @@
 import { z } from "zod";
 import {
+  CONSENT_TYPES,
+  REFERRAL_STATUSES,
   EPISODE_STATUSES,
   EPISODE_CLOSURE_REASONS,
   CONTACT_RESULTS,
@@ -93,3 +95,35 @@ export const feedbackStatusUpdateSchema = z.object({
   resolutionNote: z.string().min(1).optional(),
 });
 export type FeedbackStatusUpdate = z.infer<typeof feedbackStatusUpdateSchema>;
+
+// M15: recording that a form was signed. The expiry is computed from
+// the episode's enrolment date rather than supplied, so it can't be
+// quietly set to something convenient.
+export const consentCreateSchema = z.object({
+  participantId: z.string().uuid(),
+  type: z.enum(CONSENT_TYPES),
+  formName: z.string().min(1).max(200),
+  signedDate: z.string().date(),
+});
+export type ConsentCreate = z.infer<typeof consentCreateSchema>;
+
+export const consentRevokeSchema = z.object({
+  reason: z.string().min(1),
+});
+export type ConsentRevoke = z.infer<typeof consentRevokeSchema>;
+
+// M17. No consentId: the service picks the release that authorises the
+// disclosure, so a caller can't nominate an unrelated or expired one.
+export const referralCreateSchema = z.object({
+  participantId: z.string().uuid(),
+  partnerName: z.string().min(1).max(200),
+  serviceType: z.string().min(1).max(200),
+  reason: z.string().min(1).optional(),
+});
+export type ReferralCreate = z.infer<typeof referralCreateSchema>;
+
+export const referralOutcomeSchema = z.object({
+  status: z.enum(REFERRAL_STATUSES),
+  outcomeNote: z.string().min(1).optional(),
+});
+export type ReferralOutcome = z.infer<typeof referralOutcomeSchema>;

@@ -16,6 +16,8 @@ export const PERMISSIONS = [
   "notes.approve", // CHW supervisor / Program Manager (U6)
   "care_plans.write",
   "care_plans.approve", // Clinical Director (U6)
+  "consents.write", // record and revoke consent forms (M15/M16)
+  "referrals.write", // refer out and record what came back (M17)
   "admin.users.manage",
   "admin.settings.manage",
   "feedback.submit", // any logged-in user — NMBM has no dedicated IT staff (M31), see docs/SUPPORT.md
@@ -33,6 +35,8 @@ export type Permission = (typeof PERMISSIONS)[number];
 // so the grid stays the single source of truth for "who can do what."
 export const DEFAULT_ROLE_PERMISSIONS: Record<Role, Permission[]> = {
   clinical_director: [
+    "consents.write",
+    "referrals.write",
     "participants.read.all",
     "participants.write",
     "participants.assign",
@@ -45,6 +49,8 @@ export const DEFAULT_ROLE_PERMISSIONS: Record<Role, Permission[]> = {
   ],
   billing_coordinator: ["participants.read.all", "feedback.submit"],
   intake_specialist: [
+    "consents.write",
+    "referrals.write",
     "participants.read.own",
     "participants.write",
     "episodes.write",
@@ -56,18 +62,26 @@ export const DEFAULT_ROLE_PERMISSIONS: Record<Role, Permission[]> = {
     "feedback.submit",
   ],
   community_health_worker: [
+    "consents.write",
+    "referrals.write",
     "participants.read.own",
     "notes.write",
     "care_plans.write",
     "feedback.submit",
   ],
   program_manager: [
+    "referrals.write",
     "participants.read.all",
     "participants.assign",
     "notes.approve",
     "feedback.submit",
   ],
-  apcc_acsw_intern: ["participants.read.own", "notes.write", "feedback.submit"],
+  apcc_acsw_intern: [
+    "participants.read.own",
+    "notes.write",
+    "referrals.write",
+    "feedback.submit",
+  ],
   quality_assurance_coordinator: ["participants.read.all", "feedback.submit"],
   system_administrator: [
     "admin.users.manage",

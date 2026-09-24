@@ -74,6 +74,39 @@ export type Payer = (typeof PAYERS)[number];
 export const CONSENT_STATUSES = ["active", "expired", "revoked"] as const;
 export type ConsentStatus = (typeof CONSENT_STATUSES)[number];
 
+// M15: NMBM said "we have consent forms" without listing them — the
+// blank intake packet is still outstanding. This is the smallest set
+// the referral gate needs, not a guess at their filing cabinet.
+export const CONSENT_TYPES = [
+  "general_services",
+  "release_of_information",
+  "photo_media",
+  "other",
+] as const;
+export type ConsentType = (typeof CONSENT_TYPES)[number];
+
+// M16: "our consents can expire at a year after the client is enrolled"
+// — note the anchor is enrolment, not the signature date. Still marked
+// "are we in agreement" in discovery, so it stays a named constant.
+export const CONSENT_VALID_DAYS = 365;
+
+// M17: outbound referrals. "Do referrals come in, and who sends them?"
+// was never really answered, so inbound isn't modelled.
+export const REFERRAL_STATUSES = [
+  "sent",
+  "accepted",
+  "declined",
+  "completed",
+  "no_response",
+  "withdrawn",
+] as const;
+export type ReferralStatus = (typeof REFERRAL_STATUSES)[number];
+
+// A referral with no outcome after this long is unfinished work, and
+// says so on the home screen. Not from discovery — a starting value to
+// react to, flagged in docs/DISCOVERY_FOLLOWUP.md.
+export const REFERRAL_FOLLOW_UP_DAYS = 14;
+
 // NMBM has no dedicated IT/dev staff (discovery M31) — every logged-in
 // user can submit a ticket, and it's triaged externally. See
 // docs/SUPPORT.md for who's expected to look at these and how.
