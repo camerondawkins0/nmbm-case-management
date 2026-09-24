@@ -3,7 +3,12 @@ import { notes, vNoContactCounts, participants, episodes } from "@nmbm/db";
 import { eq, and } from "drizzle-orm";
 import type { NoteCreate } from "@nmbm/shared";
 
-export async function insert(db: Db, input: NoteCreate, authorId: string) {
+export async function insert(
+  db: Db,
+  input: NoteCreate,
+  authorId: string,
+  authorIsReviewer: boolean,
+) {
   const [row] = await db
     .insert(notes)
     .values({
@@ -12,6 +17,9 @@ export async function insert(db: Db, input: NoteCreate, authorId: string) {
       authorId,
       contactResult: input.contactResult,
       body: input.body,
+      status: authorIsReviewer ? "approved" : "pending_review",
+      approvedById: authorIsReviewer ? authorId : null,
+      approvedAt: authorIsReviewer ? new Date() : null,
     })
     .returning();
   return row;

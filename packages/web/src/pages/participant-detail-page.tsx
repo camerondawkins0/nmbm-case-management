@@ -2,9 +2,10 @@ import { useCallback, useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { api, ApiError } from "../lib/api.js";
 import { can } from "../lib/use-me.js";
-import type { Me, ParticipantDetail } from "../lib/types.js";
+import type { AssignableWorker, Me, ParticipantDetail } from "../lib/types.js";
 import type { ContactResult, EpisodeClosureReason } from "@nmbm/shared";
 import { CarePlanPills, MolinaLetterPill, NoContactPill, Pill } from "../components/flags.js";
+import { CarePlanSection } from "../components/care-plan-section.js";
 
 export default function ParticipantDetailPage({ me }: { me: Me }) {
   const { id } = useParams<{ id: string }>();
@@ -123,6 +124,27 @@ export default function ParticipantDetailPage({ me }: { me: Me }) {
         />
       )}
 
+      <CarePlanSection
+        record={record}
+        me={me}
+        onChanged={(message) => {
+          setNotice(message);
+          load();
+        }}
+      />
+
+      {can(me, "participants.assign") && (
+        <AssignmentControl
+          participantId={record.id}
+          currentWorker={record.workerName}
+          onChanged={(message) => {
+            setNotice(message);
+            load();
+          }}
+          onError={setActionError}
+        />
+      )}
+
       {can(me, "episodes.write") && record.episodeStatus === "open" && record.episodeId && (
         <CloseEpisodeForm
           onClose={(reason) =>
@@ -153,8 +175,15 @@ export default function ParticipantDetailPage({ me }: { me: Me }) {
               </div>
               <p className="mt-1 text-xs text-nmbm-ink/50">
                 {note.authorName} · {new Date(note.createdAt).toLocaleDateString()}
-                {note.approvedAt && " · approved"}
+                {note.status === "approved" && " · approved"}
+                {note.status === "pending_review" && " · awaiting review"}
               </p>
+              {/* U6: the author has to be able to see why it bounced. */}
+              {note.status === "needs_revision" && note.reviewNote && (
+                <p className="mt-1 rounded bg-state-warn-bg px-2 py-1 text-xs text-state-warn">
+                  Returned: {note.reviewNote}
+                </p>
+              )}
             </li>
           ))}
           {record.notes.length === 0 && (
@@ -271,6 +300,76 @@ function CloseEpisodeForm({ onClose }: { onClose: (reason: EpisodeClosureReason)
           className="rounded border border-nmbm-ink px-4 py-1.5 text-sm font-medium text-nmbm-ink transition hover:bg-nmbm-ink hover:text-nmbm-paper"
         >
           Close episode
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// U3/M4: supervisors assign, and U9's "caseloads would be reassigned"
+// is the same action — the previous assignment is closed, not erased.
+function AssignmentControl({
+  participantId,
+  currentWorker,
+  onChanged,
+  onError,
+}: {
+  participantId: string;
+  currentWorker: string | null;
+  onChanged: (message: string) => void;
+  onError: (message: string) => void;
+}) {
+  const [workers, setWorkers] = useState<AssignableWorker[]>([]);
+  const [workerId, setWorkerId] = useState("");
+  const [busy, setBusy] = useState(false);
+
+  useEffect(() => {
+    api<AssignableWorker[]>("/api/participants/assignable-workers")
+      .then(setWorkers)
+      .catch(() => setWorkers([]));
+  }, []);
+
+  async function submit() {
+    setBusy(true);
+    try {
+      await api(`/api/participants/${participantId}/assignment`, {
+        method: "POST",
+        body: JSON.stringify({ workerId }),
+      });
+      setWorkerId("");
+      onChanged("Reassigned.");
+    } catch (e) {
+      onError(e instanceof ApiError ? e.message : "Could not reassign");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <div className="mt-6 rounded border border-nmbm-ink/10 p-4">
+      <h2 className="text-sm font-semibold uppercase tracking-wide text-nmbm-ink/50">
+        Assigned worker
+      </h2>
+      <div className="mt-3 flex flex-wrap items-center gap-3 text-sm">
+        <span className="text-nmbm-ink/70">{currentWorker ?? "Nobody assigned"}</span>
+        <select
+          value={workerId}
+          onChange={(e) => setWorkerId(e.target.value)}
+          className="rounded border border-nmbm-ink/20 px-3 py-1.5 text-sm"
+        >
+          <option value="">Reassign to…</option>
+          {workers.map((w) => (
+            <option key={w.id} value={w.id}>
+              {w.displayName}
+            </option>
+          ))}
+        </select>
+        <button
+          disabled={!workerId || busy}
+          onClick={submit}
+          className="rounded border border-nmbm-ink/30 px-4 py-1.5 text-sm font-medium disabled:opacity-40"
+        >
+          Reassign
         </button>
       </div>
     </div>

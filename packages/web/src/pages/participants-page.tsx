@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import { api } from "../lib/api.js";
 import type { ParticipantRow } from "../lib/types.js";
 import { PARTICIPANT_LABEL_PLURAL } from "@nmbm/shared";
@@ -16,7 +17,7 @@ const PAYER_LABELS: Record<string, string> = {
 
 // U5: this is already only the caller's own caseload — the server
 // decides that, so there's no "show everyone" toggle to get wrong.
-export default function ParticipantsPage() {
+export default function ParticipantsPage({ canAdmit }: { canAdmit: boolean }) {
   const [rows, setRows] = useState<ParticipantRow[] | null>(null);
   const [onlyAttention, setOnlyAttention] = useState(false);
 
@@ -32,6 +33,15 @@ export default function ParticipantsPage() {
     <div className="mx-auto max-w-5xl">
       <div className="flex flex-wrap items-baseline justify-between gap-3">
         <h1 className="text-2xl font-semibold text-nmbm-ink">{PARTICIPANT_LABEL_PLURAL}</h1>
+        <div className="flex items-center gap-4">
+        {canAdmit && (
+          <Link
+            to="/participants/new"
+            className="rounded bg-nmbm-ink px-4 py-1.5 text-sm font-medium text-nmbm-paper"
+          >
+            New intake
+          </Link>
+        )}
         <label className="flex items-center gap-2 text-sm text-nmbm-ink/70">
           <input
             type="checkbox"
@@ -40,6 +50,7 @@ export default function ParticipantsPage() {
           />
           Needs attention only
         </label>
+        </div>
       </div>
 
       <div className="mt-4 overflow-x-auto">

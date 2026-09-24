@@ -18,6 +18,25 @@ export const participantCreateSchema = z.object({
 });
 export type ParticipantCreate = z.infer<typeof participantCreateSchema>;
 
+// Intake creates the record, opens the episode and names the worker in
+// one act, because that is how it happens in the room — M3 (what a
+// funder additionally requires at intake) is still unanswered, so this
+// is the minimum the discovery answers already support.
+export const intakeSchema = z.object({
+  firstName: z.string().min(1),
+  lastName: z.string().min(1),
+  dateOfBirth: z.string().date(),
+  payer: z.enum(PAYERS).optional(),
+  assignedWorkerId: z.string().uuid(),
+  startDate: z.string().date(),
+});
+export type Intake = z.infer<typeof intakeSchema>;
+
+export const assignmentSchema = z.object({
+  workerId: z.string().uuid(),
+});
+export type AssignmentChange = z.infer<typeof assignmentSchema>;
+
 // M6: closing an episode carries the reason, because "no_contact" is
 // the one the disenrollment gate applies to.
 export const episodeCloseSchema = z.object({

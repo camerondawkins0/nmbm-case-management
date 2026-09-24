@@ -7,6 +7,7 @@ import { notFound, unprocessable, conflict } from "../../plugins/errors.js";
 import { noContactState } from "../../lib/rules.js";
 import * as repository from "./repository.js";
 import * as notesRepository from "../notes/repository.js";
+import { writeAudit } from "../../plugins/audit.js";
 
 export async function openEpisode(db: Db, input: EpisodeCreate) {
   return repository.insert(db, input);
@@ -23,7 +24,12 @@ async function loadOpenEpisode(db: Db, episodeId: string) {
 // contact needs five failed attempts, and for a Molina participant the
 // warning letter has to have gone out first. Every other closure reason
 // is an ordinary exit and isn't blocked.
-export async function closeEpisode(db: Db, episodeId: string, input: EpisodeClose) {
+export async function closeEpisode(
+  db: Db,
+  episodeId: string,
+  input: EpisodeClose,
+  actorId: string,
+) {
   const episode = await loadOpenEpisode(db, episodeId);
 
   if (input.closureReason === "no_contact") {
@@ -55,10 +61,18 @@ export async function closeEpisode(db: Db, episodeId: string, input: EpisodeClos
     }
   }
 
-  return repository.close(db, episodeId, input);
+  const closed = await repository.close(db, episodeId, input);
+  await writeAudit(db, {
+    actorUserId: actorId,
+    action: "episode.closed",
+    entityType: "episode",
+    entityId: episodeId,
+    detail: input.closureReason,
+  });
+  return closed;
 }
 
-export async function recordDisenrollmentLetter(db: Db, episodeId: string) {
+export async function recordDisenrollmentLetter(db: Db, episodeId: string, actorId: string) {
   const episode = await loadOpenEpisode(db, episodeId);
   if (episode.disenrollmentLetterSentAt) {
     throw conflict("Letter already recorded for this episode");
@@ -68,5 +82,11 @@ export async function recordDisenrollmentLetter(db: Db, episodeId: string) {
     .set({ disenrollmentLetterSentAt: new Date() })
     .where(eq(episodes.id, episodeId))
     .returning();
+  await writeAudit(db, {
+    actorUserId: actorId,
+    action: "episode.disenrollment_letter_recorded",
+    entityType: "episode",
+    entityId: episodeId,
+  });
   return row;
 }

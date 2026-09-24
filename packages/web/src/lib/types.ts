@@ -2,6 +2,7 @@ import type {
   Payer,
   CarePlanStatus,
   ContactResult,
+  NoteStatus,
   Permission,
 } from "@nmbm/shared";
 
@@ -39,6 +40,8 @@ export type ParticipantRow = {
   episodeStatus: string | null;
   startDate: string | null;
   carePlanId: string | null;
+  carePlanGoals: string | null;
+  carePlanReviewNote: string | null;
   flags: { noContact: NoContactFlags; carePlan: CarePlanFlags };
   needsAttention: boolean;
 };
@@ -49,7 +52,43 @@ export type ParticipantNote = {
   body: string;
   createdAt: string;
   authorName: string;
+  authorId: string;
+  status: NoteStatus;
+  reviewNote: string | null;
   approvedAt: string | null;
+};
+
+export type AssignableWorker = { id: string; displayName: string; email: string };
+
+export type AdminUser = {
+  id: string;
+  email: string;
+  displayName: string;
+  active: boolean;
+  deactivatedAt: string | null;
+  roles: { code: string; label: string }[];
+};
+
+export type AuditEntry = {
+  id: string;
+  action: string;
+  entityType: string;
+  entityId: string;
+  detail: string | null;
+  createdAt: string;
+  actorName: string;
+  actorEmail: string;
+};
+
+export type PendingNote = {
+  id: string;
+  body: string;
+  contactResult: ContactResult;
+  createdAt: string;
+  authorName: string;
+  participantId: string;
+  firstName: string;
+  lastName: string;
 };
 
 export type ParticipantDetail = ParticipantRow & { notes: ParticipantNote[] };

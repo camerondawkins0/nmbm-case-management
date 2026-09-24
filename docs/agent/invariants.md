@@ -68,6 +68,37 @@ Retention is separately confirmed at 7 years (R6, California state
 requirement) — that's what eventually governs when a closed record
 leaves cold storage, not when it leaves the active view.
 
+## Work is reviewed by someone other than its author (U6)
+
+Both halves of the sign-off chain now exist — care plans and notes —
+and they behave the same way on purpose:
+
+- Submitting and approving are different permissions. A CHW holding
+  `care_plans.write` or `notes.write` cannot sign off their own work.
+- Returning requires a reason, and the reason is shown to the author on
+  the record they're fixing. A bounce with no explanation just costs
+  them another round trip.
+- "Returned" is a state, never a deletion. The row keeps its id, its
+  author and its history.
+- A note written by someone who holds `notes.approve` is approved on
+  creation rather than queued. There is nobody above them in the chain,
+  so queueing it would park it forever. Whether NMBM wants that is
+  flagged in `docs/DISCOVERY_FOLLOWUP.md`.
+
+## Every consequential action leaves a trail (M30)
+
+`writeAudit` is called by the service that performs the action, inside
+the same transaction where there is one. There is no write endpoint for
+the log and no way to edit it through the app — `/api/admin/audit` is
+read-only. Adding a new action that changes participant data, staff
+access or case ownership means adding an audit line with it.
+
+## Nobody is deactivated out from under a caseload (U9)
+
+Deactivating a user is refused while they hold open assignments, and
+the refusal names the participants so the supervisor knows what to
+reassign. The account is never deleted — past notes keep their author.
+
 ## Money is a string end to end
 
 `numeric` Postgres columns, string in Zod schemas, string across the API

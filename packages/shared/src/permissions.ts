@@ -8,6 +8,9 @@ export const PERMISSIONS = [
   "participants.read.own", // own caseload only (discovery U5)
   "participants.read.all",
   "participants.write",
+  // U3/M4: "Supervisors can assign a client to a CHW. Clinical Director
+  // can assign a mental health client to an MSW intern, APCC, or ACSW."
+  "participants.assign",
   "episodes.write",
   "notes.write",
   "notes.approve", // CHW supervisor / Program Manager (U6)
@@ -32,6 +35,7 @@ export const DEFAULT_ROLE_PERMISSIONS: Record<Role, Permission[]> = {
   clinical_director: [
     "participants.read.all",
     "participants.write",
+    "participants.assign",
     "episodes.write",
     "notes.write",
     "notes.approve",
@@ -59,6 +63,7 @@ export const DEFAULT_ROLE_PERMISSIONS: Record<Role, Permission[]> = {
   ],
   program_manager: [
     "participants.read.all",
+    "participants.assign",
     "notes.approve",
     "feedback.submit",
   ],
@@ -68,6 +73,7 @@ export const DEFAULT_ROLE_PERMISSIONS: Record<Role, Permission[]> = {
     "admin.users.manage",
     "admin.settings.manage",
     "participants.read.all",
+    "participants.assign",
     "feedback.submit",
     "feedback.manage",
   ],

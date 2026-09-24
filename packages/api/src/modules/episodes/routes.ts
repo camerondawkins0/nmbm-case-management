@@ -38,7 +38,7 @@ export default async function episodeRoutes(fastify: FastifyInstance, opts: { db
     async (request) => {
       const input = episodeCloseSchema.parse(request.body);
       await assertEpisodeVisible(request.currentUser!.id, request.params.id);
-      return service.closeEpisode(db, request.params.id, input);
+      return service.closeEpisode(db, request.params.id, input, request.currentUser!.id);
     },
   );
 
@@ -49,7 +49,7 @@ export default async function episodeRoutes(fastify: FastifyInstance, opts: { db
     { preHandler: authorize("episodes.write") },
     async (request) => {
       await assertEpisodeVisible(request.currentUser!.id, request.params.id);
-      return service.recordDisenrollmentLetter(db, request.params.id);
+      return service.recordDisenrollmentLetter(db, request.params.id, request.currentUser!.id);
     },
   );
 }

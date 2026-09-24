@@ -6,6 +6,9 @@ import DashboardPage from "./pages/dashboard-page.js";
 import ParticipantsPage from "./pages/participants-page.js";
 import ParticipantDetailPage from "./pages/participant-detail-page.js";
 import CarePlanReviewPage from "./pages/care-plan-review-page.js";
+import NoteReviewPage from "./pages/note-review-page.js";
+import IntakePage from "./pages/intake-page.js";
+import AdminUsersPage from "./pages/admin/users-page.js";
 import FeedbackPage from "./pages/feedback-page.js";
 import FeedbackAdminPage from "./pages/admin/feedback-admin-page.js";
 
@@ -34,9 +37,15 @@ export default function App() {
     <AppShell me={me}>
       <Routes>
         <Route path="/" element={<DashboardPage me={me} />} />
-        <Route path="/participants" element={<ParticipantsPage />} />
+        <Route
+          path="/participants"
+          element={<ParticipantsPage canAdmit={me.permissions.includes("participants.write")} />}
+        />
+        <Route path="/participants/new" element={<IntakePage />} />
         <Route path="/participants/:id" element={<ParticipantDetailPage me={me} />} />
         <Route path="/care-plans/review" element={<CarePlanReviewPage />} />
+        <Route path="/notes/review" element={<NoteReviewPage />} />
+        <Route path="/admin/users" element={<AdminUsersPage />} />
         <Route path="/feedback" element={<FeedbackPage />} />
         <Route path="/admin/feedback" element={<FeedbackAdminPage />} />
         <Route path="/login" element={<Navigate to="/" replace />} />

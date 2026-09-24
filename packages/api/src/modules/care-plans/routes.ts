@@ -73,7 +73,7 @@ export default async function carePlanRoutes(fastify: FastifyInstance, opts: { d
     { preHandler: authorize("care_plans.approve") },
     async (request) => {
       const input = carePlanReviewSchema.parse(request.body);
-      return service.returnForRevision(db, request.params.id, input);
+      return service.returnForRevision(db, request.params.id, input, request.currentUser!.id);
     },
   );
 }

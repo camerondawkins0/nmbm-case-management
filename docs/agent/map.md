@@ -20,10 +20,16 @@ depends on `db`; `db` depends on `shared`. Nothing depends on `web`.
 - `service.ts` — rules and transactions. Never touches HTTP objects.
 - `repository.ts` — Drizzle queries. Never holds a rule.
 
-Built so far: `health`, `me`, `participants`, `episodes`, `notes`,
-`care-plans`, `dashboard`, `feedback` (see `docs/SUPPORT.md` for that
-one). Everything else in `docs/ARCHITECTURE.md`'s "explicitly not
-started" list gets a module directory the same shape when it's built.
+Built so far: `health`, `me`, `participants` (list, record, intake,
+assignment), `episodes`, `notes` (write + review), `care-plans`,
+`dashboard`, `admin` (staff, roles, audit), `feedback` (see
+`docs/SUPPORT.md` for that one). Everything else in
+`docs/ARCHITECTURE.md`'s "explicitly not started" list gets a module
+directory the same shape when it's built.
+
+Two modules split their service layer where one file would have grown
+unwieldy: `participants/intake.ts` (admission and reassignment, both
+transactional) and `notes/review.ts` (the U6 approval chain).
 
 ## API libs
 

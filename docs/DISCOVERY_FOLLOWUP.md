@@ -119,6 +119,19 @@ the same thing when M23 work starts.
   letter before closing, and records that it was sent. It does not
   generate or send it — confirm whether NMBM wants the letter text
   produced here or kept in their own templates.
+- **Does every note need review, and whose?** U6 says a supervisor
+  approves CHW notes and the Clinical Director reviews APCC/ACSW notes.
+  Built as: every note starts awaiting review, except one written by
+  somebody who can approve — theirs is approved on the spot, since
+  nobody is above them in the chain. Two things to confirm: whether
+  every routine contact note really needs a signature (it's currently
+  ~20 queued items from eight participants' seed history, which hints
+  at the real volume), and whether the Clinical Director's own notes
+  should be reviewed by anyone.
+- **Who may admit a participant?** Intake currently needs
+  `participants.write`, held by the Intake Specialist and Clinical
+  Director — a CHW cannot admit. Consistent with U3, worth confirming
+  alongside the episode-closing question above.
 - **M1** — "Clients" vs. "cases" as the record name — still needs one
   answer.
 - **M3** — What has to be known before intake can proceed, and which of

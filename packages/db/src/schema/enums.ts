@@ -4,6 +4,7 @@ import {
   EPISODE_STATUSES,
   EPISODE_CLOSURE_REASONS,
   CONTACT_RESULTS,
+  NOTE_STATUSES,
   CARE_PLAN_STATUSES,
   PAYERS,
   CONSENT_STATUSES,
@@ -17,6 +18,7 @@ export const roleEnum = pgEnum("role", ROLES);
 export const episodeStatusEnum = pgEnum("episode_status", EPISODE_STATUSES);
 export const episodeClosureReasonEnum = pgEnum("episode_closure_reason", EPISODE_CLOSURE_REASONS);
 export const contactResultEnum = pgEnum("contact_result", CONTACT_RESULTS);
+export const noteStatusEnum = pgEnum("note_status", NOTE_STATUSES);
 export const carePlanStatusEnum = pgEnum("care_plan_status", CARE_PLAN_STATUSES);
 export const payerEnum = pgEnum("payer", PAYERS);
 export const consentStatusEnum = pgEnum("consent_status", CONSENT_STATUSES);

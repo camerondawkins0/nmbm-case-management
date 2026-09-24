@@ -2,6 +2,7 @@ import type { Db } from "@nmbm/db";
 import type { CarePlanCreate, CarePlanReview } from "@nmbm/shared";
 import { notFound, conflict, badRequest } from "../../plugins/errors.js";
 import * as repository from "./repository.js";
+import { writeAudit } from "../../plugins/audit.js";
 
 export async function createCarePlan(db: Db, input: CarePlanCreate) {
   return repository.insert(db, input);
@@ -36,13 +37,25 @@ export async function approve(db: Db, id: string, approverId: string) {
   if (plan.status !== "pending_review") {
     throw conflict("Only a plan submitted for review can be approved");
   }
-  return repository.setStatus(db, id, "approved", {
+  const row = await repository.setStatus(db, id, "approved", {
     approvedById: approverId,
     resetReviewClock: true,
   });
+  await writeAudit(db, {
+    actorUserId: approverId,
+    action: "care_plan.approved",
+    entityType: "care_plan",
+    entityId: id,
+  });
+  return row;
 }
 
-export async function returnForRevision(db: Db, id: string, input: CarePlanReview) {
+export async function returnForRevision(
+  db: Db,
+  id: string,
+  input: CarePlanReview,
+  reviewerId: string,
+) {
   const plan = await load(db, id);
   if (plan.status !== "pending_review") {
     throw conflict("Only a plan submitted for review can be returned");
@@ -51,7 +64,17 @@ export async function returnForRevision(db: Db, id: string, input: CarePlanRevie
     // Returning without saying why just costs the author a round trip.
     throw badRequest("Say why the plan is being returned");
   }
-  return repository.setStatus(db, id, "needs_revision", { reviewNote: input.reviewNote });
+  const row = await repository.setStatus(db, id, "needs_revision", {
+    reviewNote: input.reviewNote,
+  });
+  await writeAudit(db, {
+    actorUserId: reviewerId,
+    action: "care_plan.returned",
+    entityType: "care_plan",
+    entityId: id,
+    detail: input.reviewNote,
+  });
+  return row;
 }
 
 export async function listAwaitingReview(db: Db) {

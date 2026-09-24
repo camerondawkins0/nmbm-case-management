@@ -32,6 +32,12 @@ export const CARE_PLAN_REVIEW_INTERVAL_DAYS = 14;
 export const CONTACT_RESULTS = ["contacted", "no_contact"] as const;
 export type ContactResult = (typeof CONTACT_RESULTS)[number];
 
+// U6: a supervisor approves a CHW's note or sends it back. Same three
+// states as a care plan, for the same reason — "returned" has to be a
+// state the author can see, not a deletion.
+export const NOTE_STATUSES = ["pending_review", "approved", "needs_revision"] as const;
+export type NoteStatus = (typeof NOTE_STATUSES)[number];
+
 // M9: two independent clocks share one status field on the plan itself.
 export const CARE_PLAN_STATUSES = [
   "draft",

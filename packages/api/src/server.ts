@@ -10,6 +10,7 @@ import noteRoutes from "./modules/notes/routes.js";
 import carePlanRoutes from "./modules/care-plans/routes.js";
 import dashboardRoutes from "./modules/dashboard/routes.js";
 import feedbackRoutes from "./modules/feedback/routes.js";
+import adminRoutes from "./modules/admin/routes.js";
 
 declare module "fastify" {
   interface FastifyInstance {
@@ -35,6 +36,7 @@ export async function buildServer() {
   await fastify.register(carePlanRoutes, { db });
   await fastify.register(dashboardRoutes, { db });
   await fastify.register(feedbackRoutes, { db });
+  await fastify.register(adminRoutes, { db });
 
   return fastify;
 }

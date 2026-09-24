@@ -29,6 +29,8 @@ const listSelection = {
   carePlanId: carePlans.id,
   carePlanStatus: carePlans.status,
   carePlanReviewDue: carePlans.nextReviewDue,
+  carePlanGoals: carePlans.goals,
+  carePlanReviewNote: carePlans.reviewNote,
   consecutiveNoContacts: vNoContactCounts.consecutiveNoContacts,
 };
 
@@ -71,6 +73,9 @@ export async function listNotes(db: Db, participantId: string) {
       body: notes.body,
       createdAt: notes.createdAt,
       authorName: users.displayName,
+      authorId: notes.authorId,
+      status: notes.status,
+      reviewNote: notes.reviewNote,
       approvedAt: notes.approvedAt,
     })
     .from(notes)
