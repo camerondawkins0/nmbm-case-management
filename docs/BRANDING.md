@@ -17,6 +17,13 @@ as a placeholder to replace once the real files are available; see
 | Stand-in mark | `packages/web/src/components/brand-mark.tsx` |
 | Asset drop point + instructions | `packages/web/public/branding/README.md` |
 
+The mark is currently rendered in three places: the sign-in page, the
+app header (`components/app-shell.tsx`), and the printable participation
+record (`pages/participation-record-page.tsx`). That third one is the
+only place the brand leaves the building — it is handed to a probation
+officer or a court — so it is the one to check first after the real
+asset lands.
+
 ## Palette
 
 | Token | Hex (approximate) | Use |
@@ -32,6 +39,16 @@ plain white ground — no secondary or tertiary brand colors were visible
 in either version shared. Don't invent one; if the UI needs a state color
 (error, warning, success) outside this palette, treat that as a separate,
 functional palette rather than an extension of the brand one.
+
+### The functional palette, which is not brand
+
+That separation is now real in the config. `tailwind.config.js` carries
+a second `state` group — `alert`, `warn`, `ok` and a background tint for
+each — used for overdue care plans, the no-contact ladder and consent
+expiry. It is deliberately not named after the brand and does not derive
+from the gold, because a two-color mark cannot legitimately be stretched
+to mean "this person is four weeks overdue." Replacing the brand hexes
+with sampled values should leave this group untouched.
 
 ## Typography
 
@@ -71,8 +88,11 @@ of leaving system-ui as the permanent choice.
    README for the exact expectation.
 3. Sample the real hex values from the files and update the palette
    table above, `tailwind.config.js`, and `theme.css` to match.
-4. Replace `<BrandMark />` in `login-page.tsx` / `dashboard-page.tsx`
-   with the real asset, or trace it into the SVG if it needs to stay
-   inline (e.g. to recolor per theme).
+4. Replace `<BrandMark />` with the real asset in all three call sites
+   (`login-page.tsx`, `app-shell.tsx`,
+   `participation-record-page.tsx`), or trace it into the SVG if it
+   needs to stay inline (e.g. to recolor per theme). Print the
+   participation record afterwards — a raster logo that looks fine at
+   44px in a header can be visibly rough on paper.
 5. Ask NMBM whether a font, minimum clear space, or usage guideline
    exists beyond what's visible in the mark itself.

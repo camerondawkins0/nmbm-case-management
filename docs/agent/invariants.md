@@ -37,6 +37,13 @@ requires sending a specific disenrollment-warning letter. This is not a
 generic "3 strikes" rule — the Molina branch is a distinct, required
 step, not an optional notification.
 
+Both halves are a gate on the close action, not a banner next to it:
+`closeEpisode` refuses and says how many attempts are still needed, or
+that the letter has to be recorded first. The gate binds **only the
+`no_contact` closure reason** — somebody who completes the programme,
+moves away or asks to leave exits without any of this, and blocking
+those would be inventing a rule NMBM never asked for.
+
 ## Care plan has two independent clocks (M9)
 
 1. A 30-day completion countdown starting at enrollment.
@@ -81,6 +88,27 @@ at it. What was authorised at the time is a fact about the past, and the
 referral records which consent authorised it.
 
 ## Disenrollment archives immediately, but never hides the record (R10)
+
+**Not yet enforced in code. This section describes the rule, not the
+current behaviour** — see "What is not built" in `docs/ARCHITECTURE.md`.
+Closing an episode today sets its status and nothing else: the
+assignment stays open, the caseload query keeps the row, and the flags
+read the resulting null episode as "no care plan", so a disenrolled
+participant shows up needing attention on the worker who just exited
+them. Verified by closing a seeded episode: the caseload query still
+returns the same eight rows, and the assignment is still open.
+
+`v_no_contact_counts` counts notes since the last successful contact
+with no reference to an episode, which has a second consequence aimed
+straight at the readmission case NMBM raised: somebody disenrolled for
+no contact and later readmitted would begin their new episode already
+at three strikes, because the failed attempts from the previous episode
+are still the most recent notes on the record.
+
+Fixing it means ending the assignment when the episode closes,
+filtering the caseload and dashboard queries to participants with an
+open episode, and scoping the view to the episode rather than the
+participant.
 
 When an episode closes, the participant has to drop out of the active
 caseload view *right away* — not on a nightly job, not eventually.
@@ -149,6 +177,44 @@ given one. Where it exists, the record reports four states rather than
 a pass/fail: a person with perfect attendance in week 7 of 12 has not
 failed anything, and must not be described to a court as though they
 had.
+
+## Intake is one act, not three screens (M3/M4)
+
+Admission writes the participant, the episode that starts the M9 clock,
+and the named worker in a single transaction. A participant can never
+exist in the half-state of being enrolled with nobody responsible for
+them, because that state is what a person falls through. The same
+transaction is where the care plan due date is computed, so the clock
+starts from the episode NMBM actually recorded rather than from whenever
+someone next opened the record.
+
+## State a person could be wrong about is derived, not stored
+
+Three things are computed at read time rather than kept in a column:
+whether a consent has expired, how long the current run of failed
+contacts is, and where somebody stands against a programme's completion
+threshold. All three share a failure mode — a stored value drifts
+silently, and nothing here runs a job to keep it honest, so the row
+would go on asserting something false until a person noticed. An
+expired release that still reads "active" is how information leaves the
+building without authorisation.
+
+Stored status columns carry only decisions a person made: revoked,
+returned, closed, withdrawn. Those don't drift, because nothing but a
+human action changes them.
+
+## Authorization is a permission code, never a role name
+
+Route code checks `authorize("notes.approve")`, never "is this user a
+Program Manager". Roles are a bundle of codes in
+`packages/shared/src/permissions.ts`, and NMBM's role list is explicitly
+still unconfirmed (U1/U3). When it changes, the grid changes and no
+route does. Two consequences worth keeping:
+
+- `participants.read.all` does not imply `participants.read.own`. A
+  route that accepts either uses `authorizeAny(CAN_READ_PARTICIPANTS)`.
+- Hiding a nav link or a button is a convenience for the person using
+  the app, never the control. The check that matters is on the endpoint.
 
 ## Money is a string end to end
 

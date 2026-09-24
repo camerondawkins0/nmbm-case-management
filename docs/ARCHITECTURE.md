@@ -1,10 +1,15 @@
 # Architecture — NMBM Case Management
 
-Status: **scoping draft**, written from the discovery document plus NMBM's
-follow-up reply on compliance. The BAA is signed (see below), so hosting
-can proceed; D2/D3 (budget, timeline) and M23 (billing) still aren't
-closed — see `docs/DISCOVERY_FOLLOWUP.md` for current status on every
-item.
+Status: **partly built.** The scoping decisions below came from the
+discovery document and NMBM's compliance follow-up; everything under
+"What is built" is running code that can be signed into and used. The
+BAA is signed (see below), so hosting can proceed; D2/D3 (budget,
+timeline) and M23 (billing) still aren't closed — see
+`docs/DISCOVERY_FOLLOWUP.md` for current status on every item.
+
+Jump to **What is built** and **What is not built** at the bottom for
+the current state. The sections in between are the reasoning that
+produced it, and they haven't changed.
 
 ## Why this looks like the WSL system
 
@@ -113,9 +118,9 @@ Nothing beyond a schema placeholder should be built here until M23 comes
 back.
 
 **Automated prompts that don't exist in WSL, described specifically by
-NMBM:**
+NMBM.** Three of the four below are now built; the fourth (M12) isn't.
 
-- 3 consecutive no-contact attempts → prompt to prepare exit
+- **Built.** 3 consecutive no-contact attempts → prompt to prepare exit
   documentation, and the CHW needs 2 more non-contacts before
   disenrollment is allowed (M6). For Molina clients specifically, the
   3rd attempt also triggers a required disenrollment-warning letter.
@@ -123,21 +128,27 @@ NMBM:**
   counter/flag, not a new concept — same `v_no_contact_counts`-style
   view, plus a payer-conditional letter template and a hard gate on the
   disenrollment action itself.
-- 30-day care-plan-completion countdown from enrollment, then a nudge
+- **Built.** 30-day care-plan-completion countdown from enrollment, then a nudge
   every 2 weeks while services are ongoing, then a close-out prompt at
   exit (M9). WSL has review clocks on existing plans; NMBM additionally
   wants a *completion* deadline from enrollment, which is a new clock
   type, not a variant of the existing one.
-- Follow-up QA calls at 3/5/9/12 months **after disenrollment** (M12),
+- **Not built.** Follow-up QA calls at 3/5/9/12 months **after
+  disenrollment** (M12),
   potentially leading to re-enrollment. This is a participant lifecycle
   state WSL doesn't have — closed-but-being-followed-up — and needs its
   own status rather than overloading "closed."
-- Disenrollment **immediately** moves a participant out of the active
-  caseload view (R10) — not a batch job, not eventual, so "who's active
-  right now" is never stale. The record itself stays fully retrievable
-  (a returning participant, or a contractor/grantor request) — this is
-  about default query scope, not access. See
-  `docs/agent/invariants.md`.
+- **Not built, and currently wrong.** Disenrollment should
+  **immediately** move a participant out of the active caseload view
+  (R10) — not a batch job, not eventual, so "who's active right now" is
+  never stale. The record itself stays fully retrievable. The caseload
+  query left-joins the *open* episode, but never filters the
+  participant out and never ends the assignment, so a disenrolled
+  person stays on their worker's list with a null episode — which the
+  flags then read as "no care plan", i.e. as needing attention. Someone
+  disenrolled for no contact also keeps their three-strikes warning,
+  because `v_no_contact_counts` isn't episode-scoped. See "What is not
+  built".
 
 **Smaller-scale, but not smaller-complexity.** 10 total users (U8) means
 the permission *grid* still needs to be right (U2–U7 describe real
@@ -146,12 +157,13 @@ notes; Program Manager or CHW supervisor approves CHW notes), but there's
 no multi-department scale problem to design around. Build the same
 role/permission engine as WSL, seeded with NMBM's roles instead of WSL's.
 
-**No housing module (yet).** M24 is "not yet, future." Schema is scaffolded
-with a placeholder domain but no tables — build when it's actually asked
-for, not preemptively (WSL's own hard rule 001 applies here too: don't
-build for hypothetical requirements).
+**No housing module (yet).** M24 is "not yet, future." No tables, no
+module — build when it's actually asked for, not preemptively (WSL's own
+hard rule 001 applies here too: don't build for hypothetical
+requirements).
 
-**Kiosk / self-serve intake matches WSL directly.** M13 — NMBM already
+**Kiosk / self-serve intake matches WSL directly, but isn't built.** M13
+— NMBM already
 sends the comprehensive needs assessment by email/text and fills it on
 tablets. This is the same participant-facing kiosk pattern WSL built:
 outside the staff app, one form, no other participant's record visible,
@@ -160,17 +172,100 @@ self-locking.
 ## Data model note
 
 M1 is unresolved in the discovery doc itself ("Clients and we can call
-them cases — are there any thoughts to this ladies?"). The schema in this
-scaffold uses `participants` as the table name (internal, matches WSL) and
-leaves the **user-facing label** ("Client" vs "Case") as a single string
-constant in `@nmbm/shared` so it can be changed without a migration once
-NMBM picks one.
+them cases — are there any thoughts to this ladies?"). The schema uses
+`participants` as the table name (internal, matches WSL) and leaves the
+**user-facing label** ("Client" vs "Case") as a single string constant
+in `@nmbm/shared` so it can be changed without a migration once NMBM
+picks one. Still unpicked, so every page currently reads
+"participant".
 
-## Explicitly not started
+## What is built
 
-Per the scope selected for this scaffold: billing/claims, housing, full
-assessment scoring engine, reporting/export builder, and the
-migration-from-Exym importer are schema-stubbed at most, not built. Each
-is a real module on the scale of one of WSL's 22 (`docs/agent/map.md`
-lists them) and should be scoped individually once Part 3 and Part 4 of
-discovery close.
+Everything below is running code: a migration, a module, and in most
+cases a page reachable after signing in. Current as of migration `0005`.
+
+| Area | What works | Where |
+|---|---|---|
+| Sign-in | Google OIDC against a named Workspace domain, session cookie, plus a dev-login path double-gated behind `NODE_ENV !== "production"` and `ALLOW_DEV_LOGIN` | `plugins/auth.ts`, `docs/GOOGLE_SETUP.md` |
+| Authorization | Permission codes, never role names, read from the database at request time | `plugins/authorize.ts`, `packages/shared/src/permissions.ts` |
+| Caseload (U5) | A front-line worker's list, dashboard and participant record are scoped server-side to their own assignments | `lib/caseload.ts` |
+| Participants and intake (M3/M4) | Admission opens the record, the episode and the assignment in one transaction; reassignment; assignable-worker list | `modules/participants/` |
+| Episodes (M6) | Open, close, and the payer-conditional disenrolment-warning letter gate. R10's archive-from-view behaviour is *not* built — see below | `modules/episodes/` |
+| Notes and the no-contact ladder (M6/U6) | Write, submit, approve, return for revision, revise and resubmit; three consecutive failed contacts prompt exit documentation and two more are required before disenrolment is allowed | `modules/notes/`, `lib/rules.ts` |
+| Care plans (M9/U6) | Authoring, goals, submit, approve, return; the 30-day completion clock and the 2-week review nudge derived side by side | `modules/care-plans/`, `lib/rules.ts` |
+| Consents (M15/M16) | Four form types, expiry derived at read time from the episode start date, revocation | `modules/consents/` |
+| Referrals (M17) | Refuses to send without a usable release and distinguishes the three reasons; records the outcome that came back | `modules/referrals/` |
+| Programmes and attendance (M14) | Programmes, cohorts, class dates, rosters, whole-roster marking in one request, and a printable participation record | `modules/programs/` |
+| Staff administration (U9) | Grant and revoke roles, deactivate and reactivate — refused while a worker still holds open assignments | `modules/admin/` |
+| Audit (M30) | Append-only, written inside the transaction that performs the action, read-only endpoint | `plugins/audit.ts` |
+| Feedback (M31) | In-app issue reporting and a triage queue, because NMBM has no IT staff | `modules/feedback/`, `docs/SUPPORT.md` |
+
+48 API routes across 12 modules, 21 tables and one view, 13 pages.
+`docs/agent/map.md` lists them route by route and page by page.
+
+Two properties hold across all of it: state a person could be wrong
+about is **derived at read time** rather than stored (consent expiry,
+the no-contact run, the participation outcome), and every consequential
+action writes an audit line inside the transaction that performs it.
+
+## What is not built
+
+Two different reasons, and they shouldn't be reported as one number.
+
+**Blocked on an answer from NMBM:**
+
+- **Billing and claims (M22/M23).** Schema placeholder only
+  (`funding_sources`, `services`). Confirmed to be at least four
+  submission channels rather than one, and neither the file layouts nor
+  the rejection-handling process have arrived. Still the largest single
+  scope driver in the discovery document; hard rule 7 in `CLAUDE.md`
+  exists to stop this being guessed at.
+- **Reporting and exports (R7/R8/M25).** The FCHN KPI spec was promised
+  and hasn't been delivered. A report builder written against a guessed
+  field list would be rewritten, not adjusted.
+- **42 CFR Part 2 handling (R5).** Confirmed real and near-term, but it
+  needs its own consent and re-disclosure rules rather than a flag on
+  the existing ones, and its timing depends on the LA County DV
+  approval.
+- **Housing (M24).** "Not yet, future."
+
+**Not blocked — ours to do:**
+
+- **R10 archive-on-disenrolment, which is a bug rather than a gap.**
+  NMBM answered this one and the rule is written down in
+  `docs/agent/invariants.md`; the code doesn't enforce it. Closing an
+  episode sets its status and stops there. It doesn't end the
+  assignment, and `listAll`/`listForParticipantIds` don't exclude
+  participants with no open episode — they left-join the open episode
+  and keep the row. The visible consequences: a disenrolled person
+  still counts in `caseloadSize`, still appears on their worker's list,
+  and shows as needing attention because a null episode reads as "no
+  care plan"; if they were disenrolled for no contact, the
+  three-strikes warning stays too, because `v_no_contact_counts` counts
+  notes without reference to an episode — which also means a readmitted
+  participant would start their new episode already at three strikes,
+  the exact scenario NMBM raised when they asked about readmission
+  dates. This is the one item in this section where the documented
+  behaviour and the built behaviour disagree, so it should be fixed
+  before anyone is shown the caseload.
+- **There are no tests.** Not one file. `npm test` runs vitest in
+  `@nmbm/api` and finds nothing to run; CI builds and typechecks and
+  stops there. Hard rule 8 in `CLAUDE.md` describes how to prove a test
+  works, and there is not yet a suite for it to apply to. The rules
+  worth covering first are the ones where being wrong is a harm rather
+  than a bug: the referral release gate, consent expiry, the M6 ladder,
+  caseload scoping, and the participation outcome. Three defects in that
+  list were found only by driving the app by hand as more than one role
+  — an authorization hook that let handlers run before the permission
+  check resolved, `participants.read.all` failing to imply
+  `participants.read.own`, and a participation verdict that called
+  perfect attendance a failure. None would have survived a test.
+- **There is no deployment.** No `Dockerfile`, no `cloudbuild.yaml`, and
+  no GCP project, Cloud SQL instance or Secret Manager entry has been
+  created. `docs/GOOGLE_SETUP.md` has the ordering for when that starts.
+- **Assessments (M13).** The comprehensive needs assessment is sent by
+  email and filled in on tablets today. A versioned assessment engine
+  and the participant-facing kiosk are two real modules, neither begun.
+- **Exym migration (M27-M29).** Needs an export or a screenshot of the
+  current system first — item 5 on the next-meeting list in
+  `docs/DISCOVERY_FOLLOWUP.md`.

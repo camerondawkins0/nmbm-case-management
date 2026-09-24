@@ -12,7 +12,7 @@ and what's specific to NMBM.
 | Doing | Read |
 |---|---|
 | Anything | this file |
-| Where code lives | `docs/agent/map.md` |
+| Where code lives, route by route and page by page | `docs/agent/map.md` |
 | Changing domain behaviour | `docs/agent/invariants.md` |
 | What's built vs. stubbed, and why it's shaped this way | `docs/ARCHITECTURE.md` |
 | What NMBM hasn't answered yet | `docs/DISCOVERY_FOLLOWUP.md` |
@@ -37,7 +37,13 @@ DATABASE_URL=... npm run -w @nmbm/db seed:synthetic   # invented staff and parti
 
 Reference data is not optional: `authorize()` reads its grants from the
 database, so before `seed:reference` runs every authenticated route
-returns 403.
+returns 403 — which presents as a broken login, not as missing data.
+
+`npm test` currently finds nothing to run. There is no test file in this
+repo yet; CI builds and typechecks and stops. Rule 8 below is how to
+write the first ones, not a description of a suite that exists. See
+"What is not built" in `docs/ARCHITECTURE.md` for which rules deserve
+covering first.
 
 For local sign-in without Google, set `ALLOW_DEV_LOGIN=true` and visit
 `/auth/dev-login?email=t.green@nmbm.example.org`. It is refused when
@@ -65,12 +71,30 @@ For local sign-in without Google, set `ALLOW_DEV_LOGIN=true` and visit
    unanswered in discovery and are the single biggest scope driver in
    the whole document — see `docs/DISCOVERY_FOLLOWUP.md`.
 8. **Prove a test works by breaking the code.** Revert the fix, confirm
-   the new test fails for the right reason, restore.
+   the new test fails for the right reason, restore. Nothing here has
+   been proved that way yet, because there are no tests — every rule in
+   `docs/agent/invariants.md` has so far been checked by hand over HTTP
+   and in a browser. Four of them were wrong the first time and were
+   caught that way; assume the fifth is still wrong.
+9. **Derive state that can drift; store only decisions a person made.**
+   Consent expiry, the no-contact run and programme completion are
+   computed at read time. A stored status that nothing keeps honest goes
+   on asserting something false until somebody notices — and the thing
+   it asserts is usually about a real person. See
+   `docs/agent/invariants.md`.
 
 ## Working agreements
 
 - Branch: work directly on `main` until this repo has a real CI/deploy
-  pipeline of its own (there is none yet — this is a scaffold).
+  pipeline of its own. CI builds and typechecks on push; there is no
+  `Dockerfile`, no `cloudbuild.yaml`, and no GCP project yet, so nothing
+  a merge does can reach a running system.
+- Check a rule over HTTP as more than one role before building the page
+  for it. Two of the worst bugs in this repo so far — an authorization
+  hook that let handlers run before the check resolved, and a Clinical
+  Director locked out of the whole caseload — were invisible from a
+  single signed-in session, and one of them was masked by tests passing
+  on the 401 path.
 - This system is not the WSL system. Don't copy WSL business rules
   (billing categories, program names, permission grid) by default —
   check them against NMBM's own discovery answers first. Architecture

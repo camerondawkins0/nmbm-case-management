@@ -4,6 +4,13 @@ NMBM replied to the compliance/billing follow-up (Part 3 + M23) inline on
 the doc we sent. Answers below are recorded as given; codes still match
 the original discovery document.
 
+This doc tracks what is **unanswered**. For what has been **built**
+against the answers that did arrive, see "What is built" in
+`docs/ARCHITECTURE.md` — as of migration `0005` that covers intake,
+episodes, notes and the M6 ladder, care plans and the M9 clocks,
+consents, referrals, programmes and attendance, staff administration
+and the audit log.
+
 ## Answered — Part 3 compliance
 
 - **R2 / R3** — The Google Workspace Business Standard BAA is **signed and
@@ -26,11 +33,14 @@ the original discovery document.
   accurate without manual cleanup), while the record stays fully
   retrievable — for a returning participant (the readmission-date case
   already discussed) or for a contractor/grantor request. This is a
-  behavior requirement, not just a retention window: episodes already
-  carry `status`/`endDate` (`packages/db/src/schema/episodes.ts`); the
-  caseload/dashboard queries need to filter closed episodes out by
-  default once they're built, while every read path still reaches
-  closed records on request. See `docs/agent/invariants.md`.
+  behavior requirement, not just a retention window. Episodes carry
+  `status`/`endDate` and closing one works, but **the caseload and
+  dashboard queries don't filter closed episodes out, and closing an
+  episode doesn't end the assignment** — so a disenrolled participant
+  still appears on their worker's list and reads as needing attention.
+  The answer is recorded; the behaviour isn't built. This one is ours
+  to fix, not NMBM's to clarify. See `docs/agent/invariants.md` and
+  "What is not built" in `docs/ARCHITECTURE.md`.
 - **R11** — No prior incident. Response owner is QA/HR, who would notify
   affected participants by mail to the address on file. NMBM suggested
   signing that correspondence with a role name ("Quality Assurance
