@@ -8,4 +8,5 @@ export * from "./consents.js";
 export * from "./funding.js";
 export * from "./feedback.js";
 export * from "./referrals.js";
+export * from "./programs.js";
 export * from "./views.js";

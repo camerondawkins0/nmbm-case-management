@@ -13,6 +13,7 @@ import feedbackRoutes from "./modules/feedback/routes.js";
 import adminRoutes from "./modules/admin/routes.js";
 import consentRoutes from "./modules/consents/routes.js";
 import referralRoutes from "./modules/referrals/routes.js";
+import programRoutes from "./modules/programs/routes.js";
 
 declare module "fastify" {
   interface FastifyInstance {
@@ -40,6 +41,7 @@ export async function buildServer() {
   await fastify.register(feedbackRoutes, { db });
   await fastify.register(consentRoutes, { db });
   await fastify.register(referralRoutes, { db });
+  await fastify.register(programRoutes, { db });
   await fastify.register(adminRoutes, { db });
 
   return fastify;

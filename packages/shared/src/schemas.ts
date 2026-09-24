@@ -1,5 +1,6 @@
 import { z } from "zod";
 import {
+  ATTENDANCE_STATUSES,
   CONSENT_TYPES,
   REFERRAL_STATUSES,
   EPISODE_STATUSES,
@@ -127,3 +128,53 @@ export const referralOutcomeSchema = z.object({
   outcomeNote: z.string().min(1).optional(),
 });
 export type ReferralOutcome = z.infer<typeof referralOutcomeSchema>;
+
+// M14: a programme, and one run of it.
+export const programCreateSchema = z.object({
+  name: z.string().min(1).max(120),
+  description: z.string().min(1).optional(),
+});
+export type ProgramCreate = z.infer<typeof programCreateSchema>;
+
+export const cohortCreateSchema = z.object({
+  programId: z.string().uuid(),
+  name: z.string().min(1).max(160),
+  startDate: z.string().date(),
+  endDate: z.string().date().optional(),
+  facilitatorId: z.string().uuid().optional(),
+  // How many sessions completion takes. Optional because NMBM hasn't
+  // said — see docs/DISCOVERY_FOLLOWUP.md.
+  requiredSessions: z.number().int().positive().optional(),
+});
+export type CohortCreate = z.infer<typeof cohortCreateSchema>;
+
+export const sessionCreateSchema = z.object({
+  sessionDate: z.string().date(),
+  topic: z.string().min(1).max(200).optional(),
+});
+export type SessionCreate = z.infer<typeof sessionCreateSchema>;
+
+export const cohortEnrollSchema = z.object({
+  participantId: z.string().uuid(),
+});
+export type CohortEnroll = z.infer<typeof cohortEnrollSchema>;
+
+export const cohortWithdrawSchema = z.object({
+  reason: z.string().min(1),
+});
+export type CohortWithdraw = z.infer<typeof cohortWithdrawSchema>;
+
+// The whole roster in one pass, which is how attendance is actually
+// taken — a class of twelve shouldn't be twelve requests.
+export const attendanceMarkSchema = z.object({
+  marks: z
+    .array(
+      z.object({
+        enrollmentId: z.string().uuid(),
+        status: z.enum(ATTENDANCE_STATUSES),
+        note: z.string().min(1).optional(),
+      }),
+    )
+    .min(1),
+});
+export type AttendanceMark = z.infer<typeof attendanceMarkSchema>;

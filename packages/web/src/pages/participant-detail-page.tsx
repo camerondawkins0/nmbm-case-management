@@ -8,6 +8,7 @@ import { CarePlanPills, MolinaLetterPill, NoContactPill, Pill } from "../compone
 import { CarePlanSection } from "../components/care-plan-section.js";
 import { ConsentsSection } from "../components/consents-section.js";
 import { ReferralsSection } from "../components/referrals-section.js";
+import { Link } from "react-router-dom";
 
 export default function ParticipantDetailPage({ me }: { me: Me }) {
   const { id } = useParams<{ id: string }>();
@@ -154,6 +155,39 @@ export default function ParticipantDetailPage({ me }: { me: Me }) {
         }}
         onError={setActionError}
       />
+
+      {record.programs.length > 0 && (
+        <section className="mt-6 rounded border border-nmbm-ink/10 p-4">
+          <h2 className="text-sm font-semibold uppercase tracking-wide text-nmbm-ink/50">
+            Programmes
+          </h2>
+          <ul className="mt-3 flex flex-col gap-2">
+            {record.programs.map((enrolment) => (
+              <li
+                key={enrolment.enrollmentId}
+                className="flex flex-wrap items-center justify-between gap-2 rounded border border-nmbm-ink/10 px-3 py-2 text-sm"
+              >
+                <span>
+                  <Link to={`/cohorts/${enrolment.cohortId}`} className="font-medium text-nmbm-ink hover:underline">
+                    {enrolment.programName}
+                  </Link>
+                  <span className="block text-xs text-nmbm-ink/50">
+                    {enrolment.cohortName} · {enrolment.status}
+                  </span>
+                </span>
+                {/* M14: the reason this record exists — proof for a
+                    probation officer, reachable from the case. */}
+                <Link
+                  to={`/enrollments/${enrolment.enrollmentId}/participation`}
+                  className="text-xs text-nmbm-gold-dark hover:underline"
+                >
+                  Proof of participation
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
 
       {can(me, "participants.assign") && (
         <AssignmentControl

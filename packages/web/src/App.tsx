@@ -9,6 +9,9 @@ import CarePlanReviewPage from "./pages/care-plan-review-page.js";
 import NoteReviewPage from "./pages/note-review-page.js";
 import IntakePage from "./pages/intake-page.js";
 import AdminUsersPage from "./pages/admin/users-page.js";
+import ProgramsPage from "./pages/programs-page.js";
+import CohortPage from "./pages/cohort-page.js";
+import ParticipationRecordPage from "./pages/participation-record-page.js";
 import FeedbackPage from "./pages/feedback-page.js";
 import FeedbackAdminPage from "./pages/admin/feedback-admin-page.js";
 
@@ -45,6 +48,9 @@ export default function App() {
         <Route path="/participants/:id" element={<ParticipantDetailPage me={me} />} />
         <Route path="/care-plans/review" element={<CarePlanReviewPage />} />
         <Route path="/notes/review" element={<NoteReviewPage />} />
+        <Route path="/programs" element={<ProgramsPage />} />
+        <Route path="/cohorts/:id" element={<CohortPage me={me} />} />
+        <Route path="/enrollments/:id/participation" element={<ParticipationRecordPage />} />
         <Route path="/admin/users" element={<AdminUsersPage />} />
         <Route path="/feedback" element={<FeedbackPage />} />
         <Route path="/admin/feedback" element={<FeedbackAdminPage />} />

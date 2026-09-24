@@ -36,6 +36,13 @@
       "when": 1758844800000,
       "tag": "0004_referrals_and_consents",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1759017600000,
+      "tag": "0005_programs_and_attendance",
+      "breakpoints": true
     }
   ]
 }

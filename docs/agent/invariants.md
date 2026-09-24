@@ -125,6 +125,31 @@ Deactivating a user is refused while they hold open assignments, and
 the refusal names the participants so the supervisor knows what to
 reassign. The account is never deleted — past notes keep their author.
 
+## Attendance is evidence, not a tally (M14)
+
+NMBM's answer named the audience: "The PO's or whomever, will need
+proof the person participated in the class." That makes three things
+non-negotiable:
+
+- Every mark records who made it and when, and the participation record
+  shows those names. A count nobody can trace is worth nothing to a
+  probation officer.
+- "Excused" is a separate status from "absent", because the reader
+  cares which it was.
+- Withdrawing somebody from a cohort never removes their marks. The
+  classes they did attend still happened.
+
+Re-marking a session corrects the existing row rather than adding a
+second one — a person cannot be both present and absent for one class.
+Marks are refused for anyone not on that cohort's roster, which would
+otherwise put a class in someone's record they were never enrolled in.
+
+A completion threshold is optional on a cohort because NMBM hasn't
+given one. Where it exists, the record reports four states rather than
+a pass/fail: a person with perfect attendance in week 7 of 12 has not
+failed anything, and must not be described to a court as though they
+had.
+
 ## Money is a string end to end
 
 `numeric` Postgres columns, string in Zod schemas, string across the API

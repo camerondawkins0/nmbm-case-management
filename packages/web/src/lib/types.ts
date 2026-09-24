@@ -5,6 +5,9 @@ import type {
   NoteStatus,
   ConsentType,
   ReferralStatus,
+  AttendanceStatus,
+  CohortStatus,
+  CohortEnrollmentStatus,
   Permission,
 } from "@nmbm/shared";
 
@@ -132,10 +135,94 @@ export type ReferralAwaitingOutcome = {
   daysWaiting: number;
 };
 
+export type ProgramSummary = {
+  id: string;
+  name: string;
+  description: string | null;
+  active: boolean;
+  cohorts: {
+    id: string;
+    name: string;
+    status: CohortStatus;
+    startDate: string;
+    endDate: string | null;
+    requiredSessions: number | null;
+    facilitatorName: string | null;
+  }[];
+};
+
+export type CohortDetail = {
+  cohort: {
+    id: string;
+    name: string;
+    programName: string;
+    startDate: string;
+    endDate: string | null;
+    status: CohortStatus;
+    requiredSessions: number | null;
+  };
+  sessions: { id: string; sessionDate: string; topic: string | null }[];
+  roster: {
+    enrollmentId: string;
+    participantId: string;
+    firstName: string;
+    lastName: string;
+    status: CohortEnrollmentStatus;
+    withdrawnReason: string | null;
+    attended: number;
+    excused: number;
+    absent: number;
+  }[];
+  marks: {
+    sessionId: string;
+    enrollmentId: string;
+    status: AttendanceStatus;
+    note: string | null;
+    recordedAt: string;
+    recordedByName: string;
+  }[];
+};
+
+export type ParticipationRecord = {
+  enrollment: {
+    id: string;
+    status: CohortEnrollmentStatus;
+    firstName: string;
+    lastName: string;
+    dateOfBirth: string;
+    participantId: string;
+    cohortName: string;
+    programName: string;
+    requiredSessions: number | null;
+  };
+  sessions: {
+    sessionDate: string;
+    topic: string | null;
+    status: AttendanceStatus;
+    recordedAt: string;
+    recordedByName: string;
+  }[];
+  attended: number;
+  excused: number;
+  absent: number;
+  sessionsHeld: number;
+  outcome: "no_requirement" | "met" | "in_progress" | "short";
+};
+
+export type ParticipantProgram = {
+  enrollmentId: string;
+  status: CohortEnrollmentStatus;
+  cohortId: string;
+  cohortName: string;
+  programName: string;
+  startDate: string;
+};
+
 export type ParticipantDetail = ParticipantRow & {
   notes: ParticipantNote[];
   consents: ParticipantConsent[];
   referrals: ParticipantReferral[];
+  programs: ParticipantProgram[];
 };
 
 export type Me = {

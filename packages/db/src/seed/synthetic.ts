@@ -1,3 +1,4 @@
+import { eq } from "drizzle-orm";
 import { createDb } from "../client.js";
 import {
   users,
@@ -10,6 +11,11 @@ import {
   carePlans,
   consents,
   referrals,
+  programs,
+  programCohorts,
+  cohortSessions,
+  cohortEnrollments,
+  sessionAttendance,
 } from "../schema/index.js";
 import type { Payer, Role, ContactResult, CarePlanStatus } from "@nmbm/shared";
 import { CARE_PLAN_REVIEW_INTERVAL_DAYS, CONSENT_VALID_DAYS } from "@nmbm/shared";
@@ -311,6 +317,105 @@ async function main() {
             : null,
         approvedById: fixture.carePlan.status === "approved" ? clinicalDirectorId : null,
         approvedAt: fixture.carePlan.status === "approved" ? daysAgo(fixture.enrolledDaysAgo - 10) : null,
+      });
+    }
+  }
+
+  // M14: Anger Management is the programme NMBM said is running now.
+  // Domestic Violence is seeded as planned-but-not-started, because
+  // it's waiting on LA County approval.
+  const [angerManagement] = await db
+    .insert(programs)
+    .values({
+      name: "Anger Management",
+      description: "Weekly group. Attendance is evidence for probation officers and the courts.",
+    })
+    .returning();
+  const [domesticViolence] = await db
+    .insert(programs)
+    .values({
+      name: "Domestic Violence",
+      description: "Not yet running — awaiting LA County approval (discovery R5).",
+    })
+    .returning();
+
+  const facilitatorId = staffByEmail.get("r.alvarez@nmbm.example.org")!;
+  const [cohort] = await db
+    .insert(programCohorts)
+    .values({
+      programId: angerManagement.id,
+      name: "Anger Management — Autumn 2026",
+      startDate: isoDate(daysAgo(42)),
+      facilitatorId,
+      // A real number here would come from NMBM; 12 is a placeholder so
+      // the progress display has something to count against.
+      requiredSessions: 12,
+      status: "running",
+    })
+    .returning();
+
+  await db.insert(programCohorts).values({
+    programId: domesticViolence.id,
+    name: "Domestic Violence — pending approval",
+    startDate: isoDate(daysAgo(-30)),
+    status: "planned",
+  });
+
+  // Six weekly classes so far.
+  const sessionRows = [];
+  for (let week = 6; week >= 1; week -= 1) {
+    const [row] = await db
+      .insert(cohortSessions)
+      .values({
+        cohortId: cohort.id,
+        sessionDate: isoDate(daysAgo(week * 7)),
+        topic: [
+          "Ground rules and triggers",
+          "Recognising escalation",
+          "Time-outs and self-talk",
+          "Communication under stress",
+          "Repair after conflict",
+          "Relapse planning",
+        ][6 - week],
+      })
+      .returning();
+    sessionRows.push(row);
+  }
+
+  // Three of the caseload attend the group, with deliberately different
+  // records: near-perfect, patchy, and one who withdrew.
+  const attendees: { last: string; pattern: ("present" | "late" | "excused" | "absent")[] }[] = [
+    { last: "Willis", pattern: ["present", "present", "present", "late", "present", "present"] },
+    { last: "Mosley", pattern: ["present", "absent", "present", "excused", "absent", "present"] },
+    { last: "Reyes", pattern: ["present", "present", "absent", "absent", "absent", "absent"] },
+  ];
+
+  for (const attendee of attendees) {
+    const [person] = await db
+      .select()
+      .from(participants)
+      .where(eq(participants.lastName, attendee.last));
+    if (!person) continue;
+
+    const [enrollment] = await db
+      .insert(cohortEnrollments)
+      .values({
+        cohortId: cohort.id,
+        participantId: person.id,
+        status: attendee.last === "Reyes" ? "withdrawn" : "enrolled",
+        withdrawnAt: attendee.last === "Reyes" ? daysAgo(9) : null,
+        withdrawnReason:
+          attendee.last === "Reyes" ? "Stopped attending after the third week." : null,
+      })
+      .returning();
+
+    for (const [index, status] of attendee.pattern.entries()) {
+      await db.insert(sessionAttendance).values({
+        sessionId: sessionRows[index].id,
+        enrollmentId: enrollment.id,
+        status,
+        recordedById: facilitatorId,
+        recordedAt: daysAgo((6 - index) * 7),
       });
     }
   }

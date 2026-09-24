@@ -107,6 +107,25 @@ export type ReferralStatus = (typeof REFERRAL_STATUSES)[number];
 // react to, flagged in docs/DISCOVERY_FOLLOWUP.md.
 export const REFERRAL_FOLLOW_UP_DAYS = 14;
 
+// M14: NMBM run Anger Management now; Domestic Violence classes wait on
+// LA County approval. A cohort is one run of a programme, so the same
+// programme twice a year doesn't mix its rosters.
+export const COHORT_STATUSES = ["planned", "running", "completed", "cancelled"] as const;
+export type CohortStatus = (typeof COHORT_STATUSES)[number];
+
+export const COHORT_ENROLLMENT_STATUSES = ["enrolled", "completed", "withdrawn"] as const;
+export type CohortEnrollmentStatus = (typeof COHORT_ENROLLMENT_STATUSES)[number];
+
+// "excused" is kept apart from "absent" because the probation officer
+// reading the record cares which it was.
+export const ATTENDANCE_STATUSES = ["present", "late", "excused", "absent"] as const;
+export type AttendanceStatus = (typeof ATTENDANCE_STATUSES)[number];
+
+// M14: "the PO's or whomever will need proof the person participated."
+// Present and late both count as having attended; excused and absent
+// don't, though excused is reported separately rather than hidden.
+export const ATTENDED_STATUSES: AttendanceStatus[] = ["present", "late"];
+
 // NMBM has no dedicated IT/dev staff (discovery M31) — every logged-in
 // user can submit a ticket, and it's triaged externally. See
 // docs/SUPPORT.md for who's expected to look at these and how.

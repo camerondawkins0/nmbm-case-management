@@ -18,6 +18,8 @@ export const PERMISSIONS = [
   "care_plans.approve", // Clinical Director (U6)
   "consents.write", // record and revoke consent forms (M15/M16)
   "referrals.write", // refer out and record what came back (M17)
+  "programs.manage", // set up programmes, cohorts and class dates (M14)
+  "attendance.record", // mark a roster — the evidence a PO relies on (M14)
   "admin.users.manage",
   "admin.settings.manage",
   "feedback.submit", // any logged-in user — NMBM has no dedicated IT staff (M31), see docs/SUPPORT.md
@@ -35,6 +37,8 @@ export type Permission = (typeof PERMISSIONS)[number];
 // so the grid stays the single source of truth for "who can do what."
 export const DEFAULT_ROLE_PERMISSIONS: Record<Role, Permission[]> = {
   clinical_director: [
+    "programs.manage",
+    "attendance.record",
     "consents.write",
     "referrals.write",
     "participants.read.all",
@@ -57,11 +61,13 @@ export const DEFAULT_ROLE_PERMISSIONS: Record<Role, Permission[]> = {
     "feedback.submit",
   ],
   health_education_prevention_specialist: [
+    "attendance.record",
     "participants.read.own",
     "notes.write",
     "feedback.submit",
   ],
   community_health_worker: [
+    "attendance.record",
     "consents.write",
     "referrals.write",
     "participants.read.own",
@@ -70,6 +76,8 @@ export const DEFAULT_ROLE_PERMISSIONS: Record<Role, Permission[]> = {
     "feedback.submit",
   ],
   program_manager: [
+    "programs.manage",
+    "attendance.record",
     "referrals.write",
     "participants.read.all",
     "participants.assign",
@@ -77,6 +85,7 @@ export const DEFAULT_ROLE_PERMISSIONS: Record<Role, Permission[]> = {
     "feedback.submit",
   ],
   apcc_acsw_intern: [
+    "attendance.record",
     "participants.read.own",
     "notes.write",
     "referrals.write",
@@ -84,6 +93,7 @@ export const DEFAULT_ROLE_PERMISSIONS: Record<Role, Permission[]> = {
   ],
   quality_assurance_coordinator: ["participants.read.all", "feedback.submit"],
   system_administrator: [
+    "programs.manage",
     "admin.users.manage",
     "admin.settings.manage",
     "participants.read.all",
