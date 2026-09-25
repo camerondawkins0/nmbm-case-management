@@ -1,5 +1,5 @@
 import Fastify from "fastify";
-import { createDb } from "@nmbm/db";
+import { createDb, closeDb } from "@nmbm/db";
 import authPlugin from "./plugins/auth.js";
 import { registerErrorHandler } from "./plugins/errors.js";
 import healthRoutes from "./modules/health/routes.js";
@@ -21,13 +21,14 @@ declare module "fastify" {
   }
 }
 
-export async function buildServer() {
+export async function buildServer(options: { logger?: boolean } = {}) {
   const databaseUrl = process.env.DATABASE_URL;
   if (!databaseUrl) throw new Error("DATABASE_URL is required");
 
-  const fastify = Fastify({ logger: true });
+  const fastify = Fastify({ logger: options.logger ?? true });
   const db = createDb(databaseUrl);
   fastify.decorate("db", db);
+  fastify.addHook("onClose", async () => closeDb(db));
   registerErrorHandler(fastify);
 
   await fastify.register(authPlugin, { db });

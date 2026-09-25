@@ -176,6 +176,6 @@ in order in `meta/_journal.json`:
 
 ## Not in this repo yet
 
-No tests, no `Dockerfile`, no `cloudbuild.yaml`. CI builds and
-typechecks and stops. See "What is not built" in
+No `Dockerfile`, no `cloudbuild.yaml`. CI builds, typechecks and runs
+the API tests (`packages/api/test/`, see `docs/agent/testing.md`). See "What is not built" in
 `docs/ARCHITECTURE.md`.

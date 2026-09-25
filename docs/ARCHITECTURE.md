@@ -234,18 +234,12 @@ Two different reasons, and they shouldn't be reported as one number.
   sessions, so a person would be bounced between signed in and signed
   out. Needs a shared store (a Postgres table is enough at this size)
   before the first deploy, not after.
-- **There are no tests.** Not one file. `npm test` runs vitest in
-  `@nmbm/api` and finds nothing to run; CI builds and typechecks and
-  stops there. Hard rule 8 in `CLAUDE.md` describes how to prove a test
-  works, and there is not yet a suite for it to apply to. The rules
-  worth covering first are the ones where being wrong is a harm rather
-  than a bug: the referral release gate, consent expiry, the M6 ladder,
-  caseload scoping, and the participation outcome. Three defects in that
-  list were found only by driving the app by hand as more than one role
-  — an authorization hook that let handlers run before the permission
-  check resolved, `participants.read.all` failing to imply
-  `participants.read.own`, and a participation verdict that called
-  perfect attendance a failure. None would have survived a test.
+- **Test coverage stops at the API.** 83 tests run through the real
+  server against a real Postgres on every push, covering every rule in
+  `docs/agent/invariants.md`, and each has been proved by breaking the
+  rule and watching it fail. The web app has no automated tests; its
+  pages have been checked by hand in a browser. See
+  `docs/agent/testing.md`.
 - **There is no deployment.** No `Dockerfile`, no `cloudbuild.yaml`, and
   no GCP project, Cloud SQL instance or Secret Manager entry has been
   created. `docs/GOOGLE_SETUP.md` has the ordering for when that starts.

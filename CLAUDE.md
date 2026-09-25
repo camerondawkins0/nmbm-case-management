@@ -13,6 +13,7 @@ and what's specific to NMBM.
 |---|---|
 | Anything | this file |
 | Where code lives, route by route and page by page | `docs/agent/map.md` |
+| Running or writing tests | `docs/agent/testing.md` |
 | Changing domain behaviour | `docs/agent/invariants.md` |
 | What's built vs. stubbed, and why it's shaped this way | `docs/ARCHITECTURE.md` |
 | What NMBM hasn't answered yet | `docs/DISCOVERY_FOLLOWUP.md` |
@@ -26,7 +27,7 @@ and what's specific to NMBM.
 ```bash
 npm run build                 # shared, db, api, web (dist is what others import)
 npm run typecheck             # all workspaces
-DATABASE_URL=... npm test     # all workspaces; api/db need Postgres
+TEST_DATABASE_URL=... npm test  # any Postgres server; each run makes and drops its own database
 npm run dev:api               # :8080
 npm run dev:web               # :5173, proxies /api to :8080
 
@@ -39,11 +40,9 @@ Reference data is not optional: `authorize()` reads its grants from the
 database, so before `seed:reference` runs every authenticated route
 returns 403 — which presents as a broken login, not as missing data.
 
-`npm test` currently finds nothing to run. There is no test file in this
-repo yet; CI builds and typechecks and stops. Rule 8 below is how to
-write the first ones, not a description of a suite that exists. See
-"What is not built" in `docs/ARCHITECTURE.md` for which rules deserve
-covering first.
+Tests run through the real server against a real Postgres, on every
+push in CI. What they cover, and what they don't, is in
+`docs/agent/testing.md`.
 
 For local sign-in without Google, set `ALLOW_DEV_LOGIN=true`: the login
 page then lists the seeded staff by role, one click each. The route
@@ -72,11 +71,9 @@ behind it (`/auth/dev-login?email=…`) is never registered when
    unanswered in discovery and are the single biggest scope driver in
    the whole document — see `docs/DISCOVERY_FOLLOWUP.md`.
 8. **Prove a test works by breaking the code.** Revert the fix, confirm
-   the new test fails for the right reason, restore. Nothing here has
-   been proved that way yet, because there are no tests — every rule in
-   `docs/agent/invariants.md` has so far been checked by hand over HTTP
-   and in a browser. Four of them were wrong the first time and were
-   caught that way; assume the fifth is still wrong.
+   the new test fails for the right reason, restore. Every test in the
+   suite has been through this (the table is in `docs/agent/testing.md`),
+   and the first pass found a rule no test was guarding.
 9. **Derive state that can drift; store only decisions a person made.**
    Consent expiry, the no-contact run and programme completion are
    computed at read time. A stored status that nothing keeps honest goes
@@ -87,7 +84,7 @@ behind it (`/auth/dev-login?email=…`) is never registered when
 ## Working agreements
 
 - Branch: work directly on `main` until this repo has a real CI/deploy
-  pipeline of its own. CI builds and typechecks on push; there is no
+  pipeline of its own. CI builds, typechecks and runs the tests on push; there is no
   `Dockerfile`, no `cloudbuild.yaml`, and no GCP project yet, so nothing
   a merge does can reach a running system.
 - Check a rule over HTTP as more than one role before building the page
