@@ -76,6 +76,12 @@ and the audit log.
   this application. That is a much wider boundary than "a contractor who
   builds the software", and it should be settled before real
   participant data exists rather than after. See `docs/GOOGLE_SETUP.md`.
+- **Google Cloud BAA** — raised while preparing the deployment, not in
+  the original discovery. The signed BAA (R2/R3) is Google *Workspace*'s,
+  which covers Workspace services. Cloud Run, Cloud SQL, Secret Manager
+  and Cloud Logging — where this system runs and its data lives — are
+  under Google Cloud's separate BAA, which NMBM's Cloud organisation has
+  to accept. Needed before any real client information goes in.
 - **R7** — KPIs are due out of the system by the 5th of every month for
   one contract, believed to be Full Circle Health Net. The exact fields
   are "in the contract" — **not yet delivered**, promised same-day as

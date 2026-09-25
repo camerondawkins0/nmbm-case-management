@@ -10,7 +10,8 @@
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "migrate": "tsx src/migrate.ts",
     "seed:reference": "tsx src/seed/reference.ts",
-    "seed:synthetic": "tsx src/seed/synthetic.ts"
+    "seed:synthetic": "tsx src/seed/synthetic.ts",
+    "release": "tsx src/release.ts"
   },
   "dependencies": {
     "@nmbm/shared": "*",

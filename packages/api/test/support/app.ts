@@ -18,6 +18,9 @@ export async function startApp(env: Record<string, string> = {}) {
     GOOGLE_OIDC_REDIRECT_URI: "http://localhost:8080/auth/google/callback",
     GOOGLE_WORKSPACE_DOMAIN: "nmbm.example.org",
     SESSION_IDLE_MINUTES: "60",
+    SESSION_SECRET: "",
+    TRUST_PROXY: "false",
+    WEB_DIST_DIR: "/nonexistent-web-build",
     ...env,
   });
   const app = await buildServer({ logger: false });

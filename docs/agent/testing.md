@@ -1,6 +1,6 @@
 # Testing
 
-112 tests in `packages/api/test/`, run by vitest against a real Postgres.
+126 tests in `packages/api/test/`, run by vitest against a real Postgres.
 CI runs them on every push with a Postgres 16 service.
 
 ```bash
@@ -36,6 +36,7 @@ dev-login route, and assert on HTTP responses.
 | `follow-up-schedule.test.ts` | M12 date arithmetic and milestone states, no database |
 | `follow-ups.test.ts` | M12 queue, recording calls, one result per milestone, re-enrolment requests, readmission stopping the schedule |
 | `search.test.ts` | R10 search scoping, wildcard escaping, intake's duplicate refusal and its audited override |
+| `deployment.test.ts` | Sessions shared across instances and hashed at rest; the web build served with app routes and JSON 404s; security headers; production refusing a missing secret and dev sign-in; the Secure cookie behind a trusted proxy |
 | `sign-in.test.ts` | OAuth state, refusal reasons, session regeneration, idle timeout, form-post sign-out, audit |
 
 `test/support/fixtures.ts` builds people through the real services
@@ -73,11 +74,20 @@ test.
 | Queue open to any reader; Today counts shown to everyone | follow-ups |
 | Search returning everything; intake seeing active records; wildcards unescaped | search |
 | Duplicate guard off, or ignoring first name; override not audited | search |
+| Sessions back in memory; ids stored unhashed; expired rows honoured; sign-out not deleting the row; anonymous sessions saved | deployment |
+| Proxy never trusted; API 404s answered with the app; app routes not served; assets uncached; framing allowed; API responses cacheable; no HSTS | deployment |
+| Production starting without a secret; dev sign-in in production | deployment (the second first went uncaught — see below) |
 
 One mutation during the M12 work crashed the SQL rather than changing
 its meaning, which proves nothing; it was redone as a clean change and
 caught. A mutation only counts if the failure is the rule, not a syntax
 error.
+
+The deployment work found another kind of miss: the test for "no dev
+sign-in in production" signed in as a user who didn't exist, so a
+wrongly enabled route answered 404 "no such user" — identical to the
+route being absent. It now uses a real account. A refusal test has to
+be one the broken code would actually answer differently.
 
 The first pass of this found one gap — removing the open-episode filter
 went unnoticed, because closing also ends the assignment so a worker's

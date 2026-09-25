@@ -55,6 +55,8 @@ weight:
 | `GOOGLE_WORKSPACE_DOMAIN` | NMBM's primary Workspace domain, e.g. `nmbm.org` |
 | `SESSION_SECRET` | 32+ random characters — Secret Manager. The server refuses to start in production without it, because the development fallback is published in this repository |
 | `SESSION_IDLE_MINUTES` | Optional; default 60. Idle time before a session ends |
+| `TRUST_PROXY` | `true` on Cloud Run, which ends TLS in front of the app. Without it the Secure session cookie is never sent and sign-in fails with no error |
+| `DATABASE_SOCKET_DIR` | `/cloudsql/<connection name>` on Cloud Run — see `docs/DEPLOY.md` |
 
 `GOOGLE_WORKSPACE_DOMAIN` has no default on purpose: sign-in refuses to
 start without it rather than falling back to accepting any Google

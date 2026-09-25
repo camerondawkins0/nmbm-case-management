@@ -289,6 +289,10 @@ route does. Two consequences worth keeping:
   mid-page sends a *load* back through sign-in, but never a *save*:
   navigating away there would discard a note the worker just typed.
 - Sign-in, sign-out, refusals and first-time provisioning are audited.
+- Sessions live in Postgres, so every instance shares them and a deploy
+  signs nobody out. The table is keyed by a SHA-256 of the session id,
+  never the id — whoever can read the database still can't become a
+  signed-in user. Anonymous requests never write a row.
 
 ## Money is a string end to end
 

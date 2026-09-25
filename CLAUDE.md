@@ -20,6 +20,7 @@ and what's specific to NMBM.
 | Touching colors, fonts, or the logo | `docs/BRANDING.md` |
 | Reviewing user-submitted tickets/feedback | `docs/SUPPORT.md` |
 | Google sign-in, OAuth clients, redirect URIs | `docs/GOOGLE_SETUP.md` |
+| Deploying, rolling back, restoring, the first administrator | `docs/DEPLOY.md` |
 | The no-contact ladder or care plan clocks | `packages/api/src/lib/rules.ts` |
 
 ## Commands
@@ -34,6 +35,7 @@ npm run dev:web               # :5173, proxies /api to :8080
 DATABASE_URL=... npm run -w @nmbm/db migrate
 DATABASE_URL=... npm run -w @nmbm/db seed:reference   # roles, permissions, grants — required
 DATABASE_URL=... npm run -w @nmbm/db seed:synthetic   # invented staff and participants for demos
+DATABASE_URL=... npm run -w @nmbm/db release          # migrate + seed:reference, what every deploy runs
 ```
 
 Reference data is not optional: `authorize()` reads its grants from the
@@ -83,10 +85,14 @@ behind it (`/auth/dev-login?email=…`) is never registered when
 
 ## Working agreements
 
-- Branch: work directly on `main` until this repo has a real CI/deploy
-  pipeline of its own. CI builds, typechecks and runs the tests on push; there is no
-  `Dockerfile`, no `cloudbuild.yaml`, and no GCP project yet, so nothing
-  a merge does can reach a running system.
+- Branch: `main` is still safe to push to directly, because the Cloud
+  Build trigger doesn't exist yet. **Once it does, a push to `main`
+  deploys production** — tests, migration and all — and work moves to
+  branches merged when ready. `docs/DEPLOY.md`.
+- A migration runs before the code that needs it goes live, so for the
+  length of a deploy the old version runs against the new schema. Add
+  columns and tables; rename or drop only in a later deploy, once
+  nothing uses the old one.
 - Check a rule over HTTP as more than one role before building the page
   for it. Two of the worst bugs in this repo so far — an authorization
   hook that let handlers run before the check resolved, and a Clinical

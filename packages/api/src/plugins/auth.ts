@@ -13,6 +13,7 @@ import {
   type SignInError,
 } from "@nmbm/shared";
 import { writeAudit } from "./audit.js";
+import { PostgresSessionStore } from "./session-store.js";
 
 declare module "fastify" {
   interface Session {
@@ -73,7 +74,14 @@ export default fp(async function authPlugin(fastify: FastifyInstance, opts: { db
 
   await fastify.register(cookie);
   await fastify.register(session, {
-    secret: process.env.SESSION_SECRET ?? "dev-only-change-me-32-characters+",
+    secret: process.env.SESSION_SECRET || "dev-only-change-me-32-characters+",
+    // Shared by every instance, and survives restarts — see
+    // plugins/session-store.ts.
+    store: new PostgresSessionStore(db, maxMs),
+    // A session is written only once there's something in it. Otherwise
+    // every anonymous request — Cloud Run's health checks included —
+    // would add a row.
+    saveUninitialized: false,
     cookie: {
       secure: process.env.NODE_ENV === "production",
       httpOnly: true,

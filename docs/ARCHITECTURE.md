@@ -28,18 +28,19 @@ prompts NMBM described that WSL doesn't have.**
 The WSL system runs on Cloud Run against a plain (no-BAA) setup, with an
 Azure port documented separately (`docs/AZURE.md` in that repo). NMBM's
 **Google Workspace Business Standard BAA is signed** (R2/R3 — CEO Dayna
-Moore signed it) specifically so this system can run under it — that
-decision is *why* Google was picked, not an afterthought, and it's now
-confirmed rather than pending. R4 (whether a *second* BAA is needed
-covering this system and whoever builds/hosts it, since a contractor
-other than Google touches the data during build) is still open — NMBM is
-looking into it. Don't treat "the BAA is signed" as "hosting is fully
-cleared" until R4 closes.
+Moore signed it), and that was part of why Google was picked. **It does
+not by itself cover this system.** The Workspace BAA covers Workspace
+services; Cloud Run, Cloud SQL, Secret Manager and Cloud Logging are
+under Google Cloud's own BAA, which NMBM's Cloud organisation has to
+accept separately before real client data goes in (`docs/DEPLOY.md`).
+R4 (whether a BAA is also needed with whoever builds and hosts this) is
+still open too. Don't treat "the BAA is signed" as "hosting is cleared"
+until both are settled.
 
 | Concern | Choice | Why |
 |---|---|---|
 | Compute | Cloud Run (single service, same shape as WSL: Fastify API serves the built React SPA) | Matches proven architecture; scales to zero between the ~10 staff logins (U8), which matters for cost at this size |
-| Database | Cloud SQL for Postgres | Drizzle schema/migrations port directly; Cloud SQL is covered under Google's standard BAA terms |
+| Database | Cloud SQL for Postgres | Drizzle schema/migrations port directly; covered once the Google Cloud BAA is accepted |
 | File storage (documents, consent uploads, photos) | Cloud Storage, private bucket, signed URLs | `lib/storage.ts` in the WSL codebase already abstracts this behind a `StorageProvider` interface with a GCS implementation — reuse as-is |
 | Auth | Google OIDC (Workspace SSO) as the only login path | NMBM is already a Google Workspace org (M27); no separate Entra ID path needed unlike WSL, which supports both |
 | Secrets | Secret Manager | DB credentials, OIDC client secret |
@@ -178,10 +179,11 @@ that is what every page reads.
 ## What is built
 
 Everything below is running code: a migration, a module, and in most
-cases a page reachable after signing in. Current as of migration `0008`.
+cases a page reachable after signing in. Current as of migration `0009`.
 
 | Area | What works | Where |
 |---|---|---|
+| Deployment | One Docker image for the service and its release job; Cloud Build tests, migrates and deploys; sessions in Postgres so restarts and extra instances don't sign anyone out; the API serves the web build with strict security headers | `Dockerfile`, `cloudbuild.yaml`, `deploy/`, `docs/DEPLOY.md` |
 | Sign-in (M27) | Google OIDC against a named Workspace domain with a one-use `state` token, a fresh session id at sign-in, an idle timeout and a hard ceiling, audited sign-in and sign-out; a login page that says why a sign-in was refused and what to do next; a holding page for accounts with no role; sign-out in the header. Dev login is double-gated behind `NODE_ENV !== "production"` and `ALLOW_DEV_LOGIN` | `plugins/auth.ts`, `pages/login-page.tsx`, `docs/GOOGLE_SETUP.md` |
 | Authorization | Permission codes, never role names, read from the database at request time | `plugins/authorize.ts`, `packages/shared/src/permissions.ts` |
 | Caseload (U5) | A front-line worker's list, dashboard and participant record are scoped server-side to their own assignments | `lib/caseload.ts` |
@@ -199,7 +201,7 @@ cases a page reachable after signing in. Current as of migration `0008`.
 | Audit (M30) | Append-only, written inside the transaction that performs the action, read-only endpoint | `plugins/audit.ts` |
 | Feedback (M31) | In-app issue reporting and a triage queue, because NMBM has no IT staff | `modules/feedback/`, `docs/SUPPORT.md` |
 
-54 API routes across 13 modules, 23 tables and one view, 15 pages plus
+54 API routes across 13 modules, 24 tables and one view, 15 pages plus
 two holding screens (no role yet; server unreachable).
 `docs/agent/map.md` lists them route by route and page by page.
 
@@ -231,20 +233,18 @@ Two different reasons, and they shouldn't be reported as one number.
 
 **Not blocked — ours to do:**
 
-- **Sessions live in process memory.** Fine on one machine; on Cloud
-  Run every restart signs everybody out, and two instances don't share
-  sessions, so a person would be bounced between signed in and signed
-  out. Needs a shared store (a Postgres table is enough at this size)
-  before the first deploy, not after.
-- **Test coverage stops at the API.** 83 tests run through the real
+- **Test coverage stops at the API.** 126 tests run through the real
   server against a real Postgres on every push, covering every rule in
   `docs/agent/invariants.md`, and each has been proved by breaking the
   rule and watching it fail. The web app has no automated tests; its
   pages have been checked by hand in a browser. See
   `docs/agent/testing.md`.
-- **There is no deployment.** No `Dockerfile`, no `cloudbuild.yaml`, and
-  no GCP project, Cloud SQL instance or Secret Manager entry has been
-  created. `docs/GOOGLE_SETUP.md` has the ordering for when that starts.
+- **Deployment is written but has never run against Google Cloud.**
+  The image, the pipeline and the one-time setup script exist, and
+  everything that can be run without a Google Cloud project has been —
+  see "What has and hasn't been verified" in `docs/DEPLOY.md`. The rest
+  waits on a project in NMBM's organisation, the Workspace super-admin
+  access, and the Google Cloud BAA.
 - **Assessments (M13).** The comprehensive needs assessment is sent by
   email and filled in on tablets today. A versioned assessment engine
   and the participant-facing kiosk are two real modules, neither begun.

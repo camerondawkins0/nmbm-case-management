@@ -1,0 +1,96 @@
+# NMBM case management — build, test, migrate, deploy.
+#
+# Runs on every push to main once the trigger exists (docs/DEPLOY.md).
+# Nothing reaches production unless the tests pass here first, and the
+# database is migrated *before* the new version takes traffic — so a
+# migration must work with the version still running (add, don't
+# rename or drop, in the same deploy). See docs/DEPLOY.md.
+#
+# One-time setup, and the values for the substitutions below, come from
+# deploy/setup-gcp.sh.
+
+substitutions:
+  _REGION: us-west2 # Los Angeles
+  _REPO: nmbm
+  _SERVICE: nmbm-app
+  _SQL_INSTANCE: "" # PROJECT:REGION:INSTANCE
+  _RUNTIME_SA: "" # nmbm-run@PROJECT.iam.gserviceaccount.com
+  _GOOGLE_CLIENT_ID: ""
+  _REDIRECT_URI: "" # https://<service-url>/auth/google/callback
+  _WORKSPACE_DOMAIN: ""
+
+options:
+  # Required when the trigger runs as a dedicated service account.
+  logging: CLOUD_LOGGING_ONLY
+  dynamicSubstitutions: true
+
+steps:
+  # ---- the same checks as GitHub CI, as a gate on this deploy ----------
+  - id: postgres
+    name: gcr.io/cloud-builders/docker
+    args: [run, -d, --name=testdb, --network=cloudbuild, -e, POSTGRES_USER=nmbm, -e, POSTGRES_PASSWORD=nmbm, -e, POSTGRES_DB=nmbm, postgres:16]
+
+  - id: test
+    name: node:20-bookworm-slim
+    entrypoint: bash
+    env: [TEST_DATABASE_URL=postgres://nmbm:nmbm@testdb:5432/nmbm]
+    args:
+      - -c
+      - |
+        set -euo pipefail
+        npm ci --no-audit --no-fund
+        npm run build
+        npm run typecheck
+        # $$ because Cloud Build reads a single $ as its own substitution.
+        for i in $$(seq 1 30); do node -e "require('net').connect(5432,'testdb').on('connect',()=>process.exit(0)).on('error',()=>process.exit(1))" && break; sleep 1; done
+        npm test
+
+  # ---- the image ------------------------------------------------------
+  - id: image
+    name: gcr.io/cloud-builders/docker
+    args: [build, -t, "${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPO}/app:${SHORT_SHA}", .]
+
+  - id: push
+    name: gcr.io/cloud-builders/docker
+    args: [push, "${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPO}/app:${SHORT_SHA}"]
+
+  # ---- migrate and seed grants, from the new image ---------------------
+  - id: release
+    name: gcr.io/google.com/cloudsdktool/cloud-sdk:slim
+    entrypoint: bash
+    args:
+      - -c
+      - |
+        set -euo pipefail
+        gcloud run jobs deploy nmbm-release \
+          --image="${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPO}/app:${SHORT_SHA}" \
+          --region="${_REGION}" \
+          --service-account="${_RUNTIME_SA}" \
+          --set-cloudsql-instances="${_SQL_INSTANCE}" \
+          --set-env-vars="DATABASE_SOCKET_DIR=/cloudsql/${_SQL_INSTANCE}" \
+          --set-secrets="DATABASE_URL=nmbm-database-url:latest" \
+          --command=node --args=packages/db/dist/release.js \
+          --max-retries=0 --task-timeout=600s
+        gcloud run jobs execute nmbm-release --region="${_REGION}" --wait
+
+  # ---- deploy -----------------------------------------------------------
+  - id: deploy
+    name: gcr.io/google.com/cloudsdktool/cloud-sdk:slim
+    entrypoint: bash
+    args:
+      - -c
+      - |
+        set -euo pipefail
+        gcloud run deploy "${_SERVICE}" \
+          --image="${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPO}/app:${SHORT_SHA}" \
+          --region="${_REGION}" \
+          --service-account="${_RUNTIME_SA}" \
+          --set-cloudsql-instances="${_SQL_INSTANCE}" \
+          --allow-unauthenticated \
+          --port=8080 --cpu=1 --memory=512Mi \
+          --min-instances=0 --max-instances=3 --timeout=60s \
+          --set-env-vars="NODE_ENV=production,TRUST_PROXY=true,DATABASE_SOCKET_DIR=/cloudsql/${_SQL_INSTANCE},GOOGLE_OIDC_CLIENT_ID=${_GOOGLE_CLIENT_ID},GOOGLE_OIDC_REDIRECT_URI=${_REDIRECT_URI},GOOGLE_WORKSPACE_DOMAIN=${_WORKSPACE_DOMAIN}" \
+          --set-secrets="DATABASE_URL=nmbm-database-url:latest,SESSION_SECRET=nmbm-session-secret:latest,GOOGLE_OIDC_CLIENT_SECRET=nmbm-google-client-secret:latest"
+
+images:
+  - "${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPO}/app:${SHORT_SHA}"

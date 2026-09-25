@@ -38,3 +38,11 @@ jobs:
       - run: npm test
         env:
           TEST_DATABASE_URL: postgres://nmbm:nmbm@localhost:5432/nmbm
+
+  # The production image, built but not pushed — so a change that breaks
+  # the Dockerfile is caught on the push that made it, not at deploy.
+  image:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: docker build -t nmbm-app:ci .

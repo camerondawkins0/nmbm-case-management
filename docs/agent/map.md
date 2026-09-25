@@ -1,6 +1,6 @@
 # Map
 
-Where things are. Current as of migration `0008`.
+Where things are. Current as of migration `0009`.
 
 ## Packages
 
@@ -77,6 +77,8 @@ except in the context of one person's record.
 |---|---|
 | `plugins/auth.ts` | Google OIDC (Workspace SSO) with `state`, session regeneration, idle timeout, `safeReturnTo`, sign-in audit, dev login |
 | `plugins/authorize.ts` | `authorize(code)`, `authorizeAny([...])`, `CAN_READ_PARTICIPANTS`, `getPermissions` |
+| `plugins/session-store.ts` | `PostgresSessionStore` — sessions shared across instances, keyed by a hash of the id |
+| `plugins/web-app.ts` | Serves the web build (with the app's routes falling back to `index.html`) and sets the security headers |
 | `plugins/audit.ts` | `writeAudit(db, entry)` — append-only |
 | `plugins/errors.ts` | `AppError` plus `badRequest`/`notFound`/`conflict`/`forbidden`/`unprocessable`, and `registerErrorHandler` |
 
@@ -133,7 +135,7 @@ module layout. `enums.ts` wraps `as const` arrays from `@nmbm/shared` in
 `pgEnum`, so an enum is declared once and used in both places — same
 convention as the WSL system this was adapted from.
 
-23 tables and one view:
+24 tables and one view:
 
 | File | Tables |
 |---|---|
@@ -149,6 +151,7 @@ convention as the WSL system this was adapted from.
 | `feedback.ts` | `feedback_items` |
 | `settings.ts` | `app_settings` — one row per setting somebody has changed |
 | `follow-ups.ts` | `follow_up_calls` — one row per call attempt; the schedule isn't stored |
+| `sessions.ts` | `sessions` — sign-in sessions, keyed by a hash of the session id |
 | `views.ts` | `v_no_contact_counts` (rebuilt per episode in 0006), declared to Drizzle with `.existing()` |
 
 Migrations are hand-written SQL in `packages/db/src/migrations/`, listed
@@ -165,6 +168,7 @@ in order in `meta/_journal.json`:
 | `0006_episode_scoped_caseload` | One open episode per participant; repair of assignments left open on closed episodes; `v_no_contact_counts` rebuilt per episode |
 | `0007_app_settings` | `app_settings` |
 | `0008_follow_up_calls` | `follow_up_calls`, one settling result per milestone, search indexes on participants |
+| `0009_sessions` | `sessions` |
 
 ## Seeds
 
@@ -183,8 +187,10 @@ in order in `meta/_journal.json`:
   running Anger Management cohort with six weekly sessions and three
   deliberately different attendance histories. Nothing in it is real.
 
-## Not in this repo yet
+## Deployment
 
-No `Dockerfile`, no `cloudbuild.yaml`. CI builds, typechecks and runs
-the API tests (`packages/api/test/`, see `docs/agent/testing.md`). See "What is not built" in
-`docs/ARCHITECTURE.md`.
+`Dockerfile`, `cloudbuild.yaml` and `deploy/setup-gcp.sh` at the root;
+`packages/db/src/release.ts` is the release job (migrate, then roles and
+grants) and `packages/db/src/grant-role.ts` bootstraps the first
+administrator. `packages/db/src/client.ts` is where the Cloud SQL socket
+is handled. How it all fits: `docs/DEPLOY.md`.
