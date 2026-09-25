@@ -118,8 +118,9 @@ How that's held, and what must not be undone:
     no active one — enough to find a returning participant and readmit
     them, without sight of every caseload.
   - The **last** assigned worker keeps read-only sight of a closed case
-    for `former_worker_access_days` (default 90, set on the Settings
-    page, audited). Only the last: someone who handed the case on
+    for `former_worker_access_days` — at most 90 days, which is also
+    the default; the Settings page can shorten it, never extend it.
+    Changes are audited. Only the last: someone who handed the case on
     before it closed gets nothing. Readmission ends it, because the
     case is active again and belongs to whoever holds it now.
   The same rules decide both the Closed list and the by-id lookup, so a

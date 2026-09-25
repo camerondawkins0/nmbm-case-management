@@ -55,10 +55,9 @@ and the audit log.
 - **Does the worker keep sight after closing?** Yes, "especially if
   they are the last assigned case manager", capped at 90 days and
   adjustable. Built as: only the *last* assigned worker, read-only,
-  for a window NMBM's system administrator sets on the Settings page
-  (default 90, 0–365). Changes are audited. The 0–365 bounds are ours,
-  to stop a typo becoming indefinite access; if 90 was meant as a hard
-  ceiling, that's a one-line change.
+  for a window NMBM's system administrator sets on the Settings page.
+  90 days is both the default and the maximum (confirmed); it can be
+  shortened to anything down to 0. Changes are audited.
 - **Does disenrolment withdraw someone from their classes?** No —
   "disenrollment typically means they are no longer receiving or
   participating in services with the provider." The roster flags them
