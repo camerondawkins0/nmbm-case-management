@@ -5,6 +5,7 @@ import type { ClosedParticipantRow, ParticipantRow } from "../lib/types.js";
 import { PARTICIPANT_LABEL_PLURAL } from "@nmbm/shared";
 import { CarePlanPills, MolinaLetterPill, NoContactPill, ParticipantLink } from "../components/flags.js";
 import { CLOSURE_REASON_LABELS, PAYER_LABELS } from "../lib/labels.js";
+import { parseSearch, SearchResults, useParticipantSearch } from "../components/participant-search.js";
 
 type View = "active" | "closed";
 
@@ -30,6 +31,9 @@ export default function ParticipantsPage({
   const [rows, setRows] = useState<ParticipantRow[] | null>(null);
   const [closed, setClosed] = useState<ClosedParticipantRow[] | null>(null);
   const [onlyAttention, setOnlyAttention] = useState(false);
+  const [searchText, setSearchText] = useState("");
+  const searchQuery = parseSearch(searchText);
+  const searchResults = useParticipantSearch(searchQuery);
 
   useEffect(() => {
     api<ParticipantRow[]>("/api/participants").then(setRows).catch(() => setRows([]));
@@ -78,6 +82,21 @@ export default function ParticipantsPage({
         </p>
       )}
 
+      <input
+        type="search"
+        value={searchText}
+        onChange={(e) => setSearchText(e.target.value)}
+        placeholder="Find by name or date of birth (4/3/1981)"
+        aria-label="Find a client by name or date of birth"
+        className="mt-4 w-full max-w-md rounded border border-nmbm-ink/20 px-3 py-2 text-sm"
+      />
+
+      {searchQuery ? (
+        <div className="mt-4">
+          {searchResults ? <SearchResults results={searchResults} /> : <p className="text-sm text-nmbm-ink/50">Searching…</p>}
+        </div>
+      ) : (
+      <>
       <div role="tablist" className="mt-4 flex gap-1 border-b border-nmbm-ink/10 text-sm">
         {(["active", "closed"] as View[]).map((v) => (
           <button
@@ -132,6 +151,8 @@ export default function ParticipantsPage({
         </div>
       ) : (
         <ClosedTable rows={closed} seesAll={seesAllClosed} />
+      )}
+      </>
       )}
     </div>
   );

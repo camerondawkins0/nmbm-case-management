@@ -6,8 +6,8 @@ the original discovery document.
 
 This doc tracks what is **unanswered**. For what has been **built**
 against the answers that did arrive, see "What is built" in
-`docs/ARCHITECTURE.md` — as of migration `0007` that covers sign-in, intake,
-episodes and readmission, notes and the M6 ladder, care plans and the M9 clocks,
+`docs/ARCHITECTURE.md` — as of migration `0008` that covers sign-in, intake,
+episodes, readmission and search, follow-up calls, notes and the M6 ladder, care plans and the M9 clocks,
 consents, referrals, programmes and attendance, staff administration
 and the audit log.
 
@@ -203,12 +203,26 @@ the same thing when M23 work starts.
   `participants.write`, held by the Intake Specialist and Clinical
   Director — a CHW cannot admit. Consistent with U3, worth confirming
   alongside the episode-closing question above.
+- **M12 follow-up calls — three things we assumed.** Built from M12's
+  answer; these weren't in it:
+  - *How long a missed call stays worth making.* Built as: until the
+    next call falls due (the 12-month one until 15 months).
+  - *What QA asks.* Built as free text for how they're doing and how
+    NMBM's services were received. If QA has a script or a fixed set of
+    questions (a satisfaction scale, say), those should be fields —
+    that's what makes the answers reportable.
+  - *Who gets called.* Built as everyone whose case closed, whatever the
+    reason — including "unable to contact" and "moved out of area".
+    Worth confirming whether some exits should be skipped.
+  QA and the Clinical Director can record calls; intake sees who asked
+  to come back.
 - **M1** — "Clients" vs. "cases" as the record name — still needs one
   answer.
 - **M3** — What has to be known before intake can proceed, and which of
   those a funder specifically requires — never answered.
 - **M12** — 3/5/9/12-month follow-up cadence — still marked "are we all
-  in agreement," not confirmed.
+  in agreement," not confirmed. Built with those four; changing them
+  is one constant (`FOLLOW_UP_MONTHS`).
 - **M16** — One-year consent expiry — still marked "are we in
   agreement," not confirmed.
 

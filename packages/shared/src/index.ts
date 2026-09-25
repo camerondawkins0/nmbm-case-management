@@ -5,3 +5,4 @@ export * from "./labels.js";
 export * from "./schemas.js";
 export * from "./auth.js";
 export * from "./settings.js";
+export * from "./follow-ups.js";

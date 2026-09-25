@@ -10,6 +10,9 @@ import { ConsentsSection } from "../components/consents-section.js";
 import { ReferralsSection } from "../components/referrals-section.js";
 import { Link } from "react-router-dom";
 import { CLOSURE_REASON_LABELS } from "../lib/labels.js";
+import { FOLLOW_UP_OUTCOME_LABELS } from "@nmbm/shared";
+import type { FollowUpSchedule } from "../lib/types.js";
+import { FollowUpCallForm } from "../components/follow-up-call-form.js";
 
 export default function ParticipantDetailPage({ me }: { me: Me }) {
   const { id } = useParams<{ id: string }>();
@@ -165,6 +168,17 @@ export default function ParticipantDetailPage({ me }: { me: Me }) {
         <NoteForm
           participantId={record.id}
           episodeId={record.episodeId}
+          onSaved={(message) => {
+            setNotice(message);
+            load();
+          }}
+        />
+      )}
+
+      {record.followUps && (
+        <FollowUpSection
+          schedule={record.followUps}
+          canRecord={can(me, "follow_ups.record")}
           onSaved={(message) => {
             setNotice(message);
             load();
@@ -619,5 +633,86 @@ function ReadmitForm({
         {busy ? "Readmitting…" : "Readmit"}
       </button>
     </form>
+  );
+}
+
+const MILESTONE_TONE = {
+  completed: "ok",
+  due: "warn",
+  overdue: "alert",
+  upcoming: "muted",
+  lapsed: "muted",
+} as const;
+
+const MILESTONE_LABEL = {
+  completed: "Done",
+  due: "Due now",
+  overdue: "Overdue",
+  upcoming: "Upcoming",
+  lapsed: "Missed",
+} as const;
+
+// M12 on the record: all four calls, what each came to, and every
+// attempt with who made it — so a supervisor reading the file can see
+// "tried twice, then reached" rather than just the last word.
+function FollowUpSection({
+  schedule,
+  canRecord,
+  onSaved,
+}: {
+  schedule: FollowUpSchedule;
+  canRecord: boolean;
+  onSaved: (message: string) => void;
+}) {
+  const [open, setOpen] = useState<number | null>(null);
+  return (
+    <section className="mt-6 rounded border border-nmbm-ink/10 p-4">
+      <h2 className="text-sm font-semibold uppercase tracking-wide text-nmbm-ink/50">Follow-up calls</h2>
+      <p className="mt-1 text-xs text-nmbm-ink/50">Counted from the case closing on {schedule.endDate}.</p>
+      <ol className="mt-3 flex flex-col gap-2">
+        {schedule.milestones.map((m) => (
+          <li key={m.months} className="rounded border border-nmbm-ink/10 px-3 py-2 text-sm">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <span className="text-nmbm-ink">
+                <span className="font-medium">{m.months}-month call</span>
+                <span className="ml-2 text-xs text-nmbm-ink/50">due {m.dueDate}</span>
+              </span>
+              <span className="flex items-center gap-2">
+                <Pill tone={MILESTONE_TONE[m.state]}>{MILESTONE_LABEL[m.state]}</Pill>
+                {canRecord && (m.state === "due" || m.state === "overdue") && open !== m.months && (
+                  <button
+                    onClick={() => setOpen(m.months)}
+                    className="rounded border border-nmbm-ink/30 px-2 py-0.5 text-xs font-medium hover:border-nmbm-ink"
+                  >
+                    Record call
+                  </button>
+                )}
+              </span>
+            </div>
+            {m.attempts.map((call) => (
+              <div key={call.id} className="mt-2 border-l-2 border-nmbm-ink/10 pl-3 text-xs text-nmbm-ink/70">
+                <p>
+                  <span className="font-medium text-nmbm-ink">{FOLLOW_UP_OUTCOME_LABELS[call.outcome]}</span> ·{" "}
+                  {call.calledByName} · {new Date(call.calledAt).toLocaleDateString()}
+                </p>
+                {call.note && <p className="mt-0.5">{call.note}</p>}
+                {call.servicesFeedback && <p className="mt-0.5 italic">On NMBM's services: {call.servicesFeedback}</p>}
+              </div>
+            ))}
+            {open === m.months && (
+              <FollowUpCallForm
+                episodeId={schedule.episodeId}
+                months={m.months}
+                onSaved={(message) => {
+                  setOpen(null);
+                  onSaved(message);
+                }}
+                onCancel={() => setOpen(null)}
+              />
+            )}
+          </li>
+        ))}
+      </ol>
+    </section>
   );
 }

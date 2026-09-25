@@ -25,6 +25,8 @@ export const PERMISSIONS = [
   "referrals.write", // refer out and record what came back (M17)
   "programs.manage", // set up programmes, cohorts and class dates (M14)
   "attendance.record", // mark a roster — the evidence a PO relies on (M14)
+  // M12: "it would be nice for our QA to be able to make the calls".
+  "follow_ups.record",
   "admin.users.manage",
   "admin.settings.manage",
   "feedback.submit", // any logged-in user — NMBM has no dedicated IT staff (M31), see docs/SUPPORT.md
@@ -42,6 +44,7 @@ export type Permission = (typeof PERMISSIONS)[number];
 // so the grid stays the single source of truth for "who can do what."
 export const DEFAULT_ROLE_PERMISSIONS: Record<Role, Permission[]> = {
   clinical_director: [
+    "follow_ups.record",
     "programs.manage",
     "attendance.record",
     "consents.write",
@@ -97,7 +100,7 @@ export const DEFAULT_ROLE_PERMISSIONS: Record<Role, Permission[]> = {
     "referrals.write",
     "feedback.submit",
   ],
-  quality_assurance_coordinator: ["participants.read.all", "feedback.submit"],
+  quality_assurance_coordinator: ["participants.read.all", "follow_ups.record", "feedback.submit"],
   system_administrator: [
     "programs.manage",
     "admin.users.manage",

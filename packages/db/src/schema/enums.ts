@@ -1,5 +1,6 @@
 import { pgEnum } from "drizzle-orm/pg-core";
 import {
+  FOLLOW_UP_OUTCOMES,
   ROLES,
   EPISODE_STATUSES,
   EPISODE_CLOSURE_REASONS,
@@ -34,3 +35,6 @@ export const cohortEnrollmentStatusEnum = pgEnum("cohort_enrollment_status", COH
 export const attendanceStatusEnum = pgEnum("attendance_status", ATTENDANCE_STATUSES);
 export const feedbackCategoryEnum = pgEnum("feedback_category", FEEDBACK_CATEGORIES);
 export const feedbackStatusEnum = pgEnum("feedback_status", FEEDBACK_STATUSES);
+
+// M12: what a QA follow-up call came to.
+export const followUpOutcomeEnum = pgEnum("follow_up_outcome", FOLLOW_UP_OUTCOMES);

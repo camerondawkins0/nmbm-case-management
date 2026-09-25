@@ -8,8 +8,8 @@ import {
   users,
   vNoContactCounts,
 } from "@nmbm/db";
-import { eq, and, isNull, isNotNull, inArray, desc, sql } from "drizzle-orm";
-import type { ParticipantCreate } from "@nmbm/shared";
+import { eq, and, or, isNull, isNotNull, inArray, desc, sql, type SQL } from "drizzle-orm";
+import type { ParticipantCreate, ParticipantSearch } from "@nmbm/shared";
 
 // One row per participant with everything the caseload screen shows, so
 // a list of 40 doesn't turn into 120 follow-up queries.
@@ -173,4 +173,61 @@ export async function countsForIds(db: Db, ids: string[] | null) {
     .from(participants)
     .where(scope);
   return row;
+}
+
+function likePrefix(term: string) {
+  return `${term.toLowerCase().replace(/[\\%_]/g, (c) => `\\${c}`)}%`;
+}
+
+// Readmission search (R10). Every word has to start a first or last
+// name, so "ire wal" finds Irene Walsh and "walsh" finds every Walsh.
+// Callers filter the result by what the person searching may open —
+// this returns candidates, not an answer.
+export async function search(db: Db, input: ParticipantSearch, limit = 25) {
+  const conditions: SQL[] = [];
+  if (input.dob) conditions.push(eq(participants.dateOfBirth, input.dob));
+  for (const word of (input.q ?? "").split(/\s+/).filter(Boolean)) {
+    const pattern = likePrefix(word);
+    conditions.push(
+      or(
+        sql`lower(${participants.firstName}) like ${pattern}`,
+        sql`lower(${participants.lastName}) like ${pattern}`,
+      )!,
+    );
+  }
+  // Outer references are qualified by hand: in a single-table query
+  // Drizzle renders ${participants.id} as a bare "id", which is ambiguous
+  // (or worse, silently rebinds) inside these subqueries.
+  return db
+    .select({
+      id: participants.id,
+      firstName: participants.firstName,
+      lastName: participants.lastName,
+      dateOfBirth: participants.dateOfBirth,
+      active: sql<boolean>`exists (select 1 from "episodes" e where e.participant_id = "participants"."id" and e.status = 'open')`,
+      lastEndDate: sql<string | null>`(select max(e.end_date)::text from "episodes" e where e.participant_id = "participants"."id" and e.status = 'closed')`,
+      workerName: sql<string | null>`(select u.display_name from "assignments" a join "users" u on u.id = a.worker_id where a.participant_id = "participants"."id" and a.ended_at is null limit 1)`,
+    })
+    .from(participants)
+    .where(and(...conditions))
+    .orderBy(participants.lastName, participants.firstName)
+    .limit(limit);
+}
+
+// The duplicate check at intake: same date of birth and the same first
+// or last name. Loose on purpose — a married name or a nickname shouldn't
+// be enough to slip a second record past the front desk.
+export async function possibleDuplicates(db: Db, first: string, last: string, dob: string) {
+  return db
+    .select({ id: participants.id })
+    .from(participants)
+    .where(
+      and(
+        eq(participants.dateOfBirth, dob),
+        or(
+          sql`lower(${participants.firstName}) = ${first.trim().toLowerCase()}`,
+          sql`lower(${participants.lastName}) = ${last.trim().toLowerCase()}`,
+        ),
+      ),
+    );
 }

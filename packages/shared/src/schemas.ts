@@ -31,6 +31,10 @@ export const intakeSchema = z.object({
   payer: z.enum(PAYERS).optional(),
   assignedWorkerId: z.string().uuid(),
   startDate: z.string().date(),
+  // Intake refuses a second record with the same name and date of birth
+  // unless the person at the desk confirms it's somebody else. A
+  // returning participant should be readmitted onto their own record.
+  confirmNotDuplicate: z.boolean().optional(),
 });
 export type Intake = z.infer<typeof intakeSchema>;
 

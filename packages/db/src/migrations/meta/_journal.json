@@ -57,6 +57,13 @@
       "when": 1759276800000,
       "tag": "0007_app_settings",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1759363200000,
+      "tag": "0008_follow_up_calls",
+      "breakpoints": true
     }
   ]
 }

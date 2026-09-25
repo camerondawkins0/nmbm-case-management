@@ -1,6 +1,6 @@
 import { eq } from "drizzle-orm";
 import type { Db } from "@nmbm/db";
-import { users, roles, userRoles, notes, assignments } from "@nmbm/db";
+import { users, roles, userRoles, notes, assignments, episodes } from "@nmbm/db";
 import type { Payer, Role, ContactResult } from "@nmbm/shared";
 import { admitParticipant } from "../../src/modules/participants/intake.js";
 
@@ -40,7 +40,9 @@ export async function admit(
   const { participant, episode } = await admitParticipant(
     db,
     {
-      firstName: "Test",
+      // Unique first and last names: the intake duplicate check matches on
+      // date of birth plus either name, so shared ones would trip it.
+      firstName: unique("F"),
       lastName: unique("P"),
       dateOfBirth: "1980-01-01",
       payer: opts.payer ?? "medi_cal",
@@ -79,4 +81,9 @@ export async function backdateAssignmentEnd(db: Db, participantId: string, daysA
     .update(assignments)
     .set({ endedAt: new Date(Date.now() - daysAgo * 86_400_000) })
     .where(eq(assignments.participantId, participantId));
+}
+
+// Moves when an episode ended, to put a closure months in the past.
+export async function backdateEpisodeEnd(db: Db, episodeId: string, endDate: string) {
+  await db.update(episodes).set({ endDate }).where(eq(episodes.id, episodeId));
 }

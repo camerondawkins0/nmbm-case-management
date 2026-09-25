@@ -93,6 +93,10 @@ behind it (`/auth/dev-login?email=…`) is never registered when
   Director locked out of the whole caseload — were invisible from a
   single signed-in session, and one of them was masked by tests passing
   on the 401 path.
+- In a raw `sql` subquery, write outer columns qualified by hand
+  (`"episodes"."id"`). Drizzle renders `${episodes.id}` as a bare `"id"`
+  when a query reads one table, and inside a subquery that silently
+  binds to the subquery's own table — no error, just the wrong answer.
 - This system is not the WSL system. Don't copy WSL business rules
   (billing categories, program names, permission grid) by default —
   check them against NMBM's own discovery answers first. Architecture

@@ -3,7 +3,8 @@ import { participants, assignments, episodes, users } from "@nmbm/db";
 import { eq, and, isNull } from "drizzle-orm";
 import type { Intake } from "@nmbm/shared";
 import { CARE_PLAN_COMPLETION_DAYS } from "@nmbm/shared";
-import { conflict, notFound } from "../../plugins/errors.js";
+import { AppError, conflict, notFound } from "../../plugins/errors.js";
+import { possibleDuplicates } from "./repository.js";
 import { writeAudit } from "../../plugins/audit.js";
 
 function isoDate(d: Date) {
@@ -18,6 +19,19 @@ export async function admitParticipant(db: Db, input: Intake, actorId: string) {
   const [worker] = await db.select().from(users).where(eq(users.id, input.assignedWorkerId));
   if (!worker) throw notFound("Assigned worker not found");
   if (!worker.active) throw conflict("That worker's account is deactivated");
+
+  // R10's returning participant belongs on their existing record, with
+  // their history, not on a second one. The refusal doesn't say whose
+  // record matched: the person at the desk may not be allowed to open it,
+  // and search shows them the ones they can.
+  const duplicates = await possibleDuplicates(db, input.firstName, input.lastName, input.dateOfBirth);
+  if (duplicates.length > 0 && !input.confirmNotDuplicate) {
+    throw new AppError(
+      409,
+      "possible_duplicate",
+      "A record with this date of birth and a matching name already exists. If this is a returning client, find them and readmit them instead. If it's a different person, confirm that and admit again.",
+    );
+  }
 
   const carePlanDue = new Date(input.startDate);
   carePlanDue.setDate(carePlanDue.getDate() + CARE_PLAN_COMPLETION_DAYS);
@@ -53,7 +67,11 @@ export async function admitParticipant(db: Db, input: Intake, actorId: string) {
       action: "participant.admitted",
       entityType: "participant",
       entityId: participant.id,
-      detail: `episode ${episode.id} opened, assigned to ${worker.displayName}`,
+      detail:
+        `episode ${episode.id} opened, assigned to ${worker.displayName}` +
+        (duplicates.length > 0
+          ? `; admitted as a different person despite ${duplicates.length} record(s) with the same date of birth and a matching name`
+          : ""),
     });
 
     return { participant, episode };

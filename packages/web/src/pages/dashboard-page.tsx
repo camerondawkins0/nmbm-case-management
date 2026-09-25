@@ -23,7 +23,9 @@ export default function DashboardPage({ me }: { me: Me }) {
     data.carePlanReviewsDue.length === 0 &&
     data.carePlansReturned.length === 0 &&
     data.referralsAwaitingOutcome.length === 0 &&
-    data.awaitingReview.length === 0;
+    data.awaitingReview.length === 0 &&
+    !(data.followUps && data.followUps.overdue + data.followUps.due > 0) &&
+    !data.reEnrollmentRequests;
 
   return (
     <div className="mx-auto max-w-4xl">
@@ -36,6 +38,31 @@ export default function DashboardPage({ me }: { me: Me }) {
         <p className="mt-8 rounded border border-state-ok/20 bg-state-ok-bg px-4 py-3 text-sm text-state-ok">
           Nothing needs attention today.
         </p>
+      )}
+
+      {/* M12: QA's calls and the people who asked to come back, for the
+          roles that act on them. The detail lives on /follow-ups. */}
+      {((data.followUps && data.followUps.overdue + data.followUps.due > 0) || !!data.reEnrollmentRequests) && (
+        <div className="mt-8 grid gap-3 sm:grid-cols-2">
+          {data.followUps && data.followUps.overdue + data.followUps.due > 0 && (
+            <Link to="/follow-ups" className="rounded border border-nmbm-ink/10 p-4 hover:border-nmbm-ink/40">
+              <p className="text-sm font-semibold uppercase tracking-wide text-nmbm-ink/50">Follow-up calls</p>
+              <p className="mt-1 text-sm text-nmbm-ink">
+                {data.followUps.overdue > 0 && <span className="text-state-alert">{data.followUps.overdue} overdue</span>}
+                {data.followUps.overdue > 0 && data.followUps.due > 0 && " · "}
+                {data.followUps.due > 0 && <span>{data.followUps.due} due now</span>}
+              </p>
+            </Link>
+          )}
+          {!!data.reEnrollmentRequests && (
+            <Link to="/follow-ups" className="rounded border border-state-warn/30 bg-state-warn-bg p-4 hover:border-state-warn">
+              <p className="text-sm font-semibold uppercase tracking-wide text-state-warn">Asked to come back</p>
+              <p className="mt-1 text-sm text-nmbm-ink">
+                {data.reEnrollmentRequests} former client{data.reEnrollmentRequests > 1 ? "s" : ""} waiting to be readmitted
+              </p>
+            </Link>
+          )}
+        </div>
       )}
 
       <Section title="Missed contact" rows={data.noContactWarnings} kind="no-contact" />

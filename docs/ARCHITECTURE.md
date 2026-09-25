@@ -118,7 +118,7 @@ Nothing beyond a schema placeholder should be built here until M23 comes
 back.
 
 **Automated prompts that don't exist in WSL, described specifically by
-NMBM.** Three of the four below are now built; the fourth (M12) isn't.
+NMBM.** All four below are built.
 
 - **Built.** 3 consecutive no-contact attempts → prompt to prepare exit
   documentation, and the CHW needs 2 more non-contacts before
@@ -133,7 +133,7 @@ NMBM.** Three of the four below are now built; the fourth (M12) isn't.
   exit (M9). WSL has review clocks on existing plans; NMBM additionally
   wants a *completion* deadline from enrollment, which is a new clock
   type, not a variant of the existing one.
-- **Not built.** Follow-up QA calls at 3/5/9/12 months **after
+- **Built.** Follow-up QA calls at 3/5/9/12 months **after
   disenrollment** (M12),
   potentially leading to re-enrollment. This is a participant lifecycle
   state WSL doesn't have — closed-but-being-followed-up — and needs its
@@ -178,7 +178,7 @@ that is what every page reads.
 ## What is built
 
 Everything below is running code: a migration, a module, and in most
-cases a page reachable after signing in. Current as of migration `0007`.
+cases a page reachable after signing in. Current as of migration `0008`.
 
 | Area | What works | Where |
 |---|---|---|
@@ -192,12 +192,14 @@ cases a page reachable after signing in. Current as of migration `0007`.
 | Consents (M15/M16) | Four form types, expiry derived at read time from the episode start date, revocation | `modules/consents/` |
 | Referrals (M17) | Refuses to send without a usable release and distinguishes the three reasons; records the outcome that came back | `modules/referrals/` |
 | Programmes and attendance (M14) | Programmes, cohorts, class dates, rosters, whole-roster marking in one request, and a printable participation record. Disenrolled participants stay on the roster, flagged | `modules/programs/` |
+| Follow-up calls (M12) | QA's queue of 3/5/9/12-month calls, derived from each closed episode's end date; every attempt recorded with who made it; "wants services again" puts the person on intake's list until they're readmitted | `modules/follow-ups/`, `lib/follow-ups.ts`, `/follow-ups` |
+| Readmission search (R10) | Find a record by name or date of birth, limited to what the searcher can open; intake checks for a returning client as the form is filled in, and refuses a likely duplicate unless told it's a different person (audited) | `participants/repository.ts`, `components/participant-search.tsx` |
 | Settings (M31) | Values NMBM's administrator changes without a deploy, audited. One so far: the former-worker access window | `lib/settings.ts`, `/admin/settings` |
 | Staff administration (U9) | Grant and revoke roles, deactivate and reactivate — refused while a worker still holds open assignments | `modules/admin/` |
 | Audit (M30) | Append-only, written inside the transaction that performs the action, read-only endpoint | `plugins/audit.ts` |
 | Feedback (M31) | In-app issue reporting and a triage queue, because NMBM has no IT staff | `modules/feedback/`, `docs/SUPPORT.md` |
 
-50 API routes across 12 modules, 22 tables and one view, 14 pages plus
+54 API routes across 13 modules, 23 tables and one view, 15 pages plus
 two holding screens (no role yet; server unreachable).
 `docs/agent/map.md` lists them route by route and page by page.
 

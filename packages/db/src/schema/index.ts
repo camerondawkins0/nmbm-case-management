@@ -11,3 +11,4 @@ export * from "./referrals.js";
 export * from "./programs.js";
 export * from "./views.js";
 export * from "./settings.js";
+export * from "./follow-ups.js";

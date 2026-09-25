@@ -1,6 +1,6 @@
 # Testing
 
-83 tests in `packages/api/test/`, run by vitest against a real Postgres.
+112 tests in `packages/api/test/`, run by vitest against a real Postgres.
 CI runs them on every push with a Postgres 16 service.
 
 ```bash
@@ -33,6 +33,9 @@ dev-login route, and assert on HTTP responses.
 | `disenrolment.test.ts` | R10: off the caseload on close, closed-record access (intake, last worker, window and its 90-day cap), readmission starting a fresh run |
 | `attendance.test.ts` | M14 whole-roster marking, correction not duplication, off-roster refusal, recorder names, disenrolled people flagged not withdrawn |
 | `sign-off.test.ts` | U6 notes and care plans reviewed by someone other than the author |
+| `follow-up-schedule.test.ts` | M12 date arithmetic and milestone states, no database |
+| `follow-ups.test.ts` | M12 queue, recording calls, one result per milestone, re-enrolment requests, readmission stopping the schedule |
+| `search.test.ts` | R10 search scoping, wildcard escaping, intake's duplicate refusal and its audited override |
 | `sign-in.test.ts` | OAuth state, refusal reasons, session regeneration, idle timeout, form-post sign-out, audit |
 
 `test/support/fixtures.ts` builds people through the real services
@@ -65,6 +68,16 @@ test.
 | Re-marking inserts a second row; off-roster marks accepted; roster flag never set | attendance |
 | OAuth state unchecked; session not regenerated; idle timeout ignored; return path unsanitised; sign-out form parser removed | sign-in, rules |
 | CHW note not queued; note returned without a reason | sign-off |
+| Unanswered call settling a milestone; milestones never lapsing; no early window; unclamped month arithmetic | follow-up-schedule, follow-ups |
+| Second result allowed; calls allowed before due; schedule continuing after readmission; re-enrolment request surviving readmission | follow-ups |
+| Queue open to any reader; Today counts shown to everyone | follow-ups |
+| Search returning everything; intake seeing active records; wildcards unescaped | search |
+| Duplicate guard off, or ignoring first name; override not audited | search |
+
+One mutation during the M12 work crashed the SQL rather than changing
+its meaning, which proves nothing; it was redone as a clean change and
+caught. A mutation only counts if the failure is the rule, not a syntax
+error.
 
 The first pass of this found one gap — removing the open-episode filter
 went unnoticed, because closing also ends the assignment so a worker's

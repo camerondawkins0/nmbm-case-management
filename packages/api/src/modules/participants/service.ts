@@ -1,6 +1,6 @@
 import type { Db } from "@nmbm/db";
 import { assignments } from "@nmbm/db";
-import type { ParticipantCreate, ParticipantListQuery } from "@nmbm/shared";
+import type { ParticipantCreate, ParticipantListQuery, ParticipantSearch } from "@nmbm/shared";
 import { notFound, forbidden } from "../../plugins/errors.js";
 import {
   caseloadParticipantIds,
@@ -13,6 +13,7 @@ import * as repository from "./repository.js";
 import * as consentService from "../consents/service.js";
 import * as referralService from "../referrals/service.js";
 import * as programService from "../programs/service.js";
+import * as followUpService from "../follow-ups/service.js";
 
 function decorate(row: Awaited<ReturnType<typeof repository.findById>>) {
   const flags = participantFlags(row);
@@ -56,14 +57,15 @@ export async function getParticipant(db: Db, caller: CallerScope, id: string) {
   }
   const row = await repository.findById(db, id);
   if (!row) throw notFound("Participant not found");
-  const [episodes, notes, consents, referrals, programs] = await Promise.all([
+  const [episodes, notes, consents, referrals, programs, followUps] = await Promise.all([
     repository.listEpisodes(db, id),
     repository.listNotes(db, id),
     consentService.listForParticipant(db, id),
     referralService.listForParticipant(db, id),
     programService.listEnrollmentsForParticipant(db, id),
+    followUpService.scheduleForParticipant(db, id),
   ]);
-  return { ...decorate(row), episodes, notes, consents, referrals, programs };
+  return { ...decorate(row), episodes, notes, consents, referrals, programs, followUps };
 }
 
 export async function createParticipant(
@@ -87,4 +89,21 @@ export async function assertCanSee(db: Db, caller: CallerScope, participantId: s
   if (!(await canSeeParticipant(db, caller, participantId))) {
     throw forbidden("Not on your caseload");
   }
+}
+
+// Readmission search. Only returns what the person searching could open
+// anyway — the same three rules as the record itself (U5 caseload, R10
+// closed records for intake, the last worker's window) — so a search
+// can't be used to learn that someone is on another worker's caseload.
+export async function searchParticipants(db: Db, caller: CallerScope, input: ParticipantSearch) {
+  const candidates = await repository.search(db, input);
+  if (caller.canReadAll) return candidates;
+  const [caseload, former] = await Promise.all([
+    caseloadParticipantIds(db, caller.id),
+    formerCaseload(db, caller.id),
+  ]);
+  const visible = new Set([...caseload, ...former.map((f) => f.participantId)]);
+  return candidates
+    .filter((c) => visible.has(c.id) || (caller.canReadClosed && !c.active && c.lastEndDate !== null))
+    .map((c) => (visible.has(c.id) ? c : { ...c, workerName: null }));
 }

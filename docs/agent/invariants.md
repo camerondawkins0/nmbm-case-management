@@ -234,6 +234,40 @@ route does. Two consequences worth keeping:
 - Hiding a nav link or a button is a convenience for the person using
   the app, never the control. The check that matters is on the endpoint.
 
+## Follow-up calls are derived from the closure, and settle once (M12)
+
+- **Nothing about the schedule is stored.** Due dates come from the
+  episode's end date, every time they're asked for
+  (`lib/follow-ups.ts`). Only the calls are rows. A stored "due" column
+  would disagree with a corrected end date and nobody would notice.
+- **Every attempt is a row.** "Tried three times, no answer" is on the
+  record, not collapsed into the eventual result.
+- **A milestone is settled once** — by a reached, declined or
+  wrong-number call. An unanswered call leaves it owed. The database
+  enforces one settling result per milestone, because a second
+  "reached" would double-count in any report built on this.
+- **Readmission stops the old schedule.** Only a participant's latest,
+  closed episode is followed up; once they're back in services there's
+  nobody to call. The new episode gets its own schedule when it ends.
+- **"Wants services again" is a list, not a task to tick.** It's derived
+  — anyone reached who asked to come back and hasn't been readmitted
+  since — so readmitting them is what clears it.
+- A missed milestone drops out of the queue when the next one falls due
+  (the last one at 15 months). That rule is ours, not NMBM's, and is
+  flagged in `docs/DISCOVERY_FOLLOWUP.md`.
+
+## A returning participant is found, not re-created (R10)
+
+- Search returns only records the searcher could open, under the same
+  three rules as the record itself. It must never be a way to learn
+  that someone is on another worker's caseload.
+- Intake refuses a new record with the same date of birth and the same
+  first *or* last name — loose on purpose, so a changed surname doesn't
+  slip through. The refusal doesn't say whose record matched, since the
+  person at the desk may not be allowed to open it. They can override it
+  by confirming it's a different person, and the override is written to
+  the audit log.
+
 ## Sign-in says why it refused, and never trusts the browser's word (M27)
 
 - The Google round trip carries a one-use `state` token bound to the

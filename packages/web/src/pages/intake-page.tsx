@@ -4,6 +4,7 @@ import { api, ApiError } from "../lib/api.js";
 import type { AssignableWorker } from "../lib/types.js";
 import { PARTICIPANT_LABEL } from "@nmbm/shared";
 import type { Payer } from "@nmbm/shared";
+import { SearchResults, useParticipantSearch } from "../components/participant-search.js";
 
 const PAYERS: { value: Payer; label: string }[] = [
   { value: "medi_cal", label: "Medi-Cal" },
@@ -24,6 +25,11 @@ export default function IntakePage() {
   const [workers, setWorkers] = useState<AssignableWorker[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  // Set when the server says a record with this name and birthday already
+  // exists. The only way past it is saying, deliberately, that this is
+  // someone else — and that's written to the audit log.
+  const [possibleDuplicate, setPossibleDuplicate] = useState<string | null>(null);
+  const [confirmedDifferent, setConfirmedDifferent] = useState(false);
   const [form, setForm] = useState({
     firstName: "",
     lastName: "",
@@ -32,6 +38,21 @@ export default function IntakePage() {
     assignedWorkerId: "",
     startDate: new Date().toISOString().slice(0, 10),
   });
+
+  // R10: a returning client belongs on their existing record. Look as
+  // soon as there's a birthday or a surname to go on, before anyone has
+  // typed out the rest of the form.
+  const returningQuery = form.dateOfBirth
+    ? { dob: form.dateOfBirth }
+    : form.lastName.trim().length >= 2
+      ? { q: `${form.firstName} ${form.lastName}`.trim() }
+      : null;
+  const returning = useParticipantSearch(returningQuery);
+
+  useEffect(() => {
+    setPossibleDuplicate(null);
+    setConfirmedDifferent(false);
+  }, [form.firstName, form.lastName, form.dateOfBirth]);
 
   useEffect(() => {
     api<AssignableWorker[]>("/api/participants/assignable-workers")
@@ -49,11 +70,16 @@ export default function IntakePage() {
         body: JSON.stringify({
           ...form,
           payer: form.payer === "" ? undefined : form.payer,
+          confirmNotDuplicate: confirmedDifferent || undefined,
         }),
       });
       navigate(`/participants/${result.participant.id}`);
     } catch (e) {
-      setError(e instanceof ApiError ? e.message : "Could not complete intake");
+      if (e instanceof ApiError && e.code === "possible_duplicate") {
+        setPossibleDuplicate(e.message);
+      } else {
+        setError(e instanceof ApiError ? e.message : "Could not complete intake");
+      }
       setSaving(false);
     }
   }
@@ -157,9 +183,36 @@ export default function IntakePage() {
           </select>
         </label>
 
+        {returning && returning.length > 0 && (
+          <div className="rounded border border-state-warn/30 bg-state-warn-bg p-4">
+            <p className="text-sm font-medium text-state-warn">Has this person been with NMBM before?</p>
+            <p className="mt-1 text-sm text-nmbm-ink/70">
+              These records match. If one is them, open it and readmit rather than starting a new
+              record — their history stays together that way.
+            </p>
+            <div className="mt-3 bg-nmbm-paper">
+              <SearchResults results={returning} compact />
+            </div>
+          </div>
+        )}
+
+        {possibleDuplicate && (
+          <div className="rounded border border-state-alert/25 bg-state-alert-bg p-4 text-sm text-state-alert">
+            <p>{possibleDuplicate}</p>
+            <label className="mt-3 flex items-center gap-2 text-nmbm-ink">
+              <input
+                type="checkbox"
+                checked={confirmedDifferent}
+                onChange={(e) => setConfirmedDifferent(e.target.checked)}
+              />
+              I've checked — this is a different person
+            </label>
+          </div>
+        )}
+
         <button
           type="submit"
-          disabled={saving}
+          disabled={saving || (possibleDuplicate !== null && !confirmedDifferent)}
           className="self-start rounded bg-nmbm-ink px-6 py-2 text-sm font-medium text-nmbm-paper disabled:opacity-50"
         >
           {saving ? "Saving…" : "Complete intake"}

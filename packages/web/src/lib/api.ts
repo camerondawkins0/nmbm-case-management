@@ -2,6 +2,9 @@ export class ApiError extends Error {
   constructor(
     public status: number,
     message: string,
+    // The API's machine-readable reason, e.g. "possible_duplicate", for
+    // the few places a page does something different depending on it.
+    public code?: string,
   ) {
     super(message);
   }
@@ -32,15 +35,17 @@ export async function api<T>(path: string, init?: RequestInit): Promise<T> {
   }
   if (!res.ok) {
     let message = `Request failed (${res.status})`;
+    let code: string | undefined;
     try {
       const body = await res.json();
       // The API sends the rule that was violated in `message` — showing
       // that to the worker is the whole point of the gates.
       if (body?.message) message = body.message;
+      if (typeof body?.error === "string") code = body.error;
     } catch {
       // Non-JSON error body; the status-based message stands.
     }
-    throw new ApiError(res.status, message);
+    throw new ApiError(res.status, message, code);
   }
   return res.json() as Promise<T>;
 }

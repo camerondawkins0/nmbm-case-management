@@ -10,6 +10,7 @@ import type {
   CohortEnrollmentStatus,
   Permission,
   EpisodeClosureReason,
+  FollowUpOutcome,
 } from "@nmbm/shared";
 
 // Mirrors what the API sends. The flags are derived server-side — the
@@ -261,8 +262,77 @@ export type EpisodeSummary = {
   readmittedFromEpisodeId: string | null;
 };
 
+// M12. Mirrors lib/follow-ups.ts in the API: the schedule is derived
+// there from the episode's end date; the client only renders it.
+export type FollowUpCallRecord = {
+  id: string;
+  milestoneMonths: number;
+  outcome: FollowUpOutcome;
+  note: string | null;
+  servicesFeedback: string | null;
+  calledAt: string;
+  calledByName: string;
+};
+
+export type FollowUpMilestone = {
+  months: 3 | 5 | 9 | 12;
+  dueDate: string;
+  opensOn: string;
+  lapsesOn: string;
+  state: "upcoming" | "due" | "overdue" | "completed" | "lapsed";
+  result: FollowUpCallRecord | null;
+  attempts: FollowUpCallRecord[];
+};
+
+export type FollowUpSchedule = { episodeId: string; endDate: string; milestones: FollowUpMilestone[] };
+
+export type FollowUpQueueItem = {
+  episodeId: string;
+  endDate: string;
+  closureReason: EpisodeClosureReason | null;
+  participantId: string;
+  firstName: string;
+  lastName: string;
+  dateOfBirth: string;
+  months: 3 | 5 | 9 | 12;
+  dueDate: string;
+  lapsesOn: string;
+  state: "upcoming" | "due" | "overdue";
+  attempts: number;
+  lastAttemptAt: string | null;
+};
+
+export type FollowUpQueue = {
+  overdue: FollowUpQueueItem[];
+  due: FollowUpQueueItem[];
+  upcoming: FollowUpQueueItem[];
+};
+
+export type ReEnrollmentRequest = {
+  callId: string;
+  participantId: string;
+  firstName: string;
+  lastName: string;
+  dateOfBirth: string;
+  milestoneMonths: number;
+  note: string | null;
+  calledAt: string;
+  calledByName: string;
+};
+
+export type SearchResult = {
+  id: string;
+  firstName: string;
+  lastName: string;
+  dateOfBirth: string;
+  active: boolean;
+  lastEndDate: string | null;
+  workerName: string | null;
+};
+
 export type ParticipantDetail = ParticipantRow & {
   episodes: EpisodeSummary[];
+  followUps: FollowUpSchedule | null;
   notes: ParticipantNote[];
   consents: ParticipantConsent[];
   referrals: ParticipantReferral[];
@@ -278,6 +348,9 @@ export type Me = {
 };
 
 export type Dashboard = {
+  // Present only for the roles that act on them.
+  followUps: { overdue: number; due: number } | null;
+  reEnrollmentRequests: number | null;
   caseloadSize: number;
   needsAttention: number;
   noContactWarnings: ParticipantRow[];

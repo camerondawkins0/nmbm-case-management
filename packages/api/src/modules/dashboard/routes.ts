@@ -6,6 +6,7 @@ import * as participantService from "../participants/service.js";
 import * as carePlanRepository from "../care-plans/repository.js";
 import * as referralService from "../referrals/service.js";
 import { caseloadParticipantIds } from "../../lib/caseload.js";
+import * as followUpService from "../follow-ups/service.js";
 
 // The discovery doc's own framing of care plans (M9): an overdue plan
 // should "turn up on the worker's home screen instead of a report
@@ -40,7 +41,21 @@ export default async function dashboardRoutes(fastify: FastifyInstance, opts: { 
         caller.canReadAll ? null : await caseloadParticipantIds(db, userId),
       );
 
+      // M12: QA's calls, and the people who asked to come back, for the
+      // roles that act on them.
+      const followUps = permissions.has("follow_ups.record")
+        ? await followUpService.listQueue(db).then((q) => ({ overdue: q.overdue.length, due: q.due.length }))
+        : null;
+      const reEnrollmentRequests =
+        permissions.has("follow_ups.record") ||
+        permissions.has("participants.read.closed") ||
+        permissions.has("participants.read.all")
+          ? (await followUpService.listReEnrollmentRequests(db)).length
+          : null;
+
       return {
+        followUps,
+        reEnrollmentRequests,
         caseloadSize: participants.length,
         referralsAwaitingOutcome,
         needsAttention: participants.filter((p) => p.needsAttention).length,

@@ -16,6 +16,7 @@ import ParticipationRecordPage from "./pages/participation-record-page.js";
 import FeedbackPage from "./pages/feedback-page.js";
 import FeedbackAdminPage from "./pages/admin/feedback-admin-page.js";
 import SettingsPage from "./pages/admin/settings-page.js";
+import FollowUpsPage from "./pages/follow-ups-page.js";
 
 export default function App() {
   const session = useMe();
@@ -75,6 +76,7 @@ export default function App() {
         <Route path="/feedback" element={<FeedbackPage />} />
         <Route path="/admin/feedback" element={<FeedbackAdminPage />} />
         <Route path="/admin/settings" element={<SettingsPage />} />
+        <Route path="/follow-ups" element={<FollowUpsPage me={me} />} />
         <Route path="/login" element={<Navigate to="/" replace />} />
       </Routes>
     </AppShell>

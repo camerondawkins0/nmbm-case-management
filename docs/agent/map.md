@@ -1,6 +1,6 @@
 # Map
 
-Where things are. Current as of migration `0007`.
+Where things are. Current as of migration `0008`.
 
 ## Packages
 
@@ -37,7 +37,7 @@ splits out `audit.ts` for the same reason.
 
 ## API routes
 
-50 routes across 12 modules, plus five on the auth plugin. Every route
+54 routes across 13 modules, plus five on the auth plugin. Every route
 outside `PUBLIC_BY_DESIGN` carries an `authorize()` or `authorizeAny()`
 preHandler, and the permission it requires is named in the file.
 
@@ -45,13 +45,14 @@ preHandler, and the permission it requires is named in the file.
 |---|---|
 | `health` | `GET /api/health` — PUBLIC_BY_DESIGN, Cloud Run health check |
 | `me` | `GET /api/me` — PUBLIC_BY_DESIGN, answers "is anyone signed in?" |
-| `participants` | `GET /api/participants` (`?status=closed` for former participants — R10), `GET /api/participants/:id`, `GET /api/participants/assignable-workers`, `POST /api/participants`, `POST /api/participants/intake`, `POST /api/participants/:id/assignment` |
+| `participants` | `GET /api/participants` (`?status=closed` for former participants — R10), `GET /api/participants/search?q=&dob=`, `GET /api/participants/:id`, `GET /api/participants/assignable-workers`, `POST /api/participants`, `POST /api/participants/intake`, `POST /api/participants/:id/assignment` |
 | `episodes` | `POST /api/episodes` (readmission — see invariants, R10), `POST /api/episodes/:id/close`, `POST /api/episodes/:id/disenrollment-letter` |
 | `notes` | `POST /api/notes`, `PATCH /api/notes/:id`, `GET /api/notes/awaiting-review`, `GET /api/notes/returned`, `POST /api/notes/:id/approve`, `POST /api/notes/:id/return` |
 | `care-plans` | `POST /api/care-plans`, `PATCH /api/care-plans/:id`, `POST /api/care-plans/:id/submit`, `GET /api/care-plans/awaiting-review`, `POST /api/care-plans/:id/approve`, `POST /api/care-plans/:id/return` |
 | `consents` | `POST /api/consents`, `POST /api/consents/:id/revoke` |
 | `referrals` | `POST /api/referrals`, `POST /api/referrals/:id/outcome` |
 | `programs` | `GET /api/programs`, `POST /api/programs`, `POST /api/cohorts`, `GET /api/cohorts/:id`, `POST /api/cohorts/:id/sessions`, `POST /api/cohorts/:id/enrollments`, `POST /api/enrollments/:id/withdraw`, `POST /api/sessions/:id/attendance`, `GET /api/enrollments/:id/participation` |
+| `follow-ups` | `GET /api/follow-ups` (QA's queue), `POST /api/follow-ups` (record a call), `GET /api/follow-ups/re-enrollment-requests` |
 | `dashboard` | `GET /api/dashboard` |
 | `admin` | `GET /api/admin/users`, `GET /api/admin/roles`, `POST /api/admin/users/:id/roles`, `DELETE /api/admin/users/:id/roles/:roleCode`, `POST /api/admin/users/:id/deactivate`, `POST /api/admin/users/:id/reactivate`, `GET /api/admin/audit`, `GET /api/admin/settings`, `PUT /api/admin/settings/:key` |
 | `feedback` | `POST /api/feedback`, `GET /api/feedback/mine`, `GET /api/feedback`, `PATCH /api/feedback/:id/status` |
@@ -67,6 +68,7 @@ except in the context of one person's record.
 |---|---|
 | `lib/caseload.ts` | `resolveScope`, `caseloadParticipantIds`, `formerCaseload`, `canSeeParticipant` — U5 scoping and R10's closed-record access |
 | `lib/rules.ts` | The M6 no-contact ladder and M9 care plan clocks, derived in one place |
+| `lib/follow-ups.ts` | `followUpSchedule`, `addMonths` — M12's schedule, derived from an episode's end date |
 | `lib/settings.ts` | `getSetting`, `listSettings`, `updateSetting` — admin-changeable values, declared with defaults and bounds in `@nmbm/shared` (`APP_SETTINGS`) |
 
 ## API plugins
@@ -99,6 +101,7 @@ first is behind the session check.
 | `/notes/review` | `note-review-page.tsx` | The U6 queue — approve, or return with a reason |
 | `/care-plans/review` | `care-plan-review-page.tsx` | The same, for care plans |
 | `/programs` | `programs-page.tsx` | Programmes and their cohorts |
+| `/follow-ups` | `follow-ups-page.tsx` | M12: QA's call queue, and who asked to come back (intake sees only the latter) |
 | `/cohorts/:id` | `cohort-page.tsx` | The M14 grid — sessions across, people down — and the take-attendance panel; flags anyone whose NMBM services have ended |
 | `/enrollments/:id/participation` | `participation-record-page.tsx` | The printable proof a probation officer receives |
 | `/admin/users` | `admin/users-page.tsx` | Staff, roles, deactivation |
@@ -116,6 +119,9 @@ reach), `sign-out-button.tsx`, `brand-mark.tsx`, `flags.tsx` (the attention badg
 `lib/use-me.ts` tells signed out, session expired and server
 unreachable apart; `lib/api.ts` handles a session ending mid-page;
 `lib/labels.ts` holds display labels shared across pages.
+`components/participant-search.tsx` is the search used on the Clients
+page and the intake form; `components/follow-up-call-form.tsx` records a
+call from the queue or the record.
 
 Hiding a nav link is a convenience, never the control. Every page here
 is behind a server-side permission check on the endpoints it calls.
@@ -127,7 +133,7 @@ module layout. `enums.ts` wraps `as const` arrays from `@nmbm/shared` in
 `pgEnum`, so an enum is declared once and used in both places — same
 convention as the WSL system this was adapted from.
 
-22 tables and one view:
+23 tables and one view:
 
 | File | Tables |
 |---|---|
@@ -142,6 +148,7 @@ convention as the WSL system this was adapted from.
 | `funding.ts` | `funding_sources`, `services` — the M23 placeholder, deliberately unbuilt |
 | `feedback.ts` | `feedback_items` |
 | `settings.ts` | `app_settings` — one row per setting somebody has changed |
+| `follow-ups.ts` | `follow_up_calls` — one row per call attempt; the schedule isn't stored |
 | `views.ts` | `v_no_contact_counts` (rebuilt per episode in 0006), declared to Drizzle with `.existing()` |
 
 Migrations are hand-written SQL in `packages/db/src/migrations/`, listed
@@ -157,6 +164,7 @@ in order in `meta/_journal.json`:
 | `0005_programs_and_attendance` | The five programme and attendance tables |
 | `0006_episode_scoped_caseload` | One open episode per participant; repair of assignments left open on closed episodes; `v_no_contact_counts` rebuilt per episode |
 | `0007_app_settings` | `app_settings` |
+| `0008_follow_up_calls` | `follow_up_calls`, one settling result per milestone, search indexes on participants |
 
 ## Seeds
 
@@ -169,8 +177,9 @@ in order in `meta/_journal.json`:
   removing a permission from `DEFAULT_ROLE_PERMISSIONS` actually takes
   it away instead of leaving it granted forever.
 - `synthetic.ts` is invented demo data: staff at `@nmbm.example.org`,
-  nine participants whose fixtures each exercise one rule (Irene Walsh
-  is the disenrolled one, for R10), and a
+  twelve participants whose fixtures each exercise one rule (Irene
+  Walsh is the disenrolled one, for R10; Price, Liu and Moreno show
+  M12's overdue, due and asked-to-come-back states), and a
   running Anger Management cohort with six weekly sessions and three
   deliberately different attendance histories. Nothing in it is real.
 

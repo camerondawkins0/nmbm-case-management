@@ -5,6 +5,7 @@ import {
   intakeSchema,
   assignmentSchema,
   participantListQuerySchema,
+  participantSearchSchema,
 } from "@nmbm/shared";
 import { authorize, authorizeAny, CAN_READ_PARTICIPANTS } from "../../plugins/authorize.js";
 import { resolveScope } from "../../lib/caseload.js";
@@ -23,6 +24,23 @@ export default async function participantRoutes(fastify: FastifyInstance, opts: 
       const query = participantListQuerySchema.parse(request.query);
       const caller = await resolveScope(db, request.currentUser!.id);
       return service.listParticipants(db, caller, query);
+    },
+  );
+
+  // Declared before /:id so "search" isn't read as an id.
+  fastify.get(
+    "/api/participants/search",
+    {
+      preHandler: authorizeAny([
+        "participants.read.own",
+        "participants.read.all",
+        "participants.read.closed",
+      ]),
+    },
+    async (request) => {
+      const input = participantSearchSchema.parse(request.query);
+      const caller = await resolveScope(db, request.currentUser!.id);
+      return service.searchParticipants(db, caller, input);
     },
   );
 

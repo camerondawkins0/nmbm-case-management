@@ -16,8 +16,17 @@ import {
   cohortSessions,
   cohortEnrollments,
   sessionAttendance,
+  followUpCalls,
 } from "../schema/index.js";
-import type { Payer, Role, ContactResult, CarePlanStatus, EpisodeClosureReason } from "@nmbm/shared";
+import type {
+  Payer,
+  Role,
+  ContactResult,
+  CarePlanStatus,
+  EpisodeClosureReason,
+  FollowUpMonths,
+  FollowUpOutcome,
+} from "@nmbm/shared";
 import { CARE_PLAN_REVIEW_INTERVAL_DAYS, CONSENT_VALID_DAYS } from "@nmbm/shared";
 
 // Invented staff and participants for local development and demos. No
@@ -69,6 +78,8 @@ type Fixture = {
   // R10: a past participant. The episode is closed and the assignment
   // ended, so they appear under "Closed" and on nobody's caseload.
   closed?: { reason: EpisodeClosureReason; daysAgo: number };
+  // M12: QA calls already made after the closure.
+  followUps?: { months: FollowUpMonths; outcome: FollowUpOutcome; daysAgo: number; note?: string; feedback?: string }[];
   demonstrates: string;
 };
 
@@ -175,7 +186,58 @@ const FIXTURES: Fixture[] = [
     contacts: ["contacted", "no_contact", "no_contact", "no_contact", "no_contact", "no_contact"],
     closed: { reason: "no_contact", daysAgo: 70 },
     demonstrates:
-      "R10 — disenrolled for no contact: off Tasha's caseload, retrievable under Closed, and readmission starts a fresh M6 run",
+      "R10 — disenrolled for no contact: off Tasha's caseload, retrievable under Closed, and readmission starts a fresh M6 run; M12 3-month call coming up",
+  },
+  {
+    first: "Jamal",
+    last: "Price",
+    dob: "1990-06-17",
+    payer: "medi_cal",
+    worker: "l.ortega@nmbm.example.org",
+    enrolledDaysAgo: 220,
+    contacts: ["contacted", "contacted"],
+    closed: { reason: "completed", daysAgo: 115 },
+    followUps: [{ months: 3, outcome: "no_answer", daysAgo: 20, note: "Rang twice, voicemail full." }],
+    demonstrates: "M12 3-month call overdue, one unanswered attempt on record",
+  },
+  {
+    first: "Karen",
+    last: "Liu",
+    dob: "1975-10-29",
+    payer: "kaiser",
+    worker: "t.green@nmbm.example.org",
+    enrolledDaysAgo: 260,
+    contacts: ["contacted", "contacted", "contacted"],
+    closed: { reason: "completed", daysAgo: 150 },
+    followUps: [
+      {
+        months: 3,
+        outcome: "reached_doing_well",
+        daysAgo: 58,
+        note: "Working part time, housing stable.",
+        feedback: "Said the transportation help made the difference.",
+      },
+    ],
+    demonstrates: "M12 3-month call done; 5-month call due now",
+  },
+  {
+    first: "Luz",
+    last: "Moreno",
+    dob: "1986-02-08",
+    payer: "molina",
+    worker: "l.ortega@nmbm.example.org",
+    enrolledDaysAgo: 190,
+    contacts: ["contacted", "contacted"],
+    closed: { reason: "participant_declined", daysAgo: 100 },
+    followUps: [
+      {
+        months: 3,
+        outcome: "reached_wants_services",
+        daysAgo: 5,
+        note: "Lost her job last month; asked to be re-enrolled for food and rent help.",
+      },
+    ],
+    demonstrates: "M12 call leading to re-enrolment — waiting on intake",
   },
 ];
 
@@ -277,6 +339,19 @@ async function main() {
         createdAt: when,
         approvedById: supervisorApproved ? supervisorId : null,
         approvedAt: supervisorApproved ? when : null,
+      });
+    }
+
+    for (const call of fixture.followUps ?? []) {
+      await db.insert(followUpCalls).values({
+        participantId: participant.id,
+        episodeId: episode.id,
+        milestoneMonths: call.months,
+        outcome: call.outcome,
+        note: call.note ?? null,
+        servicesFeedback: call.feedback ?? null,
+        calledById: staffByEmail.get("d.fowler@nmbm.example.org")!,
+        calledAt: daysAgo(call.daysAgo),
       });
     }
 
