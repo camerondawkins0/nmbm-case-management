@@ -10,14 +10,16 @@ type View = "active" | "closed";
 
 // U5: the active list is already only the caller's own caseload — the
 // server decides that, so there's no "show everyone" toggle to get
-// wrong. R10: it is also only people with an open episode; closed
-// records are a separate question, asked by someone who can read them.
+// wrong. R10: it is also only people with an open episode. Closed
+// records are a separate tab, and the server decides which: all of
+// them for intake and supervisors, or a front-line worker's own former
+// clients for a limited time.
 export default function ParticipantsPage({
   canAdmit,
-  canSeeClosed,
+  seesAllClosed,
 }: {
   canAdmit: boolean;
-  canSeeClosed: boolean;
+  seesAllClosed: boolean;
 }) {
   const location = useLocation();
   // Set by the record page after an episode closes and the record has
@@ -76,25 +78,23 @@ export default function ParticipantsPage({
         </p>
       )}
 
-      {canSeeClosed && (
-        <div role="tablist" className="mt-4 flex gap-1 border-b border-nmbm-ink/10 text-sm">
-          {(["active", "closed"] as View[]).map((v) => (
-            <button
-              key={v}
-              role="tab"
-              aria-selected={view === v}
-              onClick={() => setView(v)}
-              className={`-mb-px border-b-2 px-3 py-2 font-medium ${
-                view === v
-                  ? "border-nmbm-gold text-nmbm-ink"
-                  : "border-transparent text-nmbm-ink/50 hover:text-nmbm-ink"
-              }`}
-            >
-              {v === "active" ? `Active (${rows.length})` : "Closed"}
-            </button>
-          ))}
-        </div>
-      )}
+      <div role="tablist" className="mt-4 flex gap-1 border-b border-nmbm-ink/10 text-sm">
+        {(["active", "closed"] as View[]).map((v) => (
+          <button
+            key={v}
+            role="tab"
+            aria-selected={view === v}
+            onClick={() => setView(v)}
+            className={`-mb-px border-b-2 px-3 py-2 font-medium ${
+              view === v
+                ? "border-nmbm-gold text-nmbm-ink"
+                : "border-transparent text-nmbm-ink/50 hover:text-nmbm-ink"
+            }`}
+          >
+            {v === "active" ? `Active (${rows.length})` : seesAllClosed ? "Closed" : "Recently closed"}
+          </button>
+        ))}
+      </div>
 
       {view === "active" ? (
         <div className="mt-4 overflow-x-auto">
@@ -131,19 +131,20 @@ export default function ParticipantsPage({
           {visible.length === 0 && <p className="py-6 text-sm text-nmbm-ink/50">Nothing to show.</p>}
         </div>
       ) : (
-        <ClosedTable rows={closed} />
+        <ClosedTable rows={closed} seesAll={seesAllClosed} />
       )}
     </div>
   );
 }
 
-function ClosedTable({ rows }: { rows: ClosedParticipantRow[] | null }) {
+function ClosedTable({ rows, seesAll }: { rows: ClosedParticipantRow[] | null; seesAll: boolean }) {
   if (!rows) return <p className="mt-4 text-sm text-nmbm-ink/50">Loading…</p>;
   return (
     <div className="mt-4 overflow-x-auto">
       <p className="mb-3 text-sm text-nmbm-ink/60">
-        Former {PARTICIPANT_LABEL_PLURAL.toLowerCase()}, most recently closed first. Nothing here
-        counts toward anyone's caseload; open a record to see its history or readmit.
+        {seesAll
+          ? `Former ${PARTICIPANT_LABEL_PLURAL.toLowerCase()}, most recently closed first. Nothing here counts toward anyone's caseload; open a record to see its history or readmit.`
+          : `${PARTICIPANT_LABEL_PLURAL} whose case closed while you were their worker. You can still open their records, read-only, until the date shown.`}
       </p>
       <table className="w-full min-w-[720px] border-collapse text-sm">
         <thead>
@@ -153,6 +154,7 @@ function ClosedTable({ rows }: { rows: ClosedParticipantRow[] | null }) {
             <th className="py-2 pr-4 font-semibold">Enrolled</th>
             <th className="py-2 pr-4 font-semibold">Closed</th>
             <th className="py-2 pr-4 font-semibold">Reason</th>
+            {!seesAll && <th className="py-2 pr-4 font-semibold">Visible until</th>}
           </tr>
         </thead>
         <tbody>
@@ -167,6 +169,7 @@ function ClosedTable({ rows }: { rows: ClosedParticipantRow[] | null }) {
               <td className="py-3 pr-4 text-nmbm-ink/70">
                 {row.closureReason ? CLOSURE_REASON_LABELS[row.closureReason] : "—"}
               </td>
+              {!seesAll && <td className="py-3 pr-4 text-nmbm-ink/70">{row.accessUntil}</td>}
             </tr>
           ))}
         </tbody>

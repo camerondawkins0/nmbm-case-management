@@ -178,25 +178,26 @@ that is what every page reads.
 ## What is built
 
 Everything below is running code: a migration, a module, and in most
-cases a page reachable after signing in. Current as of migration `0005`.
+cases a page reachable after signing in. Current as of migration `0007`.
 
 | Area | What works | Where |
 |---|---|---|
 | Sign-in (M27) | Google OIDC against a named Workspace domain with a one-use `state` token, a fresh session id at sign-in, an idle timeout and a hard ceiling, audited sign-in and sign-out; a login page that says why a sign-in was refused and what to do next; a holding page for accounts with no role; sign-out in the header. Dev login is double-gated behind `NODE_ENV !== "production"` and `ALLOW_DEV_LOGIN` | `plugins/auth.ts`, `pages/login-page.tsx`, `docs/GOOGLE_SETUP.md` |
 | Authorization | Permission codes, never role names, read from the database at request time | `plugins/authorize.ts`, `packages/shared/src/permissions.ts` |
 | Caseload (U5) | A front-line worker's list, dashboard and participant record are scoped server-side to their own assignments | `lib/caseload.ts` |
-| Participants and intake (M3/M4/R10) | Admission opens the record, the episode and the assignment in one transaction; reassignment; assignable-worker list. The list is active people only; closed records are a separate list for those who can read all | `modules/participants/` |
+| Participants and intake (M3/M4/R10) | Admission opens the record, the episode and the assignment in one transaction; reassignment; assignable-worker list. The list is active people only. Closed records: all of them for intake and supervisors, and a worker's own former clients for 90 days (adjustable) | `modules/participants/`, `lib/caseload.ts` |
 | Episodes (M2/M6/R10) | Close — which ends the assignment — and readmission, which opens a new linked episode with a named worker. The payer-conditional disenrolment-warning letter gate | `modules/episodes/` |
 | Notes and the no-contact ladder (M6/U6) | Write, submit, approve, return for revision, revise and resubmit; three consecutive failed contacts prompt exit documentation and two more are required before disenrolment is allowed | `modules/notes/`, `lib/rules.ts` |
 | Care plans (M9/U6) | Authoring, goals, submit, approve, return; the 30-day completion clock and the 2-week review nudge derived side by side | `modules/care-plans/`, `lib/rules.ts` |
 | Consents (M15/M16) | Four form types, expiry derived at read time from the episode start date, revocation | `modules/consents/` |
 | Referrals (M17) | Refuses to send without a usable release and distinguishes the three reasons; records the outcome that came back | `modules/referrals/` |
-| Programmes and attendance (M14) | Programmes, cohorts, class dates, rosters, whole-roster marking in one request, and a printable participation record | `modules/programs/` |
+| Programmes and attendance (M14) | Programmes, cohorts, class dates, rosters, whole-roster marking in one request, and a printable participation record. Disenrolled participants stay on the roster, flagged | `modules/programs/` |
+| Settings (M31) | Values NMBM's administrator changes without a deploy, audited. One so far: the former-worker access window | `lib/settings.ts`, `/admin/settings` |
 | Staff administration (U9) | Grant and revoke roles, deactivate and reactivate — refused while a worker still holds open assignments | `modules/admin/` |
 | Audit (M30) | Append-only, written inside the transaction that performs the action, read-only endpoint | `plugins/audit.ts` |
 | Feedback (M31) | In-app issue reporting and a triage queue, because NMBM has no IT staff | `modules/feedback/`, `docs/SUPPORT.md` |
 
-48 API routes across 12 modules, 21 tables and one view, 13 pages plus
+50 API routes across 12 modules, 22 tables and one view, 14 pages plus
 two holding screens (no role yet; server unreachable).
 `docs/agent/map.md` lists them route by route and page by page.
 

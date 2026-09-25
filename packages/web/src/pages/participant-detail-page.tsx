@@ -94,9 +94,19 @@ export default function ParticipantDetailPage({ me }: { me: Me }) {
             <ReadmitForm
               participantId={record.id}
               earliest={lastEpisode.endDate}
-              onDone={(message) => {
-                setNotice(message);
-                load();
+              onDone={async (message) => {
+                // Readmitted to somebody else's caseload, the record is an
+                // active case the person who readmitted may not be able to
+                // see — intake, usually. Tell them it worked rather than
+                // showing "not found".
+                try {
+                  setRecord(await api<ParticipantDetail>(`/api/participants/${record.id}`));
+                  setNotice(message);
+                } catch {
+                  navigate("/participants", {
+                    state: { notice: `${record.firstName} ${record.lastName}: ${message}` },
+                  });
+                }
               }}
               onError={setActionError}
             />
@@ -253,10 +263,14 @@ export default function ParticipantDetailPage({ me }: { me: Me }) {
               setActionError(e instanceof ApiError ? e.message : "Could not close episode");
               return;
             }
-            // R10: closing ends the assignment, so somebody who can only
-            // see their own caseload can no longer open this record.
-            // Take them to the list and say why, rather than to a 404.
-            if (!can(me, "participants.read.all")) {
+            // R10: closing ends the assignment. Whether the closer can
+            // still open the record depends on their role and on the
+            // former-worker window, which the server decides — so ask it,
+            // and if the answer is no, go to the list and say why rather
+            // than land on a 404.
+            try {
+              setRecord(await api<ParticipantDetail>(`/api/participants/${record.id}`));
+            } catch {
               navigate("/participants", {
                 state: { notice: `Episode closed. ${name} has left your caseload.` },
               });
@@ -267,7 +281,6 @@ export default function ParticipantDetailPage({ me }: { me: Me }) {
                 ? `Episode closed. ${name} is no longer on ${record.workerName}'s caseload.`
                 : "Episode closed.",
             );
-            load();
           }}
         />
       )}
@@ -538,7 +551,7 @@ function ReadmitForm({
 }: {
   participantId: string;
   earliest: string | null;
-  onDone: (message: string) => void;
+  onDone: (message: string) => void | Promise<void>;
   onError: (message: string) => void;
 }) {
   const [workers, setWorkers] = useState<AssignableWorker[]>([]);
@@ -561,7 +574,7 @@ function ReadmitForm({
         body: JSON.stringify({ participantId, startDate, assignedWorkerId: workerId }),
       });
       const worker = workers.find((w) => w.id === workerId)?.displayName ?? "the worker";
-      onDone(`Readmitted and assigned to ${worker}.`);
+      await onDone(`Readmitted and assigned to ${worker}.`);
     } catch (err) {
       onError(err instanceof ApiError ? err.message : "Could not readmit");
     } finally {

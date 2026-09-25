@@ -7,6 +7,11 @@ import type { Role } from "./roles.js";
 export const PERMISSIONS = [
   "participants.read.own", // own caseload only (discovery U5)
   "participants.read.all",
+  // R10: find and open former participants' records, for readmission.
+  // NMBM: intake "can readmit, especially if a directive is given to do
+  // so" — which needs sight of the closed record without sight of every
+  // active caseload.
+  "participants.read.closed",
   "participants.write",
   // U3/M4: "Supervisors can assign a client to a CHW. Clinical Director
   // can assign a mental health client to an MSW intern, APCC, or ACSW."
@@ -53,6 +58,7 @@ export const DEFAULT_ROLE_PERMISSIONS: Record<Role, Permission[]> = {
   ],
   billing_coordinator: ["participants.read.all", "feedback.submit"],
   intake_specialist: [
+    "participants.read.closed",
     "consents.write",
     "referrals.write",
     "participants.read.own",

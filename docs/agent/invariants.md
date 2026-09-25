@@ -111,15 +111,29 @@ How that's held, and what must not be undone:
   disenrolled for no contact would come back already at three strikes.
 - **One open episode per participant**, enforced by a partial unique
   index rather than by every writer remembering to check.
-- **Closed records are a separate question.** `?status=closed` lists
-  them for callers who hold `participants.read.all`; a front-line
-  worker's caseload is their open assignments, so there is nothing
-  closed on it. The direct lookup by id still reaches a closed record
-  for anyone who could see it.
+- **Closed records are a separate question**, answered three ways
+  (`lib/caseload.ts`):
+  - `participants.read.all` sees everything, closed included.
+  - `participants.read.closed` (intake) sees every *closed* record and
+    no active one — enough to find a returning participant and readmit
+    them, without sight of every caseload.
+  - The **last** assigned worker keeps read-only sight of a closed case
+    for `former_worker_access_days` (default 90, set on the Settings
+    page, audited). Only the last: someone who handed the case on
+    before it closed gets nothing. Readmission ends it, because the
+    case is active again and belongs to whoever holds it now.
+  The same rules decide both the Closed list and the by-id lookup, so a
+  record can't be listed and then refuse to open, or the reverse.
 - **Readmission, not a second intake.** `POST /api/episodes` opens a new
   episode linked to the last one, with a named worker, in one
   transaction — the same one act as intake. Reassignment on a closed
   record is refused: readmission is the way back.
+
+Disenrolment does not withdraw anyone from a programme cohort. NMBM:
+disenrolment "means they are no longer receiving or participating in
+services with the provider" — a court-ordered class may carry on
+regardless. The roster flags them with the date services ended and
+leaves the enrolment and its attendance alone.
 
 Retention is separately confirmed at 7 years (R6, California state
 requirement) — that governs when a closed record eventually leaves

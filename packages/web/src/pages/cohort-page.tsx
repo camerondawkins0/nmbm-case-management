@@ -134,6 +134,7 @@ export default function CohortPage({ me }: { me: Me }) {
                   {person.status === "withdrawn" && (
                     <span className="ml-2 text-xs text-nmbm-ink/50">withdrawn</span>
                   )}
+                  <ServicesEndedFlag on={person.servicesEndedOn} />
                 </td>
                 {data.sessions.map((session) => {
                   const mark = markFor(session.id, person.enrollmentId);
@@ -204,6 +205,7 @@ export default function CohortPage({ me }: { me: Me }) {
                   >
                     <span className="text-nmbm-ink">
                       {person.firstName} {person.lastName}
+                      <ServicesEndedFlag on={person.servicesEndedOn} />
                     </span>
                     <span className="flex gap-1">
                       {MARKS.map((mark) => {
@@ -254,5 +256,21 @@ export default function CohortPage({ me }: { me: Me }) {
         see who recorded it.
       </p>
     </div>
+  );
+}
+
+// R10/M14: NMBM's answer — disenrolment means the person no longer
+// receives services from NMBM, so flag them on the roster rather than
+// withdrawing them. A court-ordered class may continue regardless, and
+// whether it does is the facilitator's call, not the system's.
+function ServicesEndedFlag({ on }: { on: string | null }) {
+  if (!on) return null;
+  return (
+    <span
+      className="ml-2 align-middle"
+      title="Disenrolled from NMBM services. Still on this roster; attendance can still be recorded."
+    >
+      <Pill tone="warn">Services ended {on}</Pill>
+    </span>
   );
 }

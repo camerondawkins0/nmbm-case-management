@@ -35,12 +35,13 @@ export default async function participantRoutes(fastify: FastifyInstance, opts: 
     },
   );
 
-  // Who a case can be handed to. Needed by the intake form before any
-  // participant exists, so it hangs off the assign permission rather
-  // than a participant id.
+  // Who a case can be handed to. Needed before any participant exists,
+  // so it hangs off permissions rather than a participant id — and
+  // anyone who opens an episode names its worker, so intake and
+  // readmission can read it as well as reassignment. Staff names only.
   fastify.get(
     "/api/participants/assignable-workers",
-    { preHandler: authorize("participants.assign") },
+    { preHandler: authorizeAny(["participants.assign", "participants.write", "episodes.write"]) },
     async () => intake.listAssignableWorkers(db),
   );
 

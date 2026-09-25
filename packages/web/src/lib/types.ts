@@ -169,6 +169,8 @@ export type CohortDetail = {
     participantId: string;
     firstName: string;
     lastName: string;
+    // R10: services with NMBM have ended; the class may carry on.
+    servicesEndedOn: string | null;
     status: CohortEnrollmentStatus;
     withdrawnReason: string | null;
     attended: number;
@@ -233,6 +235,20 @@ export type ClosedParticipantRow = {
   startDate: string;
   endDate: string | null;
   closureReason: EpisodeClosureReason | null;
+  // Set only for a former worker's view: the last day they can open it.
+  accessUntil: string | null;
+};
+
+export type AppSetting = {
+  key: string;
+  label: string;
+  description: string;
+  default: number;
+  min: number;
+  max: number;
+  value: number;
+  updatedAt: string | null;
+  updatedByName: string | null;
 };
 
 export type EpisodeSummary = {

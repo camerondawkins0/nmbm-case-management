@@ -2,7 +2,12 @@ import type { Db } from "@nmbm/db";
 import { assignments } from "@nmbm/db";
 import type { ParticipantCreate, ParticipantListQuery } from "@nmbm/shared";
 import { notFound, forbidden } from "../../plugins/errors.js";
-import { caseloadParticipantIds, canSeeParticipant, type CallerScope } from "../../lib/caseload.js";
+import {
+  caseloadParticipantIds,
+  canSeeParticipant,
+  formerCaseload,
+  type CallerScope,
+} from "../../lib/caseload.js";
 import { participantFlags, needsAttention } from "../../lib/rules.js";
 import * as repository from "./repository.js";
 import * as consentService from "../consents/service.js";
@@ -22,13 +27,19 @@ export async function listVisibleParticipants(db: Db, caller: CallerScope) {
   return rows.map(decorate);
 }
 
-// R10: closed records are reached by asking for them. A front-line
-// worker's caseload is their open assignments, and closing an episode
-// ends the assignment, so there is nothing closed on it to list —
-// finding a former participant is a supervisor's or intake's lookup.
+// R10: closed records are reached by asking for them. Intake (and
+// anyone who reads all) sees every closed record, to find a returning
+// participant. A front-line worker sees only the ones they were the
+// last worker on, for the configured window — with the date that
+// access ends, so it doesn't just vanish.
 export async function listClosedParticipants(db: Db, caller: CallerScope) {
-  if (!caller.canReadAll) return [];
-  return repository.listClosed(db);
+  const rows = await repository.listClosed(db);
+  if (caller.canReadClosed) return rows.map((r) => ({ ...r, accessUntil: null }));
+  const former = await formerCaseload(db, caller.id);
+  const until = new Map(former.map((f) => [f.participantId, f.accessUntil]));
+  return rows
+    .filter((r) => until.has(r.id))
+    .map((r) => ({ ...r, accessUntil: until.get(r.id)!.toISOString().slice(0, 10) }));
 }
 
 export async function listParticipants(db: Db, caller: CallerScope, query: ParticipantListQuery) {

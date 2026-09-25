@@ -1,6 +1,6 @@
 # Map
 
-Where things are. Current as of migration `0006`.
+Where things are. Current as of migration `0007`.
 
 ## Packages
 
@@ -37,7 +37,7 @@ splits out `audit.ts` for the same reason.
 
 ## API routes
 
-48 routes across 12 modules, plus five on the auth plugin. Every route
+50 routes across 12 modules, plus five on the auth plugin. Every route
 outside `PUBLIC_BY_DESIGN` carries an `authorize()` or `authorizeAny()`
 preHandler, and the permission it requires is named in the file.
 
@@ -53,7 +53,7 @@ preHandler, and the permission it requires is named in the file.
 | `referrals` | `POST /api/referrals`, `POST /api/referrals/:id/outcome` |
 | `programs` | `GET /api/programs`, `POST /api/programs`, `POST /api/cohorts`, `GET /api/cohorts/:id`, `POST /api/cohorts/:id/sessions`, `POST /api/cohorts/:id/enrollments`, `POST /api/enrollments/:id/withdraw`, `POST /api/sessions/:id/attendance`, `GET /api/enrollments/:id/participation` |
 | `dashboard` | `GET /api/dashboard` |
-| `admin` | `GET /api/admin/users`, `GET /api/admin/roles`, `POST /api/admin/users/:id/roles`, `DELETE /api/admin/users/:id/roles/:roleCode`, `POST /api/admin/users/:id/deactivate`, `POST /api/admin/users/:id/reactivate`, `GET /api/admin/audit` |
+| `admin` | `GET /api/admin/users`, `GET /api/admin/roles`, `POST /api/admin/users/:id/roles`, `DELETE /api/admin/users/:id/roles/:roleCode`, `POST /api/admin/users/:id/deactivate`, `POST /api/admin/users/:id/reactivate`, `GET /api/admin/audit`, `GET /api/admin/settings`, `PUT /api/admin/settings/:key` |
 | `feedback` | `POST /api/feedback`, `GET /api/feedback/mine`, `GET /api/feedback`, `PATCH /api/feedback/:id/status` |
 | `plugins/auth.ts` | `GET /auth/google/login`, `GET /auth/google/callback`, `POST /auth/logout`, and in non-production with `ALLOW_DEV_LOGIN` only: `GET /auth/dev-login`, `GET /auth/dev-login/accounts` |
 
@@ -65,8 +65,9 @@ except in the context of one person's record.
 
 | File | What it is |
 |---|---|
-| `lib/caseload.ts` | `resolveScope`, `caseloadParticipantIds`, `canSeeParticipant` — U5 scoping |
+| `lib/caseload.ts` | `resolveScope`, `caseloadParticipantIds`, `formerCaseload`, `canSeeParticipant` — U5 scoping and R10's closed-record access |
 | `lib/rules.ts` | The M6 no-contact ladder and M9 care plan clocks, derived in one place |
+| `lib/settings.ts` | `getSetting`, `listSettings`, `updateSetting` — admin-changeable values, declared with defaults and bounds in `@nmbm/shared` (`APP_SETTINGS`) |
 
 ## API plugins
 
@@ -92,15 +93,16 @@ first is behind the session check.
 | `/login` | `login-page.tsx` | Google sign-in, the reason for any refusal (`?error=` codes from `SIGN_IN_ERRORS` in `@nmbm/shared`), and the dev sign-in panel when the server offers it |
 | — | `holding-pages.tsx` | Shown instead of the app: signed in with no role yet, or the server can't be reached |
 | `/` | `dashboard-page.tsx` | What needs attention: care plan clocks, the no-contact ladder, notes awaiting review, referrals with no outcome |
-| `/participants` | `participants-page.tsx` | Caseload list, scoped server-side; an Active/Closed tab for those who can read all |
+| `/participants` | `participants-page.tsx` | Caseload list, scoped server-side; a Closed tab (everything, for intake and supervisors) or Recently closed (a worker's own former clients, with the date access ends) |
 | `/participants/new` | `intake-page.tsx` | Admission — record, episode and assignment in one act |
 | `/participants/:id` | `participant-detail-page.tsx` | The record: flags, notes, care plan, consents, referrals, episode history; on a closed record, readmission |
 | `/notes/review` | `note-review-page.tsx` | The U6 queue — approve, or return with a reason |
 | `/care-plans/review` | `care-plan-review-page.tsx` | The same, for care plans |
 | `/programs` | `programs-page.tsx` | Programmes and their cohorts |
-| `/cohorts/:id` | `cohort-page.tsx` | The M14 grid — sessions across, people down — and the take-attendance panel |
+| `/cohorts/:id` | `cohort-page.tsx` | The M14 grid — sessions across, people down — and the take-attendance panel; flags anyone whose NMBM services have ended |
 | `/enrollments/:id/participation` | `participation-record-page.tsx` | The printable proof a probation officer receives |
 | `/admin/users` | `admin/users-page.tsx` | Staff, roles, deactivation |
+| `/admin/settings` | `admin/settings-page.tsx` | Settings NMBM change themselves (the former-worker window) |
 | `/feedback` | `feedback-page.tsx` | Report an issue |
 | `/admin/feedback` | `admin/feedback-admin-page.tsx` | The triage queue |
 
@@ -125,7 +127,7 @@ module layout. `enums.ts` wraps `as const` arrays from `@nmbm/shared` in
 `pgEnum`, so an enum is declared once and used in both places — same
 convention as the WSL system this was adapted from.
 
-21 tables and one view:
+22 tables and one view:
 
 | File | Tables |
 |---|---|
@@ -139,6 +141,7 @@ convention as the WSL system this was adapted from.
 | `programs.ts` | `programs`, `program_cohorts`, `cohort_sessions`, `cohort_enrollments`, `session_attendance` |
 | `funding.ts` | `funding_sources`, `services` — the M23 placeholder, deliberately unbuilt |
 | `feedback.ts` | `feedback_items` |
+| `settings.ts` | `app_settings` — one row per setting somebody has changed |
 | `views.ts` | `v_no_contact_counts` (rebuilt per episode in 0006), declared to Drizzle with `.existing()` |
 
 Migrations are hand-written SQL in `packages/db/src/migrations/`, listed
@@ -153,6 +156,7 @@ in order in `meta/_journal.json`:
 | `0004_referrals_and_consents` | `consents`, `referrals` |
 | `0005_programs_and_attendance` | The five programme and attendance tables |
 | `0006_episode_scoped_caseload` | One open episode per participant; repair of assignments left open on closed episodes; `v_no_contact_counts` rebuilt per episode |
+| `0007_app_settings` | `app_settings` |
 
 ## Seeds
 

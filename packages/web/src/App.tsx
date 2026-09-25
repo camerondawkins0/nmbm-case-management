@@ -15,6 +15,7 @@ import CohortPage from "./pages/cohort-page.js";
 import ParticipationRecordPage from "./pages/participation-record-page.js";
 import FeedbackPage from "./pages/feedback-page.js";
 import FeedbackAdminPage from "./pages/admin/feedback-admin-page.js";
+import SettingsPage from "./pages/admin/settings-page.js";
 
 export default function App() {
   const session = useMe();
@@ -56,7 +57,10 @@ export default function App() {
           element={
             <ParticipantsPage
               canAdmit={me.permissions.includes("participants.write")}
-              canSeeClosed={me.permissions.includes("participants.read.all")}
+              seesAllClosed={
+                me.permissions.includes("participants.read.all") ||
+                me.permissions.includes("participants.read.closed")
+              }
             />
           }
         />
@@ -70,6 +74,7 @@ export default function App() {
         <Route path="/admin/users" element={<AdminUsersPage />} />
         <Route path="/feedback" element={<FeedbackPage />} />
         <Route path="/admin/feedback" element={<FeedbackAdminPage />} />
+        <Route path="/admin/settings" element={<SettingsPage />} />
         <Route path="/login" element={<Navigate to="/" replace />} />
       </Routes>
     </AppShell>

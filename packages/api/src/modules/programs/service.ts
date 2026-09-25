@@ -7,8 +7,9 @@ import {
   sessionAttendance,
   participants,
   users,
+  episodes,
 } from "@nmbm/db";
-import { eq, and, desc, asc, inArray } from "drizzle-orm";
+import { eq, and, desc, asc, inArray, sql } from "drizzle-orm";
 import type {
   ProgramCreate,
   CohortCreate,
@@ -222,6 +223,15 @@ export async function getCohort(db: Db, cohortId: string) {
       firstName: participants.firstName,
       lastName: participants.lastName,
       withdrawnReason: cohortEnrollments.withdrawnReason,
+      // R10/M14: NMBM chose to flag, not withdraw — disenrolment ends
+      // services with NMBM, but a court-ordered class may carry on, and
+      // the facilitator needs to know which people that applies to.
+      servicesEndedOn: sql<string | null>`(
+        select max(e.end_date)::text from ${episodes} e
+         where e.participant_id = ${participants.id}
+           and not exists (select 1 from ${episodes} o
+                            where o.participant_id = ${participants.id} and o.status = 'open')
+      )`,
     })
     .from(cohortEnrollments)
     .innerJoin(participants, eq(participants.id, cohortEnrollments.participantId))

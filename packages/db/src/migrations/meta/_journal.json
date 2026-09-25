@@ -50,6 +50,13 @@
       "when": 1759190400000,
       "tag": "0006_episode_scoped_caseload",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1759276800000,
+      "tag": "0007_app_settings",
+      "breakpoints": true
     }
   ]
 }
