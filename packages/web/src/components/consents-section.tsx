@@ -52,7 +52,10 @@ export function ConsentsSection({
         <h2 className="text-sm font-semibold uppercase tracking-wide text-nmbm-ink/50">
           Consent forms
         </h2>
-        {writable && !adding && (
+        {/* A form is recorded against an enrolment, so a closed record
+            can't take a new one — but revoking stays available below:
+            somebody who has left can still withdraw an authorisation. */}
+        {writable && record.episodeStatus === "open" && !adding && (
           <button
             onClick={() => setAdding(true)}
             className="rounded border border-nmbm-ink/30 px-3 py-1 text-sm"

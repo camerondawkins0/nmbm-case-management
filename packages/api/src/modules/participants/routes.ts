@@ -1,6 +1,11 @@
 import type { FastifyInstance } from "fastify";
 import type { Db } from "@nmbm/db";
-import { participantCreateSchema, intakeSchema, assignmentSchema } from "@nmbm/shared";
+import {
+  participantCreateSchema,
+  intakeSchema,
+  assignmentSchema,
+  participantListQuerySchema,
+} from "@nmbm/shared";
 import { authorize, authorizeAny, CAN_READ_PARTICIPANTS } from "../../plugins/authorize.js";
 import { resolveScope } from "../../lib/caseload.js";
 import * as service from "./service.js";
@@ -15,8 +20,9 @@ export default async function participantRoutes(fastify: FastifyInstance, opts: 
     "/api/participants",
     { preHandler: authorizeAny(CAN_READ_PARTICIPANTS) },
     async (request) => {
+      const query = participantListQuerySchema.parse(request.query);
       const caller = await resolveScope(db, request.currentUser!.id);
-      return service.listVisibleParticipants(db, caller);
+      return service.listParticipants(db, caller, query);
     },
   );
 

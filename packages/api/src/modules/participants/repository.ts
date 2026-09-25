@@ -8,7 +8,7 @@ import {
   users,
   vNoContactCounts,
 } from "@nmbm/db";
-import { eq, and, isNull, inArray, desc, sql } from "drizzle-orm";
+import { eq, and, isNull, isNotNull, inArray, desc, sql } from "drizzle-orm";
 import type { ParticipantCreate } from "@nmbm/shared";
 
 // One row per participant with everything the caseload screen shows, so
@@ -48,18 +48,82 @@ function baseListQuery(db: Db) {
       and(eq(episodes.participantId, participants.id), eq(episodes.status, "open")),
     )
     .leftJoin(carePlans, eq(carePlans.episodeId, episodes.id))
-    .leftJoin(vNoContactCounts, eq(vNoContactCounts.participantId, participants.id));
+    .leftJoin(vNoContactCounts, eq(vNoContactCounts.episodeId, episodes.id));
 }
 
+// R10: "active" is having an open episode, and it is decided here in
+// the query — not by a nightly job, and not by the page hiding rows.
+const isActive = isNotNull(episodes.id);
+
 export async function listAll(db: Db) {
-  return baseListQuery(db).orderBy(participants.lastName);
+  return baseListQuery(db).where(isActive).orderBy(participants.lastName);
 }
 
 export async function listForParticipantIds(db: Db, ids: string[]) {
   if (ids.length === 0) return [];
-  return baseListQuery(db).where(inArray(participants.id, ids)).orderBy(participants.lastName);
+  return baseListQuery(db)
+    .where(and(isActive, inArray(participants.id, ids)))
+    .orderBy(participants.lastName);
 }
 
+// R10's other half: the record stays retrievable, for a returning
+// participant or a contractor/grantor request. Anyone with no open
+// episode who has had at least one, with the most recent closure —
+// that's what a person looking for them will recognise.
+export async function listClosed(db: Db) {
+  const latest = db
+    .selectDistinctOn([episodes.participantId], {
+      participantId: episodes.participantId,
+      episodeId: episodes.id,
+      startDate: episodes.startDate,
+      endDate: episodes.endDate,
+      closureReason: episodes.closureReason,
+    })
+    .from(episodes)
+    .where(eq(episodes.status, "closed"))
+    .orderBy(episodes.participantId, desc(episodes.endDate), desc(episodes.createdAt))
+    .as("latest");
+
+  return db
+    .select({
+      id: participants.id,
+      firstName: participants.firstName,
+      lastName: participants.lastName,
+      dateOfBirth: participants.dateOfBirth,
+      payer: participants.payer,
+      lastEpisodeId: latest.episodeId,
+      startDate: latest.startDate,
+      endDate: latest.endDate,
+      closureReason: latest.closureReason,
+    })
+    .from(participants)
+    .innerJoin(latest, eq(latest.participantId, participants.id))
+    .where(
+      sql`not exists (select 1 from ${episodes} e where e.participant_id = ${participants.id} and e.status = 'open')`,
+    )
+    .orderBy(desc(latest.endDate), participants.lastName);
+}
+
+// Every episode, newest first. A readmitted participant's record shows
+// both stays rather than the second overwriting the first (M2).
+export async function listEpisodes(db: Db, participantId: string) {
+  return db
+    .select({
+      id: episodes.id,
+      status: episodes.status,
+      startDate: episodes.startDate,
+      endDate: episodes.endDate,
+      closureReason: episodes.closureReason,
+      closureNote: episodes.closureNote,
+      readmittedFromEpisodeId: episodes.readmittedFromEpisodeId,
+    })
+    .from(episodes)
+    .where(eq(episodes.participantId, participantId))
+    .orderBy(desc(episodes.startDate), desc(episodes.createdAt));
+}
+
+// Not scoped to active: this is the direct lookup R10 says must still
+// reach a closed record. Who may make it is decided by canSeeParticipant.
 export async function findById(db: Db, id: string) {
   const [row] = await baseListQuery(db).where(eq(participants.id, id));
   return row;
@@ -74,6 +138,7 @@ export async function listNotes(db: Db, participantId: string) {
       createdAt: notes.createdAt,
       authorName: users.displayName,
       authorId: notes.authorId,
+      episodeId: notes.episodeId,
       status: notes.status,
       reviewNote: notes.reviewNote,
       approvedAt: notes.approvedAt,

@@ -1,10 +1,13 @@
 import type { Db } from "@nmbm/db";
 import { episodes } from "@nmbm/db";
 import { eq } from "drizzle-orm";
-import type { EpisodeCreate, EpisodeClose } from "@nmbm/shared";
+import type { EpisodeClose } from "@nmbm/shared";
 import { CARE_PLAN_COMPLETION_DAYS } from "@nmbm/shared";
 
-export async function insert(db: Db, input: EpisodeCreate) {
+export async function insert(
+  db: Db,
+  input: { participantId: string; startDate: string; readmittedFromEpisodeId: string | null },
+) {
   // M9: the 30-day care-plan completion countdown starts at enrolment,
   // so it's stamped here rather than computed at read time — the
   // deadline shouldn't move if the rule changes later.
@@ -16,7 +19,7 @@ export async function insert(db: Db, input: EpisodeCreate) {
     .values({
       participantId: input.participantId,
       startDate: input.startDate,
-      status: input.status,
+      readmittedFromEpisodeId: input.readmittedFromEpisodeId,
       carePlanDueDate: carePlanDueDate.toISOString().slice(0, 10),
     })
     .returning();

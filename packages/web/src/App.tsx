@@ -2,6 +2,7 @@ import { Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { useMe } from "./lib/use-me.js";
 import { AppShell } from "./components/app-shell.js";
 import LoginPage from "./pages/login-page.js";
+import { AwaitingAccessPage, ServerUnavailablePage } from "./pages/holding-pages.js";
 import DashboardPage from "./pages/dashboard-page.js";
 import ParticipantsPage from "./pages/participants-page.js";
 import ParticipantDetailPage from "./pages/participant-detail-page.js";
@@ -23,12 +24,16 @@ export default function App() {
     return <p className="p-6 text-sm text-nmbm-ink/50">Loading…</p>;
   }
 
+  if (session.status === "unavailable") {
+    return <ServerUnavailablePage onRetry={session.retry} />;
+  }
+
   if (session.status === "signed-out") {
     // Everything behind the shell needs a session. The server enforces
     // this too — this only saves a round trip of 401s.
     return (
       <Routes>
-        <Route path="/login" element={<LoginPage />} />
+        <Route path="/login" element={<LoginPage expired={session.expired} />} />
         <Route path="*" element={<Navigate to="/login" replace state={{ from: location }} />} />
       </Routes>
     );
@@ -36,13 +41,24 @@ export default function App() {
 
   const { me } = session;
 
+  // Signed in, but nobody has assigned a role: no permission to open
+  // anything, so there's no app to show — only what to do about it.
+  if (me.roles.length === 0) {
+    return <AwaitingAccessPage me={me} />;
+  }
+
   return (
     <AppShell me={me}>
       <Routes>
         <Route path="/" element={<DashboardPage me={me} />} />
         <Route
           path="/participants"
-          element={<ParticipantsPage canAdmit={me.permissions.includes("participants.write")} />}
+          element={
+            <ParticipantsPage
+              canAdmit={me.permissions.includes("participants.write")}
+              canSeeClosed={me.permissions.includes("participants.read.all")}
+            />
+          }
         />
         <Route path="/participants/new" element={<IntakePage />} />
         <Route path="/participants/:id" element={<ParticipantDetailPage me={me} />} />

@@ -25,11 +25,12 @@ export async function insert(
   return row;
 }
 
-export async function consecutiveNoContacts(db: Db, participantId: string): Promise<number> {
+// Per episode (R10): a readmitted participant starts a fresh run.
+export async function consecutiveNoContacts(db: Db, episodeId: string): Promise<number> {
   const [row] = await db
     .select({ count: vNoContactCounts.consecutiveNoContacts })
     .from(vNoContactCounts)
-    .where(eq(vNoContactCounts.participantId, participantId));
+    .where(eq(vNoContactCounts.episodeId, episodeId));
   return row?.count ?? 0;
 }
 

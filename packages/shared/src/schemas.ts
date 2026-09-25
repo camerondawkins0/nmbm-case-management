@@ -3,7 +3,6 @@ import {
   ATTENDANCE_STATUSES,
   CONSENT_TYPES,
   REFERRAL_STATUSES,
-  EPISODE_STATUSES,
   EPISODE_CLOSURE_REASONS,
   CONTACT_RESULTS,
   CARE_PLAN_STATUSES,
@@ -60,12 +59,24 @@ export const carePlanReviewSchema = z.object({
 });
 export type CarePlanReview = z.infer<typeof carePlanReviewSchema>;
 
+// Opening an episode for somebody already on file is readmission (M2,
+// R10's "returning participant"). It names the worker for the same
+// reason intake does: an open episode with nobody responsible is the
+// state a person falls through, and closing the last episode ended the
+// previous assignment.
 export const episodeCreateSchema = z.object({
   participantId: z.string().uuid(),
   startDate: z.string().date(),
-  status: z.enum(EPISODE_STATUSES).default("open"),
+  assignedWorkerId: z.string().uuid(),
 });
 export type EpisodeCreate = z.infer<typeof episodeCreateSchema>;
+
+// R10: the default list is who is active now. Closed records stay
+// reachable, but only by asking for them.
+export const participantListQuerySchema = z.object({
+  status: z.enum(["active", "closed"]).default("active"),
+});
+export type ParticipantListQuery = z.infer<typeof participantListQuerySchema>;
 
 // M5: basic contact info, ECM Comp Needs Assessment info, health
 // insurance, care plan — free-text body plus a structured contact result

@@ -68,6 +68,15 @@ export async function reassign(db: Db, participantId: string, workerId: string, 
   if (!worker) throw notFound("Worker not found");
   if (!worker.active) throw conflict("That worker's account is deactivated");
 
+  // R10: an assignment is responsibility for an active case. Handing a
+  // closed record to somebody would put it back on a caseload with no
+  // episode behind it — readmission is the way back, and it opens both.
+  const [openEpisode] = await db
+    .select({ id: episodes.id })
+    .from(episodes)
+    .where(and(eq(episodes.participantId, participantId), eq(episodes.status, "open")));
+  if (!openEpisode) throw conflict("This record is closed — readmit the participant to assign them");
+
   const [current] = await db
     .select()
     .from(assignments)

@@ -9,6 +9,7 @@ import type {
   CohortStatus,
   CohortEnrollmentStatus,
   Permission,
+  EpisodeClosureReason,
 } from "@nmbm/shared";
 
 // Mirrors what the API sends. The flags are derived server-side — the
@@ -58,6 +59,7 @@ export type ParticipantNote = {
   createdAt: string;
   authorName: string;
   authorId: string;
+  episodeId: string;
   status: NoteStatus;
   reviewNote: string | null;
   approvedAt: string | null;
@@ -218,7 +220,33 @@ export type ParticipantProgram = {
   startDate: string;
 };
 
+// R10: a closed record is reached only by asking for it, and is shown
+// by how it ended — that is what somebody looking for a former
+// participant will recognise.
+export type ClosedParticipantRow = {
+  id: string;
+  firstName: string;
+  lastName: string;
+  dateOfBirth: string;
+  payer: Payer | null;
+  lastEpisodeId: string;
+  startDate: string;
+  endDate: string | null;
+  closureReason: EpisodeClosureReason | null;
+};
+
+export type EpisodeSummary = {
+  id: string;
+  status: "open" | "closed";
+  startDate: string;
+  endDate: string | null;
+  closureReason: EpisodeClosureReason | null;
+  closureNote: string | null;
+  readmittedFromEpisodeId: string | null;
+};
+
 export type ParticipantDetail = ParticipantRow & {
+  episodes: EpisodeSummary[];
   notes: ParticipantNote[];
   consents: ParticipantConsent[];
   referrals: ParticipantReferral[];

@@ -13,6 +13,10 @@ import {
 // them, it doesn't decide them.
 
 export type ParticipantRuleInput = {
+  // The open episode, or null when there isn't one. Every clock below
+  // belongs to an episode (R10): a disenrolled participant has nothing
+  // due, and a missing plan on a closed record is not an overdue one.
+  episodeId: string | null;
   payer: Payer | null;
   consecutiveNoContacts: number | null;
   carePlanId: string | null;
@@ -73,7 +77,7 @@ export function noContactState(input: ParticipantRuleInput): NoContactState {
 
 export function carePlanState(input: ParticipantRuleInput): CarePlanState {
   const now = today();
-  const missing = input.carePlanId === null;
+  const missing = input.episodeId !== null && input.carePlanId === null;
   const completionDueDate = input.carePlanDueDate;
   const reviewDueDate = input.carePlanReviewDue;
 

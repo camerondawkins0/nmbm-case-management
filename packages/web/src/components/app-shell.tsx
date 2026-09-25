@@ -1,5 +1,6 @@
 import { Link, useLocation } from "react-router-dom";
 import { BrandMark } from "./brand-mark.js";
+import { SignOutButton } from "./sign-out-button.js";
 import { can } from "../lib/use-me.js";
 import { PARTICIPANT_LABEL_PLURAL } from "@nmbm/shared";
 import type { Me } from "../lib/types.js";
@@ -55,6 +56,7 @@ export function AppShell({ me, children }: { me: Me; children: React.ReactNode }
                 {me.roles.map((r) => r.label).join(", ")}
               </span>
             </span>
+            <SignOutButton className="rounded border border-nmbm-ink/20 px-3 py-1 text-nmbm-ink/70 transition hover:border-nmbm-ink hover:text-nmbm-ink" />
           </div>
         </div>
       </header>

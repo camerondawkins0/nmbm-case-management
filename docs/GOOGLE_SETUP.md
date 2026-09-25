@@ -53,10 +53,29 @@ weight:
 | `GOOGLE_OIDC_CLIENT_SECRET` | the OAuth client — Secret Manager in production, never the repo |
 | `GOOGLE_OIDC_REDIRECT_URI` | must equal one of the registered URIs above |
 | `GOOGLE_WORKSPACE_DOMAIN` | NMBM's primary Workspace domain, e.g. `nmbm.org` |
+| `SESSION_SECRET` | 32+ random characters — Secret Manager. The server refuses to start in production without it, because the development fallback is published in this repository |
+| `SESSION_IDLE_MINUTES` | Optional; default 60. Idle time before a session ends |
 
 `GOOGLE_WORKSPACE_DOMAIN` has no default on purpose: sign-in refuses to
 start without it rather than falling back to accepting any Google
-account on the internet.
+account on the internet. If any of the four Google variables is
+missing, the login page says "Sign-in isn't set up yet" rather than
+failing with a server error.
+
+## What the person at the screen sees when it goes wrong
+
+Every refusal lands back on the login page with a reason and a next
+step (`SIGN_IN_ERRORS` in `packages/shared/src/auth.ts`). The two worth
+knowing about when setting this up:
+
+- **"That isn't an NMBM account"** — someone chose a personal Gmail.
+  The authorize request sends `prompt=select_account`, so Google always
+  shows the account chooser rather than silently picking whichever
+  account the browser was already signed into.
+- **"Your account is waiting for access"** — anyone in the Workspace
+  can sign in, and arrives with no role. An administrator assigns one
+  on the Staff page; until then they see a holding page, not an app
+  full of errors.
 
 ## Scopes
 

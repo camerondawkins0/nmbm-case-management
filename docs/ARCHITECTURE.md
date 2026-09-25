@@ -138,17 +138,13 @@ NMBM.** Three of the four below are now built; the fourth (M12) isn't.
   potentially leading to re-enrollment. This is a participant lifecycle
   state WSL doesn't have — closed-but-being-followed-up — and needs its
   own status rather than overloading "closed."
-- **Not built, and currently wrong.** Disenrollment should
-  **immediately** move a participant out of the active caseload view
-  (R10) — not a batch job, not eventual, so "who's active right now" is
-  never stale. The record itself stays fully retrievable. The caseload
-  query left-joins the *open* episode, but never filters the
-  participant out and never ends the assignment, so a disenrolled
-  person stays on their worker's list with a null episode — which the
-  flags then read as "no care plan", i.e. as needing attention. Someone
-  disenrolled for no contact also keeps their three-strikes warning,
-  because `v_no_contact_counts` isn't episode-scoped. See "What is not
-  built".
+- **Built.** Disenrollment **immediately** moves a participant out of
+  the active caseload view (R10) — not a batch job, not eventual, so
+  "who's active right now" is never stale. Closing an episode ends the
+  assignment in the same transaction; the caseload and dashboard only
+  count people with an open episode; closed records are listed
+  separately and stay fully retrievable, with readmission opening a
+  fresh episode. See `docs/agent/invariants.md`.
 
 **Smaller-scale, but not smaller-complexity.** 10 total users (U8) means
 the permission *grid* still needs to be right (U2–U7 describe real
@@ -176,8 +172,8 @@ them cases — are there any thoughts to this ladies?"). The schema uses
 `participants` as the table name (internal, matches WSL) and leaves the
 **user-facing label** ("Client" vs "Case") as a single string constant
 in `@nmbm/shared` so it can be changed without a migration once NMBM
-picks one. Still unpicked, so every page currently reads
-"participant".
+picks one. Still unpicked; the constant is currently "Client", so
+that is what every page reads.
 
 ## What is built
 
@@ -186,11 +182,11 @@ cases a page reachable after signing in. Current as of migration `0005`.
 
 | Area | What works | Where |
 |---|---|---|
-| Sign-in | Google OIDC against a named Workspace domain, session cookie, plus a dev-login path double-gated behind `NODE_ENV !== "production"` and `ALLOW_DEV_LOGIN` | `plugins/auth.ts`, `docs/GOOGLE_SETUP.md` |
+| Sign-in (M27) | Google OIDC against a named Workspace domain with a one-use `state` token, a fresh session id at sign-in, an idle timeout and a hard ceiling, audited sign-in and sign-out; a login page that says why a sign-in was refused and what to do next; a holding page for accounts with no role; sign-out in the header. Dev login is double-gated behind `NODE_ENV !== "production"` and `ALLOW_DEV_LOGIN` | `plugins/auth.ts`, `pages/login-page.tsx`, `docs/GOOGLE_SETUP.md` |
 | Authorization | Permission codes, never role names, read from the database at request time | `plugins/authorize.ts`, `packages/shared/src/permissions.ts` |
 | Caseload (U5) | A front-line worker's list, dashboard and participant record are scoped server-side to their own assignments | `lib/caseload.ts` |
-| Participants and intake (M3/M4) | Admission opens the record, the episode and the assignment in one transaction; reassignment; assignable-worker list | `modules/participants/` |
-| Episodes (M6) | Open, close, and the payer-conditional disenrolment-warning letter gate. R10's archive-from-view behaviour is *not* built — see below | `modules/episodes/` |
+| Participants and intake (M3/M4/R10) | Admission opens the record, the episode and the assignment in one transaction; reassignment; assignable-worker list. The list is active people only; closed records are a separate list for those who can read all | `modules/participants/` |
+| Episodes (M2/M6/R10) | Close — which ends the assignment — and readmission, which opens a new linked episode with a named worker. The payer-conditional disenrolment-warning letter gate | `modules/episodes/` |
 | Notes and the no-contact ladder (M6/U6) | Write, submit, approve, return for revision, revise and resubmit; three consecutive failed contacts prompt exit documentation and two more are required before disenrolment is allowed | `modules/notes/`, `lib/rules.ts` |
 | Care plans (M9/U6) | Authoring, goals, submit, approve, return; the 30-day completion clock and the 2-week review nudge derived side by side | `modules/care-plans/`, `lib/rules.ts` |
 | Consents (M15/M16) | Four form types, expiry derived at read time from the episode start date, revocation | `modules/consents/` |
@@ -200,7 +196,8 @@ cases a page reachable after signing in. Current as of migration `0005`.
 | Audit (M30) | Append-only, written inside the transaction that performs the action, read-only endpoint | `plugins/audit.ts` |
 | Feedback (M31) | In-app issue reporting and a triage queue, because NMBM has no IT staff | `modules/feedback/`, `docs/SUPPORT.md` |
 
-48 API routes across 12 modules, 21 tables and one view, 13 pages.
+48 API routes across 12 modules, 21 tables and one view, 13 pages plus
+two holding screens (no role yet; server unreachable).
 `docs/agent/map.md` lists them route by route and page by page.
 
 Two properties hold across all of it: state a person could be wrong
@@ -231,23 +228,11 @@ Two different reasons, and they shouldn't be reported as one number.
 
 **Not blocked — ours to do:**
 
-- **R10 archive-on-disenrolment, which is a bug rather than a gap.**
-  NMBM answered this one and the rule is written down in
-  `docs/agent/invariants.md`; the code doesn't enforce it. Closing an
-  episode sets its status and stops there. It doesn't end the
-  assignment, and `listAll`/`listForParticipantIds` don't exclude
-  participants with no open episode — they left-join the open episode
-  and keep the row. The visible consequences: a disenrolled person
-  still counts in `caseloadSize`, still appears on their worker's list,
-  and shows as needing attention because a null episode reads as "no
-  care plan"; if they were disenrolled for no contact, the
-  three-strikes warning stays too, because `v_no_contact_counts` counts
-  notes without reference to an episode — which also means a readmitted
-  participant would start their new episode already at three strikes,
-  the exact scenario NMBM raised when they asked about readmission
-  dates. This is the one item in this section where the documented
-  behaviour and the built behaviour disagree, so it should be fixed
-  before anyone is shown the caseload.
+- **Sessions live in process memory.** Fine on one machine; on Cloud
+  Run every restart signs everybody out, and two instances don't share
+  sessions, so a person would be bounced between signed in and signed
+  out. Needs a shared store (a Postgres table is enough at this size)
+  before the first deploy, not after.
 - **There are no tests.** Not one file. `npm test` runs vitest in
   `@nmbm/api` and finds nothing to run; CI builds and typechecks and
   stops there. Hard rule 8 in `CLAUDE.md` describes how to prove a test

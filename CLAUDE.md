@@ -45,8 +45,9 @@ write the first ones, not a description of a suite that exists. See
 "What is not built" in `docs/ARCHITECTURE.md` for which rules deserve
 covering first.
 
-For local sign-in without Google, set `ALLOW_DEV_LOGIN=true` and visit
-`/auth/dev-login?email=t.green@nmbm.example.org`. It is refused when
+For local sign-in without Google, set `ALLOW_DEV_LOGIN=true`: the login
+page then lists the seeded staff by role, one click each. The route
+behind it (`/auth/dev-login?email=…`) is never registered when
 `NODE_ENV=production`.
 
 ## Hard rules

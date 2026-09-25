@@ -26,7 +26,7 @@ export default async function episodeRoutes(fastify: FastifyInstance, opts: { db
       const input = episodeCreateSchema.parse(request.body);
       const caller = await resolveScope(db, request.currentUser!.id);
       await assertCanSee(db, caller, input.participantId);
-      const episode = await service.openEpisode(db, input);
+      const episode = await service.openEpisode(db, input, request.currentUser!.id);
       reply.code(201);
       return episode;
     },

@@ -16,7 +16,12 @@ export default async function meRoutes(fastify: FastifyInstance, opts: { db: Db 
   // rather than leaking anything to an anonymous caller.
   fastify.get("/api/me", async (request, reply) => {
     if (!request.currentUser) {
-      return reply.code(401).send({ error: "unauthorized" });
+      // `reason` lets the login page say "you were signed out after an
+      // hour idle" instead of looking as if nothing happened. It reveals
+      // only that this browser's own session timed out.
+      return reply
+        .code(401)
+        .send({ error: "unauthorized", reason: request.sessionExpired ? "session_expired" : null });
     }
     const { id, email, displayName } = request.currentUser;
     const [assignedRoles, permissions] = await Promise.all([

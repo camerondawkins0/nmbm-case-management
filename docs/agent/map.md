@@ -1,6 +1,6 @@
 # Map
 
-Where things are. Current as of migration `0005`.
+Where things are. Current as of migration `0006`.
 
 ## Packages
 
@@ -37,7 +37,7 @@ splits out `audit.ts` for the same reason.
 
 ## API routes
 
-48 routes across 12 modules, plus four on the auth plugin. Every route
+48 routes across 12 modules, plus five on the auth plugin. Every route
 outside `PUBLIC_BY_DESIGN` carries an `authorize()` or `authorizeAny()`
 preHandler, and the permission it requires is named in the file.
 
@@ -45,8 +45,8 @@ preHandler, and the permission it requires is named in the file.
 |---|---|
 | `health` | `GET /api/health` — PUBLIC_BY_DESIGN, Cloud Run health check |
 | `me` | `GET /api/me` — PUBLIC_BY_DESIGN, answers "is anyone signed in?" |
-| `participants` | `GET /api/participants`, `GET /api/participants/:id`, `GET /api/participants/assignable-workers`, `POST /api/participants`, `POST /api/participants/intake`, `POST /api/participants/:id/assignment` |
-| `episodes` | `POST /api/episodes`, `POST /api/episodes/:id/close`, `POST /api/episodes/:id/disenrollment-letter` |
+| `participants` | `GET /api/participants` (`?status=closed` for former participants — R10), `GET /api/participants/:id`, `GET /api/participants/assignable-workers`, `POST /api/participants`, `POST /api/participants/intake`, `POST /api/participants/:id/assignment` |
+| `episodes` | `POST /api/episodes` (readmission — see invariants, R10), `POST /api/episodes/:id/close`, `POST /api/episodes/:id/disenrollment-letter` |
 | `notes` | `POST /api/notes`, `PATCH /api/notes/:id`, `GET /api/notes/awaiting-review`, `GET /api/notes/returned`, `POST /api/notes/:id/approve`, `POST /api/notes/:id/return` |
 | `care-plans` | `POST /api/care-plans`, `PATCH /api/care-plans/:id`, `POST /api/care-plans/:id/submit`, `GET /api/care-plans/awaiting-review`, `POST /api/care-plans/:id/approve`, `POST /api/care-plans/:id/return` |
 | `consents` | `POST /api/consents`, `POST /api/consents/:id/revoke` |
@@ -55,7 +55,7 @@ preHandler, and the permission it requires is named in the file.
 | `dashboard` | `GET /api/dashboard` |
 | `admin` | `GET /api/admin/users`, `GET /api/admin/roles`, `POST /api/admin/users/:id/roles`, `DELETE /api/admin/users/:id/roles/:roleCode`, `POST /api/admin/users/:id/deactivate`, `POST /api/admin/users/:id/reactivate`, `GET /api/admin/audit` |
 | `feedback` | `POST /api/feedback`, `GET /api/feedback/mine`, `GET /api/feedback`, `PATCH /api/feedback/:id/status` |
-| `plugins/auth.ts` | `GET /auth/google/login`, `GET /auth/google/callback`, `POST /auth/logout`, `GET /auth/dev-login` (non-production only) |
+| `plugins/auth.ts` | `GET /auth/google/login`, `GET /auth/google/callback`, `POST /auth/logout`, and in non-production with `ALLOW_DEV_LOGIN` only: `GET /auth/dev-login`, `GET /auth/dev-login/accounts` |
 
 Consents and referrals have no list endpoint of their own. Both are read
 through `GET /api/participants/:id`, because neither is ever looked at
@@ -72,7 +72,7 @@ except in the context of one person's record.
 
 | File | What it is |
 |---|---|
-| `plugins/auth.ts` | Google OIDC (Workspace SSO), sessions, `requireUser`, dev login |
+| `plugins/auth.ts` | Google OIDC (Workspace SSO) with `state`, session regeneration, idle timeout, `safeReturnTo`, sign-in audit, dev login |
 | `plugins/authorize.ts` | `authorize(code)`, `authorizeAny([...])`, `CAN_READ_PARTICIPANTS`, `getPermissions` |
 | `plugins/audit.ts` | `writeAudit(db, entry)` — append-only |
 | `plugins/errors.ts` | `AppError` plus `badRequest`/`notFound`/`conflict`/`forbidden`/`unprocessable`, and `registerErrorHandler` |
@@ -89,11 +89,12 @@ first is behind the session check.
 
 | Path | Page | What it's for |
 |---|---|---|
-| `/login` | `login-page.tsx` | Google sign-in |
+| `/login` | `login-page.tsx` | Google sign-in, the reason for any refusal (`?error=` codes from `SIGN_IN_ERRORS` in `@nmbm/shared`), and the dev sign-in panel when the server offers it |
+| — | `holding-pages.tsx` | Shown instead of the app: signed in with no role yet, or the server can't be reached |
 | `/` | `dashboard-page.tsx` | What needs attention: care plan clocks, the no-contact ladder, notes awaiting review, referrals with no outcome |
-| `/participants` | `participants-page.tsx` | Caseload list, scoped server-side |
+| `/participants` | `participants-page.tsx` | Caseload list, scoped server-side; an Active/Closed tab for those who can read all |
 | `/participants/new` | `intake-page.tsx` | Admission — record, episode and assignment in one act |
-| `/participants/:id` | `participant-detail-page.tsx` | The record: flags, notes, care plan, consents, referrals |
+| `/participants/:id` | `participant-detail-page.tsx` | The record: flags, notes, care plan, consents, referrals, episode history; on a closed record, readmission |
 | `/notes/review` | `note-review-page.tsx` | The U6 queue — approve, or return with a reason |
 | `/care-plans/review` | `care-plan-review-page.tsx` | The same, for care plans |
 | `/programs` | `programs-page.tsx` | Programmes and their cohorts |
@@ -105,10 +106,14 @@ first is behind the session check.
 
 Shared components in `packages/web/src/components/`: `app-shell.tsx`
 (header and navigation, which hides what the signed-in user cannot
-reach), `brand-mark.tsx`, `flags.tsx` (the attention badges derived in
+reach), `sign-out-button.tsx`, `brand-mark.tsx`, `flags.tsx` (the attention badges derived in
 `lib/rules.ts`), and the three sections the participant record composes
 — `care-plan-section.tsx`, `consents-section.tsx`,
 `referrals-section.tsx`.
+
+`lib/use-me.ts` tells signed out, session expired and server
+unreachable apart; `lib/api.ts` handles a session ending mid-page;
+`lib/labels.ts` holds display labels shared across pages.
 
 Hiding a nav link is a convenience, never the control. Every page here
 is behind a server-side permission check on the endpoints it calls.
@@ -134,7 +139,7 @@ convention as the WSL system this was adapted from.
 | `programs.ts` | `programs`, `program_cohorts`, `cohort_sessions`, `cohort_enrollments`, `session_attendance` |
 | `funding.ts` | `funding_sources`, `services` — the M23 placeholder, deliberately unbuilt |
 | `feedback.ts` | `feedback_items` |
-| `views.ts` | `v_no_contact_counts`, declared to Drizzle with `.existing()` |
+| `views.ts` | `v_no_contact_counts` (rebuilt per episode in 0006), declared to Drizzle with `.existing()` |
 
 Migrations are hand-written SQL in `packages/db/src/migrations/`, listed
 in order in `meta/_journal.json`:
@@ -147,6 +152,7 @@ in order in `meta/_journal.json`:
 | `0003_note_review` | The U6 review columns on notes and care plans |
 | `0004_referrals_and_consents` | `consents`, `referrals` |
 | `0005_programs_and_attendance` | The five programme and attendance tables |
+| `0006_episode_scoped_caseload` | One open episode per participant; repair of assignments left open on closed episodes; `v_no_contact_counts` rebuilt per episode |
 
 ## Seeds
 
@@ -159,7 +165,8 @@ in order in `meta/_journal.json`:
   removing a permission from `DEFAULT_ROLE_PERMISSIONS` actually takes
   it away instead of leaving it granted forever.
 - `synthetic.ts` is invented demo data: staff at `@nmbm.example.org`,
-  eight participants whose fixtures each exercise one rule, and a
+  nine participants whose fixtures each exercise one rule (Irene Walsh
+  is the disenrolled one, for R10), and a
   running Anger Management cohort with six weekly sessions and three
   deliberately different attendance histories. Nothing in it is real.
 

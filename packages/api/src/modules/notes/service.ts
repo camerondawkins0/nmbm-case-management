@@ -2,6 +2,7 @@ import type { Db } from "@nmbm/db";
 import type { NoteCreate } from "@nmbm/shared";
 import { noContactState } from "../../lib/rules.js";
 import * as repository from "./repository.js";
+import { conflict } from "../../plugins/errors.js";
 
 // M6: logging an attempt is what advances the ladder, so the response
 // tells the worker where they now stand rather than making them go
@@ -16,22 +17,29 @@ export async function recordNote(
   // it for review would just park it forever.
   authorIsReviewer: boolean,
 ) {
+  // The M6 run is counted per episode, so a note filed against a closed
+  // episode — or somebody else's — would silently fall out of the count
+  // the disenrolment gate relies on. Only the open one takes notes.
+  const episode = await repository.openEpisodeFor(db, input.participantId);
+  if (!episode) throw conflict("This participant has no open episode — readmit them first");
+  if (episode.id !== input.episodeId) throw conflict("Notes can only be added to the open episode");
+
   const note = await repository.insert(db, input, authorId, authorIsReviewer);
 
-  const [count, payer, episode] = await Promise.all([
-    repository.consecutiveNoContacts(db, input.participantId),
+  const [count, payer] = await Promise.all([
+    repository.consecutiveNoContacts(db, episode.id),
     repository.participantPayer(db, input.participantId),
-    repository.openEpisodeFor(db, input.participantId),
   ]);
 
   const state = noContactState({
+    episodeId: episode.id,
     payer,
     consecutiveNoContacts: count,
     carePlanId: null,
     carePlanStatus: null,
     carePlanDueDate: null,
     carePlanReviewDue: null,
-    disenrollmentLetterSentAt: episode?.disenrollmentLetterSentAt ?? null,
+    disenrollmentLetterSentAt: episode.disenrollmentLetterSentAt,
   });
 
   return { note, noContact: state };

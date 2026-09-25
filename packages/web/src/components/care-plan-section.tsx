@@ -85,7 +85,10 @@ export function CarePlanSection({
 
       {!writable && !locked && (
         <p className="mt-3 whitespace-pre-wrap text-sm text-nmbm-ink/80">
-          {record.carePlanGoals ?? "No care plan written yet."}
+          {record.carePlanGoals ??
+            (record.episodeStatus === "open"
+              ? "No care plan written yet."
+              : "No open episode — a care plan belongs to an enrolment.")}
         </p>
       )}
 

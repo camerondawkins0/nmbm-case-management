@@ -17,7 +17,7 @@ import {
   cohortEnrollments,
   sessionAttendance,
 } from "../schema/index.js";
-import type { Payer, Role, ContactResult, CarePlanStatus } from "@nmbm/shared";
+import type { Payer, Role, ContactResult, CarePlanStatus, EpisodeClosureReason } from "@nmbm/shared";
 import { CARE_PLAN_REVIEW_INTERVAL_DAYS, CONSENT_VALID_DAYS } from "@nmbm/shared";
 
 // Invented staff and participants for local development and demos. No
@@ -66,6 +66,9 @@ type Fixture = {
   // refuse.
   release?: "valid" | "expired" | "none";
   referral?: { partner: string; service: string; outcome: boolean; daysAgo: number };
+  // R10: a past participant. The episode is closed and the assignment
+  // ended, so they appear under "Closed" and on nobody's caseload.
+  closed?: { reason: EpisodeClosureReason; daysAgo: number };
   demonstrates: string;
 };
 
@@ -162,6 +165,18 @@ const FIXTURES: Fixture[] = [
     carePlan: { status: "draft", reviewDueDaysAgo: -14, goals: "Initial goals drafted after intake visit." },
     demonstrates: "another worker's caseload — should be invisible to Tasha",
   },
+  {
+    first: "Irene",
+    last: "Walsh",
+    dob: "1981-04-03",
+    payer: "medi_cal",
+    worker: "t.green@nmbm.example.org",
+    enrolledDaysAgo: 110,
+    contacts: ["contacted", "no_contact", "no_contact", "no_contact", "no_contact", "no_contact"],
+    closed: { reason: "no_contact", daysAgo: 70 },
+    demonstrates:
+      "R10 — disenrolled for no contact: off Tasha's caseload, retrievable under Closed, and readmission starts a fresh M6 run",
+  },
 ];
 
 const NOTE_BODIES: Record<ContactResult, string[]> = {
@@ -220,11 +235,14 @@ async function main() {
       })
       .returning();
 
+    const closedAt = fixture.closed ? daysAgo(fixture.closed.daysAgo) : null;
+
     await db.insert(assignments).values({
       participantId: participant.id,
       workerId,
       assignedById: supervisorId,
       startedAt: daysAgo(fixture.enrolledDaysAgo),
+      endedAt: closedAt,
     });
 
     const startDate = daysAgo(fixture.enrolledDaysAgo);
@@ -238,6 +256,9 @@ async function main() {
         startDate: isoDate(startDate),
         carePlanDueDate: isoDate(carePlanDue),
         createdAt: startDate,
+        ...(fixture.closed && closedAt
+          ? { status: "closed" as const, endDate: isoDate(closedAt), closureReason: fixture.closed.reason }
+          : {}),
       })
       .returning();
 

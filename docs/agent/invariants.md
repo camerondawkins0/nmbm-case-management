@@ -89,38 +89,41 @@ referral records which consent authorised it.
 
 ## Disenrollment archives immediately, but never hides the record (R10)
 
-**Not yet enforced in code. This section describes the rule, not the
-current behaviour** — see "What is not built" in `docs/ARCHITECTURE.md`.
-Closing an episode today sets its status and nothing else: the
-assignment stays open, the caseload query keeps the row, and the flags
-read the resulting null episode as "no care plan", so a disenrolled
-participant shows up needing attention on the worker who just exited
-them. Verified by closing a seeded episode: the caseload query still
-returns the same eight rows, and the assignment is still open.
+When an episode closes, the participant drops out of the active caseload
+*right away* — not on a nightly job, not eventually. NMBM's framing: they
+want "active" to stay accurate without checking by hand. The record
+itself stays fully retrievable, for a returning participant or a
+contractor/grantor request.
 
-`v_no_contact_counts` counts notes since the last successful contact
-with no reference to an episode, which has a second consequence aimed
-straight at the readmission case NMBM raised: somebody disenrolled for
-no contact and later readmitted would begin their new episode already
-at three strikes, because the failed attempts from the previous episode
-are still the most recent notes on the record.
+How that's held, and what must not be undone:
 
-Fixing it means ending the assignment when the episode closes,
-filtering the caseload and dashboard queries to participants with an
-open episode, and scoping the view to the episode rather than the
-participant.
+- **Active means an open episode**, decided in the query
+  (`participants/repository.ts`), never by the page hiding rows. The
+  dashboard and caseload counts follow from it.
+- **Closing ends the assignment in the same transaction.** An assignment
+  is responsibility for an active case, so nobody holds a closed one —
+  which is also what keeps U9's "reassign before deactivating" check
+  from being blocked by people who have already left. Ended, not
+  deleted: who held the case stays answerable.
+- **The M6 run belongs to an episode.** `v_no_contact_counts` (0006)
+  counts notes within the open episode only, and a note can only be
+  filed against the open episode. Counted per person, somebody
+  disenrolled for no contact would come back already at three strikes.
+- **One open episode per participant**, enforced by a partial unique
+  index rather than by every writer remembering to check.
+- **Closed records are a separate question.** `?status=closed` lists
+  them for callers who hold `participants.read.all`; a front-line
+  worker's caseload is their open assignments, so there is nothing
+  closed on it. The direct lookup by id still reaches a closed record
+  for anyone who could see it.
+- **Readmission, not a second intake.** `POST /api/episodes` opens a new
+  episode linked to the last one, with a named worker, in one
+  transaction — the same one act as intake. Reassignment on a closed
+  record is refused: readmission is the way back.
 
-When an episode closes, the participant has to drop out of the active
-caseload view *right away* — not on a nightly job, not eventually.
-NMBM's own framing: they want "active" to stay accurate without having
-to check by hand. This is a default-query-scope rule, not an access
-rule: `repository.ts` queries for caseload/dashboard views should filter
-`episodes.status = 'closed'` out by default, but every direct lookup
-(the returning-participant case already covered by the readmission date,
-or a contractor/grantor record request) still reaches the full record.
 Retention is separately confirmed at 7 years (R6, California state
-requirement) — that's what eventually governs when a closed record
-leaves cold storage, not when it leaves the active view.
+requirement) — that governs when a closed record eventually leaves
+storage, not when it leaves the active view.
 
 ## Work is reviewed by someone other than its author (U6)
 
@@ -215,6 +218,28 @@ route does. Two consequences worth keeping:
   route that accepts either uses `authorizeAny(CAN_READ_PARTICIPANTS)`.
 - Hiding a nav link or a button is a convenience for the person using
   the app, never the control. The check that matters is on the endpoint.
+
+## Sign-in says why it refused, and never trusts the browser's word (M27)
+
+- The Google round trip carries a one-use `state` token bound to the
+  session. Without it, anyone could complete sign-in in a victim's
+  browser with the attacker's own authorisation code, and the victim
+  would enter participant notes into the attacker's account.
+- The domain is checked on the verified token, not trusted from the
+  `hd` hint, and there is no default domain: unset means refuse.
+- A fresh session id is issued at sign-in, so an id planted beforehand
+  never becomes an authenticated one.
+- `returnTo` is re-checked on the server as a same-origin path. The
+  login page passes it; it is not trusted from there.
+- Every refusal has its own code in `SIGN_IN_ERRORS` and its own words
+  on the login page, because each has a different next step for the
+  person at the screen. A deactivated account is refused with its own
+  message — it still exists, so Google will vouch for it.
+- Sessions end after an idle period (default 60 minutes,
+  `SESSION_IDLE_MINUTES`) and after a hard ceiling. A session that ends
+  mid-page sends a *load* back through sign-in, but never a *save*:
+  navigating away there would discard a note the worker just typed.
+- Sign-in, sign-out, refusals and first-time provisioning are audited.
 
 ## Money is a string end to end
 

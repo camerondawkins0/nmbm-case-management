@@ -6,8 +6,8 @@ the original discovery document.
 
 This doc tracks what is **unanswered**. For what has been **built**
 against the answers that did arrive, see "What is built" in
-`docs/ARCHITECTURE.md` — as of migration `0005` that covers intake,
-episodes, notes and the M6 ladder, care plans and the M9 clocks,
+`docs/ARCHITECTURE.md` — as of migration `0006` that covers sign-in, intake,
+episodes and readmission, notes and the M6 ladder, care plans and the M9 clocks,
 consents, referrals, programmes and attendance, staff administration
 and the audit log.
 
@@ -33,14 +33,12 @@ and the audit log.
   accurate without manual cleanup), while the record stays fully
   retrievable — for a returning participant (the readmission-date case
   already discussed) or for a contractor/grantor request. This is a
-  behavior requirement, not just a retention window. Episodes carry
-  `status`/`endDate` and closing one works, but **the caseload and
-  dashboard queries don't filter closed episodes out, and closing an
-  episode doesn't end the assignment** — so a disenrolled participant
-  still appears on their worker's list and reads as needing attention.
-  The answer is recorded; the behaviour isn't built. This one is ours
-  to fix, not NMBM's to clarify. See `docs/agent/invariants.md` and
-  "What is not built" in `docs/ARCHITECTURE.md`.
+  behavior requirement, not just a retention window. **Built**:
+  closing an episode ends the assignment in the same transaction, the
+  caseload and dashboard count only people with an open episode, closed
+  records are listed separately, and readmission opens a fresh episode
+  whose no-contact count starts at zero. Three smaller questions it
+  raised are listed below. See `docs/agent/invariants.md`.
 - **R11** — No prior incident. Response owner is QA/HR, who would notify
   affected participants by mail to the address on file. NMBM suggested
   signing that correspondence with a role name ("Quality Assurance
@@ -185,6 +183,28 @@ the same thing when M23 work starts.
   `participants.write`, held by the Intake Specialist and Clinical
   Director — a CHW cannot admit. Consistent with U3, worth confirming
   alongside the episode-closing question above.
+- **Can the Intake Specialist readmit a returning participant?**
+  Readmission needs sight of the closed record, and the Intake
+  Specialist holds `participants.read.own` — their own caseload only,
+  which never contains a closed record. So today only the Clinical
+  Director can readmit, and an Intake Specialist seeing a returning
+  person would be tempted to run a fresh intake and create a duplicate.
+  Likely fix: let intake search closed records by name and date of
+  birth. Needs NMBM's say on who may look up former participants.
+- **Should a worker keep sight of someone after closing their case?**
+  Closing ends the assignment, so a CHW loses access to that record the
+  moment it closes — consistent with U5's "own assignments", and what
+  keeps "active" honest. If CHWs need to finish paperwork after the
+  exit, this is the place it would bite.
+- **Does disenrolment withdraw someone from their classes?** A closed
+  participant stays enrolled in any programme cohort. Court-mandated
+  classes may well continue after case management ends, so this is
+  left alone rather than guessed.
+- **How long before an idle session signs out?** Set to 60 minutes
+  (changeable without a code change via `SESSION_IDLE_MINUTES`), with a
+  10-hour ceiling. Shorter protects a tablet left on a desk; longer
+  protects a worker mid-way through writing up a visit. NMBM's
+  contracts or their own policy may name a number.
 - **M1** — "Clients" vs. "cases" as the record name — still needs one
   answer.
 - **M3** — What has to be known before intake can proceed, and which of
