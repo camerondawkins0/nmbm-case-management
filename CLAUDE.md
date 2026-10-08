@@ -21,6 +21,7 @@ and what's specific to NMBM.
 | Reviewing user-submitted tickets/feedback | `docs/SUPPORT.md` |
 | Google sign-in, OAuth clients, redirect URIs | `docs/GOOGLE_SETUP.md` |
 | Deploying, rolling back, restoring, the first administrator | `docs/DEPLOY.md` |
+| Form show-if rules, publish checks, answer validation | `packages/shared/src/assessments.ts` |
 | The no-contact ladder or care plan clocks | `packages/api/src/lib/rules.ts` |
 
 ## Commands

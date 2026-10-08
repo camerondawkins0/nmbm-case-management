@@ -8,6 +8,7 @@ import { CarePlanPills, MolinaLetterPill, NoContactPill, Pill } from "../compone
 import { CarePlanSection } from "../components/care-plan-section.js";
 import { ConsentsSection } from "../components/consents-section.js";
 import { DocumentsSection } from "../components/documents-section.js";
+import { AssessmentsSection } from "../components/assessments-section.js";
 import { ReferralsSection } from "../components/referrals-section.js";
 import { Link } from "react-router-dom";
 import { CLOSURE_REASON_LABELS } from "../lib/labels.js";
@@ -205,6 +206,8 @@ export default function ParticipantDetailPage({ me }: { me: Me }) {
         }}
         onError={setActionError}
       />
+
+      <AssessmentsSection record={record} me={me} onError={setActionError} />
 
       <DocumentsSection
         record={record}

@@ -7,3 +7,4 @@ export * from "./auth.js";
 export * from "./settings.js";
 export * from "./follow-ups.js";
 export * from "./documents.js";
+export * from "./assessments.js";

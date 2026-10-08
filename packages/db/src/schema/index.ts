@@ -14,3 +14,4 @@ export * from "./settings.js";
 export * from "./follow-ups.js";
 export * from "./sessions.js";
 export * from "./documents.js";
+export * from "./assessments.js";

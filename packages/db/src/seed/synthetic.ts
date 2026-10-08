@@ -17,6 +17,9 @@ import {
   cohortEnrollments,
   sessionAttendance,
   followUpCalls,
+  assessmentForms,
+  assessmentFormVersions,
+  assessmentQuestions,
 } from "../schema/index.js";
 import type {
   Payer,
@@ -28,6 +31,7 @@ import type {
   FollowUpOutcome,
 } from "@nmbm/shared";
 import { CARE_PLAN_REVIEW_INTERVAL_DAYS, CONSENT_VALID_DAYS } from "@nmbm/shared";
+import { randomUUID } from "node:crypto";
 
 // Invented staff and participants for local development and demos. No
 // real person appears here — every name, email and note is made up, and
@@ -515,6 +519,75 @@ async function main() {
       });
     }
   }
+
+  // An example form, so the Forms page and the record's assessment
+  // section have something in them. Invented — NMBM's real registration
+  // form and needs assessment haven't been shared — and only in this
+  // demo seed, so nothing made up reaches a real deployment.
+  const ids = { housed: randomUUID(), staying: randomUUID(), needs: randomUUID(), food: randomUUID() };
+  const [form] = await db
+    .insert(assessmentForms)
+    .values({
+      name: "Example needs assessment",
+      description: "Invented for demos. Replace with NMBM's own form.",
+      createdById: clinicalDirectorId,
+    })
+    .returning();
+  const [formVersion] = await db
+    .insert(assessmentFormVersions)
+    .values({
+      formId: form.id,
+      versionNumber: 1,
+      status: "published",
+      createdById: clinicalDirectorId,
+      publishedById: clinicalDirectorId,
+      publishedAt: new Date(),
+    })
+    .returning();
+  await db.insert(assessmentQuestions).values([
+    {
+      versionId: formVersion.id,
+      stableId: ids.housed,
+      sortOrder: 0,
+      type: "yes_no",
+      section: "Housing",
+      prompt: "Do you have a stable place to live?",
+      required: true,
+    },
+    {
+      versionId: formVersion.id,
+      stableId: ids.staying,
+      sortOrder: 1,
+      type: "short_text",
+      section: "Housing",
+      prompt: "Where are you staying right now?",
+      required: true,
+      showIf: { mode: "all", conditions: [{ questionId: ids.housed, op: "eq", value: "no" }] },
+    },
+    {
+      versionId: formVersion.id,
+      stableId: ids.needs,
+      sortOrder: 2,
+      type: "multi_choice",
+      section: "Needs",
+      prompt: "Which of these would help right now?",
+      options: [
+        { value: "food", label: "Food" },
+        { value: "transport", label: "Transport" },
+        { value: "benefits", label: "Help with benefits" },
+        { value: "counselling", label: "Counselling" },
+      ],
+    },
+    {
+      versionId: formVersion.id,
+      stableId: ids.food,
+      sortOrder: 3,
+      type: "long_text",
+      section: "Needs",
+      prompt: "Tell us about food at home this month.",
+      showIf: { mode: "all", conditions: [{ questionId: ids.needs, op: "eq", value: "food" }] },
+    },
+  ]);
 
   console.log(
     `Synthetic data seeded: ${STAFF.length} staff, ${FIXTURES.length} participants.\n` +

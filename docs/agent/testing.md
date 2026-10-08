@@ -1,6 +1,6 @@
 # Testing
 
-159 tests in `packages/api/test/`, run by vitest against a real Postgres.
+176 tests in `packages/api/test/`, run by vitest against a real Postgres.
 CI runs them on every push with a Postgres 16 service.
 
 ```bash
@@ -37,6 +37,7 @@ dev-login route, and assert on HTTP responses.
 | `follow-ups.test.ts` | M12 queue, recording calls, one result per milestone, re-enrolment requests, readmission stopping the schedule |
 | `search.test.ts` | R10 search scoping, wildcard escaping, intake's duplicate refusal and its audited override |
 | `deployment.test.ts` | Sessions shared across instances and hashed at rest; the web build served with app routes and JSON 404s; security headers; production refusing a missing secret and dev sign-in; the Secure cookie behind a trusted proxy |
+| `assessments.test.ts` | The show-if evaluator and publish checks (no database), then over HTTP: who can build, published versions frozen, drafts keeping stable ids, one draft, type changes refused, current version on start, answer validation and clearing, required-when-shown, hidden answers dropped on completion, completed final, void, caseload scoping, retired forms, closed episodes |
 | `documents.test.ts` | Upload, confirm and open through the local storage stand-in; confirm refused until the file arrives; opaque keys; views audited; consent scans same-person only; type and size refused; tampered links refused; other workers' documents 404; void keeps the row and stops it opening |
 | `csv.test.ts` | The formula-injection guard and RFC 4180 quoting, no database |
 | `routes-authorized.test.ts` | Reads `packages/api/src` and fails on any route with neither `authorize()` nor a `PUBLIC_BY_DESIGN` entry, and on entries that are no longer open; no database |
@@ -83,6 +84,10 @@ test.
 | Confirm not checking storage; pending rows listed; views not audited; voided file still opening; consent scan on another person; download not caseload-scoped | documents |
 | Upload signature ignoring type; size not enforced; signature not checked; key carrying the participant id; any file type accepted | documents (the key mutation was first written as a no-op and redone) |
 | Production falling back to local disk; CSP blocking uploads to Cloud Storage | deployment |
+| Published version editable; new draft with fresh stable ids; two drafts; type change, forward reference or stale option allowed at publish; start on the oldest version | assessments |
+| Answers unchecked; unknown questions accepted; clearing ignored; required ignoring visibility; hidden answers kept; completion unaudited; start or read not caseload-scoped; retired form or closed episode startable | assessments |
+| Hidden answers still driving a chain; unanswered satisfying "is not"; multiple choice compared as text; a CHW able to build forms | assessments |
+| A completed assessment editable | assessments — only with both guards broken: the save also refuses at the `UPDATE`, so breaking the first alone changes nothing |
 | CSV guard removed; plain numbers guarded; carriage return unquoted; headers unguarded | csv |
 | A route with no gate; a stale `PUBLIC_BY_DESIGN` entry; the bracket matcher stopping early | routes-authorized |
 

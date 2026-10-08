@@ -330,6 +330,42 @@ Rules that hold throughout:
 - Every document route applies `canSeeParticipant`, and out of scope
   answers 404, not 403.
 
+## A published form never changes; an answer is read against its own version (M11/M13)
+
+NMBM's forms (the registration form, the needs assessment) are built in
+the app, not in code. No scoring: M11 says no licensed instruments.
+
+- **Published is frozen.** `PUT .../questions` and `publish` refuse
+  anything but a draft. Editing a form starts a new draft copied from
+  the live version, and there is one draft per form at a time (partial
+  unique index). The live version is the highest published one —
+  derived, never flagged.
+- **Every assessment points at the version it was filled in on**, so a
+  later edit never puts new wording next to an old answer.
+- **Stable ids carry across versions.** Answers and show-if rules key on
+  a question's `stable_id`, and options on their `value`, so rewording
+  either doesn't orphan anything. A question can't change kind of answer
+  (text to number, say) across versions — publish refuses; add a new one.
+- **Show-if rules only look backwards**, and must name options the
+  earlier question still has. Checked at publish, not on save, because
+  drafts are written out of order. The evaluator (`visibleQuestionIds` in
+  `@nmbm/shared`) is the only answer to "which questions apply", used by
+  the API and every screen.
+- **An unanswered question satisfies no condition**, not even "is not
+  Yes". Somebody who skipped a gate hasn't answered it.
+- **Required means required when shown.** A hidden follow-up never
+  blocks completion.
+- **Completing keeps only what was asked and answered.** Answers to
+  questions that ended up hidden are kept while the form is open (so
+  Yes → No → Yes doesn't lose the explanation) and dropped on completion.
+- **Completed is final.** A correction is a void, with a reason, and a
+  new assessment. Voided ones stay readable.
+- Started only on an open episode, filed against it, and saved or
+  completed only while that episode is open. Scoped like the record;
+  out of scope is 404. Start, complete and void are audited.
+- Saves send only the changed questions and merge in SQL, so two people
+  on one form don't overwrite each other.
+
 ## Exports neutralise spreadsheet formulas
 
 Every CSV goes through `lib/csv.ts`. A cell starting `=`, `+`, `-`, `@`,

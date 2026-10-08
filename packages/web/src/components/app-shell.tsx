@@ -17,6 +17,7 @@ export function AppShell({ me, children }: { me: Me; children: React.ReactNode }
       : []),
     ...(can(me, "care_plans.approve") ? [{ to: "/care-plans/review", label: "Care plans" }] : []),
     ...(can(me, "notes.approve") ? [{ to: "/notes/review", label: "Notes" }] : []),
+    ...(can(me, "assessments.manage") ? [{ to: "/admin/forms", label: "Forms" }] : []),
     ...(can(me, "admin.users.manage") ? [{ to: "/admin/users", label: "Staff" }] : []),
     ...(can(me, "feedback.manage") ? [{ to: "/admin/feedback", label: "Feedback" }] : []),
     ...(can(me, "admin.settings.manage") ? [{ to: "/admin/settings", label: "Settings" }] : []),

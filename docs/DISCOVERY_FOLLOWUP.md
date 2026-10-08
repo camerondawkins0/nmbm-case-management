@@ -231,6 +231,13 @@ the same thing when M23 work starts.
   is one constant (`FOLLOW_UP_MONTHS`).
 - **M16** — One-year consent expiry — still marked "are we in
   agreement," not confirmed.
+- **M11/M13** — The form builder is built; NMBM's actual registration
+  form and needs assessment haven't been seen. Also open: who should be
+  able to change those forms (granted for now to the Clinical Director,
+  Program Manager and system administrator), whether any answer should
+  be scored or flag something, and — for the participant's own link —
+  whether texts are acceptable (no SMS provider is under a BAA yet;
+  email through Workspace is).
 
 ## What to bring to the next meeting
 
@@ -239,7 +246,9 @@ the same thing when M23 work starts.
 2. The FCHN KPI reporting spec (R7 — promised, still pending).
 3. Payer file-layout/rejection documentation for Kaiser ILS, Medicare,
    Medi-Cal, Molina, and FCHN/Exym (M23 — Dayna Moore).
-4. A blank intake packet and each consent form.
+4. A blank intake packet, each consent form, and the current
+   registration form and comprehensive needs assessment (M11/M13 — to
+   enter into the form builder).
 5. An export from Exym/current system, or a screenshot.
 
 No price or date should go out before M23 and D2/D3 land.

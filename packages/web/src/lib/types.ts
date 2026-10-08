@@ -1,4 +1,11 @@
 import type {
+  Answers,
+  AssessmentMode,
+  AssessmentStatus,
+  FormVersionStatus,
+  QuestionOption,
+  QuestionType,
+  ShowIf,
   Payer,
   CarePlanStatus,
   ContactResult,
@@ -379,4 +386,78 @@ export type ParticipantDocument = {
   uploadedByName: string;
   voidedAt: string | null;
   voidReason: string | null;
+};
+
+export type AssessmentFormSummary = {
+  id: string;
+  name: string;
+  description: string | null;
+  active: boolean;
+  currentVersionId: string | null;
+  currentVersionNumber: number | null;
+  draftVersionId: string | null;
+};
+
+export type AssessmentFormDetail = {
+  id: string;
+  name: string;
+  description: string | null;
+  active: boolean;
+  versions: {
+    id: string;
+    versionNumber: number;
+    status: FormVersionStatus;
+    publishedAt: string | null;
+    publishedByName: string | null;
+  }[];
+};
+
+export type FormQuestion = {
+  stableId: string;
+  sortOrder: number;
+  type: QuestionType;
+  prompt: string;
+  helpText: string | null;
+  section: string | null;
+  required: boolean;
+  options: QuestionOption[];
+  showIf: ShowIf | null;
+};
+
+export type FormVersion = {
+  id: string;
+  formId: string;
+  formName: string;
+  versionNumber: number;
+  status: FormVersionStatus;
+  publishedAt: string | null;
+  questions: FormQuestion[];
+};
+
+export type ParticipantAssessment = {
+  id: string;
+  formName: string;
+  versionNumber: number;
+  mode: AssessmentMode;
+  status: AssessmentStatus;
+  startedAt: string;
+  startedByName: string | null;
+  completedAt: string | null;
+  voidReason: string | null;
+};
+
+export type AssessmentDetail = {
+  id: string;
+  participantId: string;
+  episodeId: string;
+  versionId: string;
+  mode: AssessmentMode;
+  status: AssessmentStatus;
+  answers: Answers;
+  startedAt: string;
+  startedByName: string | null;
+  completedAt: string | null;
+  completedByName: string | null;
+  voidReason: string | null;
+  form: FormVersion;
 };

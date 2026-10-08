@@ -1,5 +1,9 @@
 import { pgEnum } from "drizzle-orm/pg-core";
 import {
+  ASSESSMENT_MODES,
+  ASSESSMENT_STATUSES,
+  FORM_VERSION_STATUSES,
+  QUESTION_TYPES,
   DOCUMENT_STATUSES,
   FOLLOW_UP_OUTCOMES,
   ROLES,
@@ -42,3 +46,9 @@ export const followUpOutcomeEnum = pgEnum("follow_up_outcome", FOLLOW_UP_OUTCOME
 
 // Uploaded documents: pending until the file is confirmed in storage.
 export const documentStatusEnum = pgEnum("document_status", DOCUMENT_STATUSES);
+
+// Forms and assessments (M11/M13).
+export const formVersionStatusEnum = pgEnum("form_version_status", FORM_VERSION_STATUSES);
+export const questionTypeEnum = pgEnum("question_type", QUESTION_TYPES);
+export const assessmentStatusEnum = pgEnum("assessment_status", ASSESSMENT_STATUSES);
+export const assessmentModeEnum = pgEnum("assessment_mode", ASSESSMENT_MODES);

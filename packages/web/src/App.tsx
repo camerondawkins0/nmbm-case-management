@@ -17,6 +17,9 @@ import FeedbackPage from "./pages/feedback-page.js";
 import FeedbackAdminPage from "./pages/admin/feedback-admin-page.js";
 import SettingsPage from "./pages/admin/settings-page.js";
 import FollowUpsPage from "./pages/follow-ups-page.js";
+import FormsPage from "./pages/admin/forms-page.js";
+import FormBuilderPage from "./pages/admin/form-builder-page.js";
+import AssessmentPage from "./pages/assessment-page.js";
 
 export default function App() {
   const session = useMe();
@@ -77,6 +80,9 @@ export default function App() {
         <Route path="/admin/feedback" element={<FeedbackAdminPage />} />
         <Route path="/admin/settings" element={<SettingsPage />} />
         <Route path="/follow-ups" element={<FollowUpsPage me={me} />} />
+        <Route path="/admin/forms" element={<FormsPage />} />
+        <Route path="/admin/forms/:id" element={<FormBuilderPage />} />
+        <Route path="/assessments/:id" element={<AssessmentPage me={me} />} />
         <Route path="/login" element={<Navigate to="/" replace />} />
       </Routes>
     </AppShell>

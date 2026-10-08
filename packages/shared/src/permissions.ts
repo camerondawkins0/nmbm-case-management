@@ -26,6 +26,12 @@ export const PERMISSIONS = [
   // only sight of the participant; every open is audited.
   "documents.write",
   "referrals.write", // refer out and record what came back (M17)
+  // Build and publish NMBM's own forms — the registration form, the
+  // needs assessment (M11/M13). Changes what every worker is asked to
+  // collect, so it sits with the people who decide that.
+  "assessments.manage",
+  // Fill one in on a participant's record, with them or from paper.
+  "assessments.write",
   "programs.manage", // set up programmes, cohorts and class dates (M14)
   "attendance.record", // mark a roster — the evidence a PO relies on (M14)
   // M12: "it would be nice for our QA to be able to make the calls".
@@ -47,6 +53,8 @@ export type Permission = (typeof PERMISSIONS)[number];
 // so the grid stays the single source of truth for "who can do what."
 export const DEFAULT_ROLE_PERMISSIONS: Record<Role, Permission[]> = {
   clinical_director: [
+    "assessments.write",
+    "assessments.manage",
     "documents.write",
     "follow_ups.record",
     "programs.manage",
@@ -65,6 +73,7 @@ export const DEFAULT_ROLE_PERMISSIONS: Record<Role, Permission[]> = {
   ],
   billing_coordinator: ["participants.read.all", "feedback.submit"],
   intake_specialist: [
+    "assessments.write",
     "documents.write",
     "participants.read.closed",
     "consents.write",
@@ -81,6 +90,7 @@ export const DEFAULT_ROLE_PERMISSIONS: Record<Role, Permission[]> = {
     "feedback.submit",
   ],
   community_health_worker: [
+    "assessments.write",
     "documents.write",
     "attendance.record",
     "consents.write",
@@ -91,6 +101,7 @@ export const DEFAULT_ROLE_PERMISSIONS: Record<Role, Permission[]> = {
     "feedback.submit",
   ],
   program_manager: [
+    "assessments.manage",
     "programs.manage",
     "attendance.record",
     "referrals.write",
@@ -100,6 +111,7 @@ export const DEFAULT_ROLE_PERMISSIONS: Record<Role, Permission[]> = {
     "feedback.submit",
   ],
   apcc_acsw_intern: [
+    "assessments.write",
     "attendance.record",
     "participants.read.own",
     "notes.write",
@@ -108,6 +120,7 @@ export const DEFAULT_ROLE_PERMISSIONS: Record<Role, Permission[]> = {
   ],
   quality_assurance_coordinator: ["participants.read.all", "follow_ups.record", "feedback.submit"],
   system_administrator: [
+    "assessments.manage",
     "programs.manage",
     "admin.users.manage",
     "admin.settings.manage",

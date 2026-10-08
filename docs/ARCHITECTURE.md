@@ -179,7 +179,7 @@ that is what every page reads.
 ## What is built
 
 Everything below is running code: a migration, a module, and in most
-cases a page reachable after signing in. Current as of migration `0010`.
+cases a page reachable after signing in. Current as of migration `0011`.
 
 | Area | What works | Where |
 |---|---|---|
@@ -192,6 +192,7 @@ cases a page reachable after signing in. Current as of migration `0010`.
 | Notes and the no-contact ladder (M6/U6) | Write, submit, approve, return for revision, revise and resubmit; three consecutive failed contacts prompt exit documentation and two more are required before disenrolment is allowed | `modules/notes/`, `lib/rules.ts` |
 | Care plans (M9/U6) | Authoring, goals, submit, approve, return; the 30-day completion clock and the 2-week review nudge derived side by side | `modules/care-plans/`, `lib/rules.ts` |
 | Consents (M15/M16) | Four form types, expiry derived at read time from the episode start date, revocation | `modules/consents/` |
+| Forms and assessments (M11/M13) | NMBM build their own forms — the registration form, the needs assessment — with sections, choice lists and follow-up questions that appear only when an earlier answer calls for them; preview, then publish. Published versions never change; editing makes a new version and old answers stay with the wording they were given against. Staff fill one in with the participant or from a paper copy, saved as they go, completed once every required question that's shown is answered, then final — corrected by voiding. Printable | `modules/assessments/`, `packages/shared/src/assessments.ts`, `/admin/forms`, `/assessments/:id` |
 | Documents (M15/M30) | Scans and photos uploaded from the record straight to a private Cloud Storage bucket on a short-lived signed link, shown only once the server has confirmed the file arrived; optionally linked to the consent form it's a scan of; every opening audited; voided rather than deleted, and a voided file can't be opened | `modules/documents/`, `lib/storage.ts`, `components/documents-section.tsx` |
 | Referrals (M17) | Refuses to send without a usable release and distinguishes the three reasons; records the outcome that came back | `modules/referrals/` |
 | Programmes and attendance (M14) | Programmes, cohorts, class dates, rosters, whole-roster marking in one request, and a printable participation record. Disenrolled participants stay on the roster, flagged | `modules/programs/` |
@@ -203,7 +204,7 @@ cases a page reachable after signing in. Current as of migration `0010`.
 | Audit (M30) | Append-only, written inside the transaction that performs the action, read-only endpoint | `plugins/audit.ts` |
 | Feedback (M31) | In-app issue reporting and a triage queue, because NMBM has no IT staff | `modules/feedback/`, `docs/SUPPORT.md` |
 
-59 API routes across 14 modules, 25 tables and one view, 15 pages plus
+73 API routes across 15 modules, 29 tables and one view, 18 pages plus
 two holding screens (no role yet; server unreachable).
 `docs/agent/map.md` lists them route by route and page by page.
 
@@ -235,7 +236,7 @@ Two different reasons, and they shouldn't be reported as one number.
 
 **Not blocked — ours to do:**
 
-- **Test coverage stops at the API.** 159 tests run through the real
+- **Test coverage stops at the API.** 176 tests run through the real
   server against a real Postgres on every push, covering every rule in
   `docs/agent/invariants.md`, and each has been proved by breaking the
   rule and watching it fail. The web app has no automated tests; its
@@ -247,9 +248,14 @@ Two different reasons, and they shouldn't be reported as one number.
   see "What has and hasn't been verified" in `docs/DEPLOY.md`. The rest
   waits on a project in NMBM's organisation, the Workspace super-admin
   access, and the Google Cloud BAA.
-- **Assessments (M13).** The comprehensive needs assessment is sent by
-  email and filled in on tablets today. A versioned assessment engine
-  and the participant-facing kiosk are two real modules, neither begun.
+- **Participants filling in forms themselves (M13).** NMBM send the
+  registration form and needs assessment by email or text and use
+  tablets. The form engine is built and staff can fill forms in; the
+  participant-facing side — a single-use link sent by email or text, or
+  a code on a tablet, showing one form and nothing else — is next.
+  Assessments already record how they were filled in (`self` is
+  reserved for it). Sending email or text needs a provider decision
+  (Workspace Gmail is covered by NMBM's BAA; SMS is not yet).
 - **Exym migration (M27-M29).** Needs an export or a screenshot of the
   current system first — item 5 on the next-meeting list in
   `docs/DISCOVERY_FOLLOWUP.md`.

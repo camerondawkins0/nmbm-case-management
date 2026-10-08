@@ -1,6 +1,6 @@
 # Map
 
-Where things are. Current as of migration `0010`.
+Where things are. Current as of migration `0011`.
 
 ## Packages
 
@@ -37,7 +37,7 @@ splits out `audit.ts` for the same reason.
 
 ## API routes
 
-59 routes across 14 modules, plus five on the auth plugin and two on the
+73 routes across 15 modules, plus five on the auth plugin and two on the
 local storage stand-in. Every route outside `PUBLIC_BY_DESIGN` carries
 an `authorize()` or `authorizeAny()` preHandler, and the permission it
 requires is named in the file. `test/routes-authorized.test.ts` reads
@@ -54,6 +54,7 @@ the source and fails on any route that has neither — see testing.md.
 | `consents` | `POST /api/consents`, `POST /api/consents/:id/revoke` |
 | `referrals` | `POST /api/referrals`, `POST /api/referrals/:id/outcome` |
 | `programs` | `GET /api/programs`, `POST /api/programs`, `POST /api/cohorts`, `GET /api/cohorts/:id`, `POST /api/cohorts/:id/sessions`, `POST /api/cohorts/:id/enrollments`, `POST /api/enrollments/:id/withdraw`, `POST /api/sessions/:id/attendance`, `GET /api/enrollments/:id/participation` |
+| `assessments` | Forms: `GET /api/assessment-forms`, `POST /api/assessment-forms`, `GET /api/assessment-forms/:id`, `POST /api/assessment-forms/:id/drafts`, `POST /api/assessment-forms/:id/active`, `GET /api/assessment-versions/:id`, `PUT /api/assessment-versions/:id/questions` (draft only), `POST /api/assessment-versions/:id/publish`. On a record: `GET /api/participants/:id/assessments`, `POST /api/participants/:id/assessments`, `GET /api/assessments/:id`, `PATCH /api/assessments/:id/answers`, `POST /api/assessments/:id/complete`, `POST /api/assessments/:id/void` |
 | `documents` | `GET /api/participants/:id/documents`, `POST /api/participants/:id/documents` (returns a signed upload link), `POST /api/documents/:id/confirm`, `GET /api/documents/:id/download-url`, `POST /api/documents/:id/void` |
 | `follow-ups` | `GET /api/follow-ups` (QA's queue), `POST /api/follow-ups` (record a call), `GET /api/follow-ups/re-enrollment-requests` |
 | `dashboard` | `GET /api/dashboard` |
@@ -105,7 +106,8 @@ first is behind the session check.
 | `/` | `dashboard-page.tsx` | What needs attention: care plan clocks, the no-contact ladder, notes awaiting review, referrals with no outcome |
 | `/participants` | `participants-page.tsx` | Caseload list, scoped server-side; a Closed tab (everything, for intake and supervisors) or Recently closed (a worker's own former clients, with the date access ends) |
 | `/participants/new` | `intake-page.tsx` | Admission — record, episode and assignment in one act |
-| `/participants/:id` | `participant-detail-page.tsx` | The record: flags, notes, care plan, consents, documents, referrals, episode history; on a closed record, readmission |
+| `/participants/:id` | `participant-detail-page.tsx` | The record: flags, notes, care plan, consents, forms and assessments, documents, referrals, episode history; on a closed record, readmission |
+| `/assessments/:id` | `assessment-page.tsx` | Filling in a form (saves as you go, follow-ups appear as earlier answers are given), or reading and printing a completed one |
 | `/notes/review` | `note-review-page.tsx` | The U6 queue — approve, or return with a reason |
 | `/care-plans/review` | `care-plan-review-page.tsx` | The same, for care plans |
 | `/programs` | `programs-page.tsx` | Programmes and their cohorts |
@@ -115,14 +117,18 @@ first is behind the session check.
 | `/admin/users` | `admin/users-page.tsx` | Staff, roles, deactivation |
 | `/admin/settings` | `admin/settings-page.tsx` | Settings NMBM change themselves (the former-worker window) |
 | `/feedback` | `feedback-page.tsx` | Report an issue |
+| `/admin/forms` | `admin/forms-page.tsx` | NMBM's forms: which exist, which version is live |
+| `/admin/forms/:id` | `admin/form-builder-page.tsx` | Build a draft — questions, options, sections, show-if rules — preview it, publish it; past versions read-only |
 | `/admin/feedback` | `admin/feedback-admin-page.tsx` | The triage queue |
 
 Shared components in `packages/web/src/components/`: `app-shell.tsx`
 (header and navigation, which hides what the signed-in user cannot
 reach), `sign-out-button.tsx`, `brand-mark.tsx`, `flags.tsx` (the attention badges derived in
-`lib/rules.ts`), and the four sections the participant record composes
+`lib/rules.ts`), and the five sections the participant record composes
 — `care-plan-section.tsx`, `consents-section.tsx`,
-`documents-section.tsx`, `referrals-section.tsx`.
+`assessments-section.tsx`, `documents-section.tsx`, `referrals-section.tsx`.
+`question-field.tsx` renders one question, the same way for the
+staff page, the builder's preview and (later) the participant's link.
 
 `lib/use-me.ts` tells signed out, session expired and server
 unreachable apart; `lib/api.ts` handles a session ending mid-page;
@@ -141,7 +147,7 @@ module layout. `enums.ts` wraps `as const` arrays from `@nmbm/shared` in
 `pgEnum`, so an enum is declared once and used in both places — same
 convention as the WSL system this was adapted from.
 
-25 tables and one view:
+29 tables and one view:
 
 | File | Tables |
 |---|---|
@@ -157,6 +163,7 @@ convention as the WSL system this was adapted from.
 | `feedback.ts` | `feedback_items` |
 | `settings.ts` | `app_settings` — one row per setting somebody has changed |
 | `follow-ups.ts` | `follow_up_calls` — one row per call attempt; the schedule isn't stored |
+| `assessments.ts` | `assessment_forms`, `assessment_form_versions`, `assessment_questions`, `assessments` — answers are a jsonb map keyed by each question's stable id |
 | `documents.ts` | `documents` — uploaded files; the bytes are in Cloud Storage under an opaque key |
 | `sessions.ts` | `sessions` — sign-in sessions, keyed by a hash of the session id |
 | `views.ts` | `v_no_contact_counts` (rebuilt per episode in 0006), declared to Drizzle with `.existing()` |
@@ -177,6 +184,7 @@ in order in `meta/_journal.json`:
 | `0008_follow_up_calls` | `follow_up_calls`, one settling result per milestone, search indexes on participants |
 | `0009_sessions` | `sessions` |
 | `0010_documents` | `documents`, `document_status` enum |
+| `0011_assessments` | The four form and assessment tables; one draft per form |
 
 ## Seeds
 
@@ -193,7 +201,8 @@ in order in `meta/_journal.json`:
   Walsh is the disenrolled one, for R10; Price, Liu and Moreno show
   M12's overdue, due and asked-to-come-back states), and a
   running Anger Management cohort with six weekly sessions and three
-  deliberately different attendance histories. Nothing in it is real.
+  deliberately different attendance histories, and an invented "Example
+  needs assessment" with two follow-up rules. Nothing in it is real.
 
 ## Deployment
 
