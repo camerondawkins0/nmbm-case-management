@@ -17,6 +17,17 @@ export const APP_SETTINGS = {
     min: 0,
     max: 90,
   },
+  // M13: how long a form link handed to a participant keeps working.
+  // Long enough for somebody to get round to it; short enough that a
+  // link sitting in an old inbox stops being a way into the form.
+  self_serve_link_days: {
+    label: "Participant form links last (days)",
+    description:
+      "How long a form link and passcode given to a participant keep working, if the form isn't submitted first. 1 to 30 days.",
+    default: 7,
+    min: 1,
+    max: 30,
+  },
 } as const;
 
 export type AppSettingKey = keyof typeof APP_SETTINGS;

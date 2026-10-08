@@ -4,7 +4,7 @@ import { auditLog } from "@nmbm/db";
 export async function writeAudit(
   db: Db,
   entry: {
-    actorUserId: string;
+    actorUserId: string | null;
     action: string;
     entityType: string;
     entityId: string;

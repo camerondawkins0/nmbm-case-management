@@ -14,6 +14,7 @@ import {
   publishProblems,
   visibleQuestionIds,
   type Answers,
+  type AssessmentMode,
   type FormQuestionInput,
 } from "@nmbm/shared";
 import { conflict, notFound, unprocessable } from "../../plugins/errors.js";
@@ -314,7 +315,7 @@ export async function listForParticipant(db: Db, participantId: string) {
 export async function start(
   db: Db,
   participantId: string,
-  input: { formId: string; mode: "with_staff" | "from_paper" },
+  input: { formId: string; mode: AssessmentMode },
   actorId: string,
 ) {
   const [form] = await db.select().from(assessmentForms).where(eq(assessmentForms.id, input.formId));
@@ -373,8 +374,19 @@ export async function get(db: Db, id: string) {
 // Answers go on an assessment only while it's open, and only while its
 // enrolment is: the same rule notes follow, so nothing is added to a
 // closed stay after the fact.
-async function requireOpen(db: Db, id: string) {
+//
+// actorId is the staff member, or null for the participant through
+// their own link. Each side keeps to its own kind of assessment: staff
+// editing a form the participant is filling in would put words in their
+// mouth, and the record would still say they wrote it.
+async function requireOpen(db: Db, id: string, actorId: string | null) {
   const row = await find(db, id);
+  if (actorId !== null && row.mode === "self") {
+    throw conflict(
+      "The participant is filling this in from their own link. To fill it in yourself, void it and start a new one",
+    );
+  }
+  if (actorId === null && row.mode !== "self") throw conflict("This form isn't the participant's to fill in");
   if (row.status !== "in_progress") {
     throw conflict(
       row.status === "completed"
@@ -387,8 +399,8 @@ async function requireOpen(db: Db, id: string) {
   return row;
 }
 
-export async function saveAnswers(db: Db, id: string, patch: Record<string, unknown>) {
-  const row = await requireOpen(db, id);
+export async function saveAnswers(db: Db, id: string, patch: Record<string, unknown>, actorId: string | null) {
+  const row = await requireOpen(db, id, actorId);
   const questions = await questionsFor(db, row.versionId);
   const byId = new Map(questions.map((q) => [q.stableId, q]));
 
@@ -426,8 +438,8 @@ export async function saveAnswers(db: Db, id: string, patch: Record<string, unkn
   return updated;
 }
 
-export async function complete(db: Db, id: string, actorId: string) {
-  const row = await requireOpen(db, id);
+export async function complete(db: Db, id: string, actorId: string | null) {
+  const row = await requireOpen(db, id, actorId);
   const questions = await questionsFor(db, row.versionId);
   const visible = visibleQuestionIds(questions, row.answers);
 
@@ -466,7 +478,7 @@ export async function complete(db: Db, id: string, actorId: string) {
     action: "assessment.completed",
     entityType: "participant",
     entityId: row.participantId,
-    detail: `${version.name} v${version.n}`,
+    detail: `${version.name} v${version.n}${actorId === null ? ", submitted by the participant" : ""}`,
   });
   return done;
 }

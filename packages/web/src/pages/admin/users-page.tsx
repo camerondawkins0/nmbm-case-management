@@ -161,7 +161,7 @@ export default function AdminUsersPage() {
             {audit.map((entry) => (
               <li key={entry.id} className="flex flex-wrap justify-between gap-2 px-3 py-2">
                 <span className="text-nmbm-ink">
-                  <span className="font-medium">{entry.actorName}</span>{" "}
+                  <span className="font-medium">{entry.actorName ?? "Participant (own link)"}</span>{" "}
                   <span className="text-nmbm-ink/60">{entry.action.replace(/[._]/g, " ")}</span>
                   {entry.detail && <span className="text-nmbm-ink/50"> — {entry.detail}</span>}
                 </span>

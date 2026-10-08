@@ -44,7 +44,10 @@ export const userRoles = pgTable(
 // Append-only. Nothing here is ever updated or deleted (CLAUDE.md hard rule 1).
 export const auditLog = pgTable("audit_log", {
   id: uuid("id").primaryKey().defaultRandom(),
-  actorUserId: uuid("actor_user_id").notNull().references(() => users.id),
+  // Null for something a participant did through their own form link —
+  // there's no staff member to name, and naming the one who issued the
+  // link would say they did it.
+  actorUserId: uuid("actor_user_id").references(() => users.id),
   action: text("action").notNull(),
   entityType: text("entity_type").notNull(),
   entityId: uuid("entity_id").notNull(),

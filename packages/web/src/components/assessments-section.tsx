@@ -5,11 +5,13 @@ import { can } from "../lib/use-me.js";
 import { ASSESSMENT_MODE_LABELS } from "../lib/labels.js";
 import type {
   AssessmentFormSummary,
+  IssuedLink,
   Me,
   ParticipantAssessment,
   ParticipantDetail,
 } from "../lib/types.js";
 import { Pill } from "./flags.js";
+import { LinkHandover, LinkStatus } from "./participant-link.js";
 
 // M13: the registration form and the needs assessment, on the record.
 export function AssessmentsSection({
@@ -27,7 +29,8 @@ export function AssessmentsSection({
   const [forms, setForms] = useState<AssessmentFormSummary[]>([]);
   const [starting, setStarting] = useState(false);
   const [formId, setFormId] = useState("");
-  const [mode, setMode] = useState<"with_staff" | "from_paper">("with_staff");
+  const [mode, setMode] = useState<"with_staff" | "from_paper" | "self">("with_staff");
+  const [issued, setIssued] = useState<IssuedLink | null>(null);
   const [busy, setBusy] = useState(false);
 
   const load = useCallback(async () => {
@@ -56,6 +59,18 @@ export function AssessmentsSection({
   async function start() {
     setBusy(true);
     try {
+      if (mode === "self") {
+        setIssued(
+          await api<IssuedLink>(`/api/participants/${record.id}/assessment-links`, {
+            method: "POST",
+            body: JSON.stringify({ formId }),
+          }),
+        );
+        setStarting(false);
+        setBusy(false);
+        load();
+        return;
+      }
       const created = await api<{ id: string }>(`/api/participants/${record.id}/assessments`, {
         method: "POST",
         body: JSON.stringify({ formId, mode }),
@@ -108,9 +123,24 @@ export function AssessmentsSection({
               {a.completedAt && ` · completed ${a.completedAt.slice(0, 10)}`}
             </p>
             {a.voidReason && <p className="mt-1 text-xs text-state-alert">Voided: {a.voidReason}</p>}
+            {a.link && a.status === "in_progress" && (
+              <LinkStatus
+                assessmentId={a.id}
+                link={a.link}
+                canManage={writable && record.episodeStatus === "open"}
+                onIssued={(link) => {
+                  setIssued(link);
+                  load();
+                }}
+                onChanged={load}
+                onError={onError}
+              />
+            )}
           </li>
         ))}
       </ul>
+
+      {issued && <LinkHandover issued={issued} onDone={() => setIssued(null)} />}
 
       {starting && (
         <div className="mt-3 rounded border border-nmbm-ink/15 p-3">
@@ -139,11 +169,12 @@ export function AssessmentsSection({
                 How
                 <select
                   value={mode}
-                  onChange={(e) => setMode(e.target.value as "with_staff" | "from_paper")}
+                  onChange={(e) => setMode(e.target.value as "with_staff" | "from_paper" | "self")}
                   className="rounded border border-nmbm-ink/20 px-2 py-1.5 text-sm"
                 >
                   <option value="with_staff">{ASSESSMENT_MODE_LABELS.with_staff}</option>
                   <option value="from_paper">{ASSESSMENT_MODE_LABELS.from_paper}</option>
+                  <option value="self">The participant, from a link</option>
                 </select>
               </label>
             </div>
@@ -154,7 +185,7 @@ export function AssessmentsSection({
               onClick={start}
               className="rounded bg-nmbm-ink px-4 py-1.5 text-sm font-medium text-nmbm-paper disabled:opacity-50"
             >
-              Start
+              {mode === "self" ? "Make link and passcode" : "Start"}
             </button>
             <button
               onClick={() => setStarting(false)}

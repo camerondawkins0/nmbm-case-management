@@ -18,7 +18,7 @@ export async function listRecent(db: Db, limit = 100) {
       actorEmail: users.email,
     })
     .from(auditLog)
-    .innerJoin(users, eq(users.id, auditLog.actorUserId))
+    .leftJoin(users, eq(users.id, auditLog.actorUserId))
     .orderBy(desc(auditLog.createdAt))
     .limit(Math.min(Math.max(limit, 1), 500));
 }

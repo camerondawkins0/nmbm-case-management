@@ -235,9 +235,10 @@ the same thing when M23 work starts.
   form and needs assessment haven't been seen. Also open: who should be
   able to change those forms (granted for now to the Clinical Director,
   Program Manager and system administrator), whether any answer should
-  be scored or flag something, and — for the participant's own link —
-  whether texts are acceptable (no SMS provider is under a BAA yet;
-  email through Workspace is).
+  be scored or flag something. The participant's own link is built
+  without any messaging service: decided in October 2026 that the case manager will
+  hand over the link and passcode themselves, so no SMS provider (and
+  BAA) is needed for it.
 
 ## What to bring to the next meeting
 

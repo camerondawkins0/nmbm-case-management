@@ -24,6 +24,10 @@ const PUBLIC_BY_DESIGN = new Map<string, string>([
   ["POST /auth/logout", "ending a session you may or may not have is harmless"],
   ["PUT /api/local-storage/*", "development-only stand-in for Cloud Storage; the signed URL is the gate"],
   ["GET /api/local-storage/*", "development-only stand-in for Cloud Storage; the signed URL is the gate"],
+  ["POST /api/self-serve/:token/unlock", "a participant's own form link; the passcode is the gate, and wrong ones lock it"],
+  ["GET /api/self-serve/:token", "a participant's own form link; needs the cookie the passcode earned"],
+  ["PATCH /api/self-serve/:token/answers", "a participant's own form link; needs the cookie the passcode earned"],
+  ["POST /api/self-serve/:token/submit", "a participant's own form link; needs the cookie the passcode earned"],
 ]);
 
 function sourceFiles(dir: string): string[] {

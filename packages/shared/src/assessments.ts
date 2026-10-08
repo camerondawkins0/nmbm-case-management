@@ -298,3 +298,25 @@ export function answerProblem(
         : "isn't a list of the options";
   }
 }
+
+/* ------------------------------------------------------------------ *
+ * The participant's own link (M13).
+ *
+ * The case manager hands over a link and a passcode themselves — in
+ * person, by phone, from their own Workspace email — so nothing here
+ * sends a message. The two are meant to travel separately: a forwarded
+ * email alone doesn't open the form.
+ * ------------------------------------------------------------------ */
+
+export const SELF_SERVE_PASSCODE_LENGTH = 6;
+// Wrong passcodes before the link locks. The link itself is a 256-bit
+// secret, so this guards a link that has gone astray, not guessing.
+export const SELF_SERVE_MAX_ATTEMPTS = 5;
+// Idle time before a participant's open form needs the passcode again —
+// a shared tablet, or a phone left on a table.
+export const SELF_SERVE_IDLE_MINUTES = 30;
+
+export const sendToParticipantSchema = z.object({ formId: z.string().uuid() });
+export const unlockSchema = z.object({
+  passcode: z.string().trim().regex(/^\d{6}$/, { message: "The passcode is six digits" }),
+});

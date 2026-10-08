@@ -20,8 +20,24 @@ import FollowUpsPage from "./pages/follow-ups-page.js";
 import FormsPage from "./pages/admin/forms-page.js";
 import FormBuilderPage from "./pages/admin/form-builder-page.js";
 import AssessmentPage from "./pages/assessment-page.js";
+import SelfServePage from "./pages/self-serve-page.js";
 
 export default function App() {
+  const location = useLocation();
+  // A participant's own form link. Deliberately outside everything
+  // below: no staff session is looked for, and nothing of the staff app
+  // — its navigation, its sign-in redirect — is reachable from it.
+  if (location.pathname.startsWith("/f/")) {
+    return (
+      <Routes>
+        <Route path="/f/:token" element={<SelfServePage />} />
+      </Routes>
+    );
+  }
+  return <StaffApp />;
+}
+
+function StaffApp() {
   const session = useMe();
   const location = useLocation();
 

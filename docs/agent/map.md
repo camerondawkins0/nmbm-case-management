@@ -1,6 +1,6 @@
 # Map
 
-Where things are. Current as of migration `0011`.
+Where things are. Current as of migration `0012`.
 
 ## Packages
 
@@ -37,7 +37,7 @@ splits out `audit.ts` for the same reason.
 
 ## API routes
 
-73 routes across 15 modules, plus five on the auth plugin and two on the
+80 routes across 15 modules, plus five on the auth plugin and two on the
 local storage stand-in. Every route outside `PUBLIC_BY_DESIGN` carries
 an `authorize()` or `authorizeAny()` preHandler, and the permission it
 requires is named in the file. `test/routes-authorized.test.ts` reads
@@ -54,7 +54,7 @@ the source and fails on any route that has neither — see testing.md.
 | `consents` | `POST /api/consents`, `POST /api/consents/:id/revoke` |
 | `referrals` | `POST /api/referrals`, `POST /api/referrals/:id/outcome` |
 | `programs` | `GET /api/programs`, `POST /api/programs`, `POST /api/cohorts`, `GET /api/cohorts/:id`, `POST /api/cohorts/:id/sessions`, `POST /api/cohorts/:id/enrollments`, `POST /api/enrollments/:id/withdraw`, `POST /api/sessions/:id/attendance`, `GET /api/enrollments/:id/participation` |
-| `assessments` | Forms: `GET /api/assessment-forms`, `POST /api/assessment-forms`, `GET /api/assessment-forms/:id`, `POST /api/assessment-forms/:id/drafts`, `POST /api/assessment-forms/:id/active`, `GET /api/assessment-versions/:id`, `PUT /api/assessment-versions/:id/questions` (draft only), `POST /api/assessment-versions/:id/publish`. On a record: `GET /api/participants/:id/assessments`, `POST /api/participants/:id/assessments`, `GET /api/assessments/:id`, `PATCH /api/assessments/:id/answers`, `POST /api/assessments/:id/complete`, `POST /api/assessments/:id/void` |
+| `assessments` | Forms: `GET /api/assessment-forms`, `POST /api/assessment-forms`, `GET /api/assessment-forms/:id`, `POST /api/assessment-forms/:id/drafts`, `POST /api/assessment-forms/:id/active`, `GET /api/assessment-versions/:id`, `PUT /api/assessment-versions/:id/questions` (draft only), `POST /api/assessment-versions/:id/publish`. On a record: `GET /api/participants/:id/assessments`, `POST /api/participants/:id/assessments`, `GET /api/assessments/:id`, `PATCH /api/assessments/:id/answers`, `POST /api/assessments/:id/complete`, `POST /api/assessments/:id/void`. The participant's link: `POST /api/participants/:id/assessment-links` (make one), `POST /api/assessments/:id/link` (replace it), `POST /api/assessments/:id/link/revoke`; and, public by design in `self-serve-routes.ts`, `POST /api/self-serve/:token/unlock`, `GET /api/self-serve/:token`, `PATCH /api/self-serve/:token/answers`, `POST /api/self-serve/:token/submit` |
 | `documents` | `GET /api/participants/:id/documents`, `POST /api/participants/:id/documents` (returns a signed upload link), `POST /api/documents/:id/confirm`, `GET /api/documents/:id/download-url`, `POST /api/documents/:id/void` |
 | `follow-ups` | `GET /api/follow-ups` (QA's queue), `POST /api/follow-ups` (record a call), `GET /api/follow-ups/re-enrollment-requests` |
 | `dashboard` | `GET /api/dashboard` |
@@ -101,6 +101,7 @@ first is behind the session check.
 
 | Path | Page | What it's for |
 |---|---|---|
+| `/f/:token` | `self-serve-page.tsx` | A participant's own form: passcode, then one form. Routed before the session check in `App.tsx` and uses its own fetch, never `lib/api.ts` |
 | `/login` | `login-page.tsx` | Google sign-in, the reason for any refusal (`?error=` codes from `SIGN_IN_ERRORS` in `@nmbm/shared`), and the dev sign-in panel when the server offers it |
 | — | `holding-pages.tsx` | Shown instead of the app: signed in with no role yet, or the server can't be reached |
 | `/` | `dashboard-page.tsx` | What needs attention: care plan clocks, the no-contact ladder, notes awaiting review, referrals with no outcome |
@@ -128,7 +129,9 @@ reach), `sign-out-button.tsx`, `brand-mark.tsx`, `flags.tsx` (the attention badg
 — `care-plan-section.tsx`, `consents-section.tsx`,
 `assessments-section.tsx`, `documents-section.tsx`, `referrals-section.tsx`.
 `question-field.tsx` renders one question, the same way for the
-staff page, the builder's preview and (later) the participant's link.
+staff page, the builder's preview and the participant's link.
+`participant-link.tsx` shows a new link and passcode once, and a
+link's state with its replace and withdraw actions.
 
 `lib/use-me.ts` tells signed out, session expired and server
 unreachable apart; `lib/api.ts` handles a session ending mid-page;
@@ -147,7 +150,7 @@ module layout. `enums.ts` wraps `as const` arrays from `@nmbm/shared` in
 `pgEnum`, so an enum is declared once and used in both places — same
 convention as the WSL system this was adapted from.
 
-29 tables and one view:
+30 tables and one view:
 
 | File | Tables |
 |---|---|
@@ -163,7 +166,7 @@ convention as the WSL system this was adapted from.
 | `feedback.ts` | `feedback_items` |
 | `settings.ts` | `app_settings` — one row per setting somebody has changed |
 | `follow-ups.ts` | `follow_up_calls` — one row per call attempt; the schedule isn't stored |
-| `assessments.ts` | `assessment_forms`, `assessment_form_versions`, `assessment_questions`, `assessments` — answers are a jsonb map keyed by each question's stable id |
+| `assessments.ts` | `assessment_forms`, `assessment_form_versions`, `assessment_questions`, `assessments`, `assessment_links` (hashes only) — answers are a jsonb map keyed by each question's stable id |
 | `documents.ts` | `documents` — uploaded files; the bytes are in Cloud Storage under an opaque key |
 | `sessions.ts` | `sessions` — sign-in sessions, keyed by a hash of the session id |
 | `views.ts` | `v_no_contact_counts` (rebuilt per episode in 0006), declared to Drizzle with `.existing()` |
@@ -185,6 +188,7 @@ in order in `meta/_journal.json`:
 | `0009_sessions` | `sessions` |
 | `0010_documents` | `documents`, `document_status` enum |
 | `0011_assessments` | The four form and assessment tables; one draft per form |
+| `0012_assessment_links` | `assessment_links`, one live link per assessment; `audit_log.actor_user_id` nullable for things a participant did |
 
 ## Seeds
 

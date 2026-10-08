@@ -4,20 +4,10 @@ import { visibleQuestionIds, type AnswerValue, type Answers } from "@nmbm/shared
 import { api, ApiError } from "../lib/api.js";
 import { can } from "../lib/use-me.js";
 import { ASSESSMENT_MODE_LABELS } from "../lib/labels.js";
-import type { AssessmentDetail, FormQuestion, Me, ParticipantDetail } from "../lib/types.js";
+import type { AssessmentDetail, IssuedLink, Me, ParticipantDetail } from "../lib/types.js";
+import { LinkHandover, LinkStatus } from "../components/participant-link.js";
 import { Pill } from "../components/flags.js";
-import { QuestionField, answerText } from "../components/question-field.js";
-
-// Consecutive questions under the same heading print together.
-function bySection(questions: FormQuestion[]) {
-  const groups: { section: string | null; questions: FormQuestion[] }[] = [];
-  for (const q of questions) {
-    const last = groups[groups.length - 1];
-    if (last && last.section === q.section) last.questions.push(q);
-    else groups.push({ section: q.section, questions: [q] });
-  }
-  return groups;
-}
+import { QuestionField, answerText, bySection } from "../components/question-field.js";
 
 type SaveState = "saved" | "unsaved" | "saving" | "failed";
 
@@ -29,6 +19,7 @@ export default function AssessmentPage({ me }: { me: Me }) {
   const [saveState, setSaveState] = useState<SaveState>("saved");
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [issued, setIssued] = useState<IssuedLink | null>(null);
   // Questions changed since the last save. Only these are sent, so two
   // people on the same form don't overwrite each other's answers.
   const dirty = useRef(new Set<string>());
@@ -125,7 +116,9 @@ export default function AssessmentPage({ me }: { me: Me }) {
   if (!assessment) return <p className="text-sm text-nmbm-ink/50">Loading…</p>;
 
   const { form } = assessment;
-  const editable = assessment.status === "in_progress" && can(me, "assessments.write");
+  // A participant's own form is theirs to fill in; staff see it, but
+  // the API won't take their edits, so neither does the page.
+  const editable = assessment.status === "in_progress" && assessment.mode !== "self" && can(me, "assessments.write");
   const visible = visibleQuestionIds(form.questions, answers);
   const shown = form.questions.filter((q) => visible.has(q.stableId));
   const name = participant ? `${participant.firstName} ${participant.lastName}` : "";
@@ -181,6 +174,26 @@ export default function AssessmentPage({ me }: { me: Me }) {
         </div>
       </div>
 
+      {assessment.mode === "self" && assessment.status === "in_progress" && (
+        <div className="mt-4 rounded border border-nmbm-ink/10 bg-nmbm-ink/[0.03] px-4 py-3 text-sm text-nmbm-ink/70 print:hidden">
+          The participant is filling this in from their own link. Their answers so far are below and
+          appear here as they save them.
+          {assessment.link && (
+            <LinkStatus
+              assessmentId={assessment.id}
+              link={assessment.link}
+              canManage={can(me, "assessments.write")}
+              onIssued={(link) => {
+                setIssued(link);
+                load();
+              }}
+              onChanged={load}
+              onError={setError}
+            />
+          )}
+          {issued && <LinkHandover issued={issued} onDone={() => setIssued(null)} />}
+        </div>
+      )}
       {assessment.voidReason && (
         <p className="mt-4 rounded border border-state-alert/20 bg-state-alert-bg px-3 py-2 text-sm text-state-alert">
           Voided: {assessment.voidReason}
@@ -264,7 +277,8 @@ export default function AssessmentPage({ me }: { me: Me }) {
               </dl>
             </section>
           ))}
-          {assessment.status === "completed" && can(me, "assessments.write") && (
+          {(assessment.status === "completed" || assessment.status === "in_progress") &&
+            can(me, "assessments.write") && (
             <div className="print:hidden">
               <button
                 disabled={busy}
@@ -274,7 +288,9 @@ export default function AssessmentPage({ me }: { me: Me }) {
                 Void this assessment
               </button>
               <p className="mt-1 text-xs text-nmbm-ink/50">
-                A completed assessment can't be edited. To correct one, void it and start a new one.
+                {assessment.status === "completed"
+                  ? "A completed assessment can't be edited. To correct one, void it and start a new one."
+                  : "Voiding stops the participant's link working. Answers so far stay on the record."}
               </p>
             </div>
           )}

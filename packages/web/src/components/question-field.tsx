@@ -162,3 +162,14 @@ export function answerText(question: FormQuestion, value: AnswerValue | undefine
   if (question.type === "yes_no" || question.type === "single_choice") return label(String(value));
   return String(value);
 }
+
+// Consecutive questions under the same heading print together.
+export function bySection<Q extends { section: string | null }>(questions: Q[]) {
+  const groups: { section: string | null; questions: Q[] }[] = [];
+  for (const q of questions) {
+    const last = groups[groups.length - 1];
+    if (last && last.section === q.section) last.questions.push(q);
+    else groups.push({ section: q.section, questions: [q] });
+  }
+  return groups;
+}

@@ -1,6 +1,6 @@
 # Testing
 
-176 tests in `packages/api/test/`, run by vitest against a real Postgres.
+188 tests in `packages/api/test/`, run by vitest against a real Postgres.
 CI runs them on every push with a Postgres 16 service.
 
 ```bash
@@ -38,6 +38,7 @@ dev-login route, and assert on HTTP responses.
 | `search.test.ts` | R10 search scoping, wildcard escaping, intake's duplicate refusal and its audited override |
 | `deployment.test.ts` | Sessions shared across instances and hashed at rest; the web build served with app routes and JSON 404s; security headers; production refusing a missing secret and dev sign-in; the Secure cookie behind a trusted proxy |
 | `assessments.test.ts` | The show-if evaluator and publish checks (no database), then over HTTP: who can build, published versions frozen, drafts keeping stable ids, one draft, type changes refused, current version on start, answer validation and clearing, required-when-shown, hidden answers dropped on completion, completed final, void, caseload scoping, retired forms, closed episodes |
+| `self-serve.test.ts` | The participant's link: nothing stored in plain, passcode before anything, cookie tied to its own link, lockout, the participant's answers filed as theirs with a null audit actor, idle timeout, expiry and closure, staff kept out of a participant's form, replace and withdraw, caseload scoping |
 | `documents.test.ts` | Upload, confirm and open through the local storage stand-in; confirm refused until the file arrives; opaque keys; views audited; consent scans same-person only; type and size refused; tampered links refused; other workers' documents 404; void keeps the row and stops it opening |
 | `csv.test.ts` | The formula-injection guard and RFC 4180 quoting, no database |
 | `routes-authorized.test.ts` | Reads `packages/api/src` and fails on any route with neither `authorize()` nor a `PUBLIC_BY_DESIGN` entry, and on entries that are no longer open; no database |
@@ -88,6 +89,10 @@ test.
 | Answers unchecked; unknown questions accepted; clearing ignored; required ignoring visibility; hidden answers kept; completion unaudited; start or read not caseload-scoped; retired form or closed episode startable | assessments |
 | Hidden answers still driving a chain; unanswered satisfying "is not"; multiple choice compared as text; a CHW able to build forms | assessments |
 | A completed assessment editable | assessments — only with both guards broken: the save also refuses at the `UPDATE`, so breaking the first alone changes nothing |
+| Passcode unchecked; never locking; a locked, expired, voided or closed-enrolment link still opening; idle timeout ignored; token stored or looked up in plain; old link surviving a replacement; link not spent on submit | self-serve |
+| Cookie not tied to its link | self-serve — missed at first: the test reused a cookie on a link nobody had unlocked, which refused for another reason. It now unlocks the second link first |
+| A submitted link still opening | self-serve — only with both guards broken: the form is no longer in progress either |
+| Staff able to edit a participant's form; the view leaking the participant; cookie Lax or site-wide; a lock blamed on staff; participant audit rows hidden from the admin; link routes not caseload-scoped | self-serve |
 | CSV guard removed; plain numbers guarded; carriage return unquoted; headers unguarded | csv |
 | A route with no gate; a stale `PUBLIC_BY_DESIGN` entry; the bracket matcher stopping early | routes-authorized |
 

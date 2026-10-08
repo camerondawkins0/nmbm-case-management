@@ -187,3 +187,8 @@ and error logs can include what a request contained. Treat Cloud Logging
 as holding client information: it is covered by the Google Cloud BAA
 once accepted, and access to it should be limited to the people who
 administer the system.
+
+Participant form links put their secret in the path (`/f/<token>`,
+`/api/self-serve/<token>/…`), so it appears in request logs. That alone
+doesn't open a form — the passcode is needed too, and only its hash is
+stored — but it's another reason to keep log access narrow.

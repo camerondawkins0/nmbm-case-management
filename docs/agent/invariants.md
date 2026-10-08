@@ -366,6 +366,39 @@ the app, not in code. No scoring: M11 says no licensed instruments.
 - Saves send only the changed questions and merge in SQL, so two people
   on one form don't overwrite each other.
 
+## A participant's link opens one form and says nothing else (M13)
+
+The case manager makes a link and a 6-digit passcode on the record and
+passes them on themselves — the app sends nothing, so no SMS or email
+provider is involved. They're meant to travel separately, so a forwarded
+email alone doesn't open the form.
+
+- **Only hashes are stored.** The link's secret (256 bits) and the
+  passcode exist in plain form only in the response that creates them.
+  Lost passcode means a new link.
+- **Five wrong passcodes lock the link**, counted in SQL so parallel
+  guesses can't share a low count. Locked stays locked.
+- **The passcode earns a cookie** scoped to `/api/self-serve/<token>`
+  (HttpOnly, SameSite=Strict), checked against a hash on the link, and
+  it lapses after 30 idle minutes. One browser at a time.
+- **Every way a link stops working looks the same to the holder** (404,
+  "ask your case manager"): expired (`self_serve_link_days`, 1–30,
+  default 7), withdrawn, replaced, locked, submitted, the form voided or
+  completed, or the enrolment closed. The record says which.
+- **The participant sees the form and nothing else** — no name, no ids,
+  no case manager. `participantView` returns three keys.
+- **Same rules as staff** for answers and completion: the participant
+  path calls the same `saveAnswers` and `complete`.
+- **Each side keeps to its own form.** Staff can't edit or complete a
+  `self` assessment (they can void it); the link can't touch any other.
+  The participant's words stay theirs.
+- **Submitting completes it** with `completed_by_id` null, and spends
+  the link. Audit rows for what the participant did have a null actor
+  and show as "Participant (own link)"; naming the staff member who
+  issued the link would say they did it.
+- Making, replacing and withdrawing a link are caseload-scoped and
+  audited.
+
 ## Exports neutralise spreadsheet formulas
 
 Every CSV goes through `lib/csv.ts`. A cell starting `=`, `+`, `-`, `@`,

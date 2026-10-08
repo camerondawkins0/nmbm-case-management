@@ -91,8 +91,8 @@ export type AuditEntry = {
   entityId: string;
   detail: string | null;
   createdAt: string;
-  actorName: string;
-  actorEmail: string;
+  actorName: string | null;
+  actorEmail: string | null;
 };
 
 export type PendingNote = {
@@ -444,7 +444,18 @@ export type ParticipantAssessment = {
   startedByName: string | null;
   completedAt: string | null;
   voidReason: string | null;
+  link: AssessmentLinkState | null;
 };
+
+// A self-serve form's link, as the record sees it.
+export type AssessmentLinkState = {
+  state: "live" | "locked" | "expired" | "revoked" | "submitted";
+  expiresAt: string;
+  openedAt: string | null;
+};
+
+// Shown to the case manager once, when the link is made.
+export type IssuedLink = { assessmentId: string; token: string; passcode: string; expiresAt: string };
 
 export type AssessmentDetail = {
   id: string;
@@ -460,4 +471,5 @@ export type AssessmentDetail = {
   completedByName: string | null;
   voidReason: string | null;
   form: FormVersion;
+  link: AssessmentLinkState | null;
 };

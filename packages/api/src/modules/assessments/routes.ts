@@ -4,6 +4,7 @@ import {
   createFormSchema,
   saveAnswersSchema,
   saveQuestionsSchema,
+  sendToParticipantSchema,
   startAssessmentSchema,
   voidAssessmentSchema,
 } from "@nmbm/shared";
@@ -12,6 +13,7 @@ import { authorize, authorizeAny, CAN_READ_PARTICIPANTS } from "../../plugins/au
 import { resolveScope, canSeeParticipant } from "../../lib/caseload.js";
 import { notFound } from "../../plugins/errors.js";
 import * as service from "./service.js";
+import * as links from "./links.js";
 
 // Reading a form's questions is needed to fill one in as much as to
 // build one.
@@ -94,7 +96,9 @@ export default async function assessmentRoutes(fastify: FastifyInstance, opts: {
     { preHandler: authorizeAny([...RECORD_READERS]) },
     async (request) => {
       await assertVisible(request.currentUser!.id, request.params.id);
-      return service.listForParticipant(db, request.params.id);
+      const rows = await service.listForParticipant(db, request.params.id);
+      const states = await links.linkStates(db, rows.filter((r) => r.mode === "self").map((r) => r.id));
+      return rows.map((r) => ({ ...r, link: states.get(r.id) ?? null }));
     },
   );
 
@@ -115,7 +119,9 @@ export default async function assessmentRoutes(fastify: FastifyInstance, opts: {
     async (request) => {
       const row = await service.find(db, request.params.id);
       await assertVisible(request.currentUser!.id, row.participantId);
-      return service.get(db, request.params.id);
+      const detail = await service.get(db, request.params.id);
+      const states = await links.linkStates(db, row.mode === "self" ? [row.id] : []);
+      return { ...detail, link: states.get(row.id) ?? null };
     },
   );
 
@@ -126,7 +132,7 @@ export default async function assessmentRoutes(fastify: FastifyInstance, opts: {
       const { answers } = saveAnswersSchema.parse(request.body);
       const row = await service.find(db, request.params.id);
       await assertVisible(request.currentUser!.id, row.participantId);
-      return service.saveAnswers(db, request.params.id, answers);
+      return service.saveAnswers(db, request.params.id, answers, request.currentUser!.id);
     },
   );
 
@@ -148,6 +154,41 @@ export default async function assessmentRoutes(fastify: FastifyInstance, opts: {
       const row = await service.find(db, request.params.id);
       await assertVisible(request.currentUser!.id, row.participantId);
       return service.voidAssessment(db, request.params.id, reason, request.currentUser!.id);
+    },
+  );
+
+  // M13: the participant fills the form in themselves. What comes back
+  // — the link's secret and the passcode — is shown to the case manager
+  // once and can't be fetched again.
+  fastify.post<{ Params: { id: string } }>(
+    "/api/participants/:id/assessment-links",
+    { preHandler: authorize("assessments.write") },
+    async (request, reply) => {
+      const { formId } = sendToParticipantSchema.parse(request.body);
+      await assertVisible(request.currentUser!.id, request.params.id);
+      reply.code(201);
+      return links.sendToParticipant(db, request.params.id, formId, request.currentUser!.id);
+    },
+  );
+
+  fastify.post<{ Params: { id: string } }>(
+    "/api/assessments/:id/link",
+    { preHandler: authorize("assessments.write") },
+    async (request, reply) => {
+      const row = await service.find(db, request.params.id);
+      await assertVisible(request.currentUser!.id, row.participantId);
+      reply.code(201);
+      return links.reissue(db, request.params.id, request.currentUser!.id);
+    },
+  );
+
+  fastify.post<{ Params: { id: string } }>(
+    "/api/assessments/:id/link/revoke",
+    { preHandler: authorize("assessments.write") },
+    async (request) => {
+      const row = await service.find(db, request.params.id);
+      await assertVisible(request.currentUser!.id, row.participantId);
+      return links.revoke(db, request.params.id, request.currentUser!.id);
     },
   );
 }
