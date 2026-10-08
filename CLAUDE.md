@@ -46,6 +46,11 @@ Tests run through the real server against a real Postgres, on every
 push in CI. What they cover, and what they don't, is in
 `docs/agent/testing.md`.
 
+Without `DOCUMENTS_BUCKET`, uploads go to local disk through signed
+`/api/local-storage/*` links, so documents work in development with no
+Google Cloud project. In production the server refuses to start without
+the bucket.
+
 For local sign-in without Google, set `ALLOW_DEV_LOGIN=true`: the login
 page then lists the seeded staff by role, one click each. The route
 behind it (`/auth/dev-login?email=…`) is never registered when
@@ -58,7 +63,8 @@ behind it (`/auth/dev-login?email=…`) is never registered when
    get the information").
 2. **Authorization is opt-in and enforced server-side.** Every route
    carries an `authorize()` preHandler or is listed in `PUBLIC_BY_DESIGN`
-   with a reason.
+   (`packages/api/test/routes-authorized.test.ts`) with a reason. That
+   test reads the source and fails on a route that has neither.
 3. **After editing `packages/shared` or `packages/db`, rebuild them.**
    Both are consumed from `dist`.
 4. **Never edit an applied migration.** Add a new one and update
@@ -82,6 +88,9 @@ behind it (`/auth/dev-login?email=…`) is never registered when
    on asserting something false until somebody notices — and the thing
    it asserts is usually about a real person. See
    `docs/agent/invariants.md`.
+10. **Every CSV goes through `lib/csv.ts`.** Export text can come from a
+   participant, and a cell starting `=` runs as a formula on the machine
+   of whoever opens the file.
 
 ## Working agreements
 

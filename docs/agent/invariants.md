@@ -294,6 +294,51 @@ route does. Two consequences worth keeping:
   never the id — whoever can read the database still can't become a
   signed-in user. Anonymous requests never write a row.
 
+## A document is on the record only once it's in storage (M15/M30)
+
+Uploading is three steps, and the record changes only on the last:
+
+1. `POST /api/participants/:id/documents` writes a `pending` row and
+   returns a signed link, good for 15 minutes, that only accepts the
+   declared type at up to 10 MB. The file goes from the browser to
+   Cloud Storage directly; it never passes through the app.
+2. The browser `PUT`s the file to that link.
+3. `POST /api/documents/:id/confirm` asks storage whether the object is
+   there, and only then marks the row `uploaded`. It doesn't take the
+   browser's word for it, and only the person who started the upload can
+   confirm it.
+
+Rules that hold throughout:
+
+- **Pending rows are invisible.** A link that was never used leaves a
+  pending row nobody sees, never an entry that opens to nothing.
+- **Storage keys are opaque** (`documents/<uuid>`). No name, no
+  participant id: a bucket listing, a log line or a leaked link says
+  nothing about whose paperwork it is.
+- **Only scans and photos.** PDF, JPEG, PNG, HEIC, WebP. Not office
+  files, which carry macros, and not HTML or SVG, which a browser runs.
+- **Opening is audited.** Every download link issued writes
+  `document.viewed`, not only uploads and voids — looking at someone's
+  ID is the access event that matters.
+- **Voided is kept but not openable.** Void usually means "filed against
+  the wrong person"; keeping it openable would leave one client's
+  paperwork viewable from another's record. The object stays in the
+  bucket under a retention policy, and the runtime service account has
+  no delete permission, so the app couldn't remove it if it tried.
+- **A consent scan belongs to the same person.** `consentId` must be a
+  consent on that participant's record, or the request is refused.
+- Every document route applies `canSeeParticipant`, and out of scope
+  answers 404, not 403.
+
+## Exports neutralise spreadsheet formulas
+
+Every CSV goes through `lib/csv.ts`. A cell starting `=`, `+`, `-`, `@`,
+tab or carriage return gets a leading apostrophe, because a spreadsheet
+runs it as a formula when the file is opened — on the staff member's
+machine, from text a participant may have typed. Plain numbers (`-5`,
+`+1.5`) are left alone; they're data, not formulas. Headers are guarded
+too.
+
 ## Money is a string end to end
 
 `numeric` Postgres columns, string in Zod schemas, string across the API

@@ -365,3 +365,18 @@ export type Dashboard = {
     status: CarePlanStatus;
   }[];
 };
+
+export type ParticipantDocument = {
+  id: string;
+  description: string;
+  consentId: string | null;
+  consentFormName: string | null;
+  originalFilename: string;
+  contentType: string;
+  sizeBytes: number;
+  status: "uploaded" | "voided";
+  uploadedAt: string | null;
+  uploadedByName: string;
+  voidedAt: string | null;
+  voidReason: string | null;
+};

@@ -1,7 +1,13 @@
 import { inject } from "vitest";
+import { mkdtempSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import type { FastifyInstance } from "fastify";
 import type { Db } from "@nmbm/db";
 import { buildServer } from "../../src/server.js";
+
+// Uploaded test files land here, not in the developer's temp folder.
+const storageDir = mkdtempSync(join(tmpdir(), "nmbm-test-storage-"));
 
 export type Response = { status: number; body: any; headers: Record<string, unknown> };
 
@@ -21,6 +27,8 @@ export async function startApp(env: Record<string, string> = {}) {
     SESSION_SECRET: "",
     TRUST_PROXY: "false",
     WEB_DIST_DIR: "/nonexistent-web-build",
+    DOCUMENTS_BUCKET: "",
+    LOCAL_STORAGE_DIR: storageDir,
     ...env,
   });
   const app = await buildServer({ logger: false });

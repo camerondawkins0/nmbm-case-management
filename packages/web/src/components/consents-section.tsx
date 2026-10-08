@@ -12,9 +12,10 @@ const TYPE_LABELS: Record<ConsentType, string> = {
   other: "Other",
 };
 
-// M15/M16. Recording that a form was signed is useful before the
-// scanned copy can be attached — Cloud Storage isn't provisioned yet,
-// so there's no upload control here on purpose.
+// M15/M16. Recording that a form was signed and attaching the scan are
+// separate steps: the scan goes in Documents, linked back to the form,
+// so a signature can be recorded the day it happens even if the scanner
+// is down.
 export function ConsentsSection({
   record,
   me,

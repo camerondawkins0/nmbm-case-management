@@ -56,6 +56,8 @@ weight:
 | `SESSION_SECRET` | 32+ random characters — Secret Manager. The server refuses to start in production without it, because the development fallback is published in this repository |
 | `SESSION_IDLE_MINUTES` | Optional; default 60. Idle time before a session ends |
 | `TRUST_PROXY` | `true` on Cloud Run, which ends TLS in front of the app. Without it the Secure session cookie is never sent and sign-in fails with no error |
+| `DOCUMENTS_BUCKET` | The bucket `deploy/setup-gcp.sh` creates. Required in production. Unset in development, where uploads go to local disk |
+| `LOCAL_STORAGE_DIR` | Development only, optional: where that local disk is. Defaults to a folder in the system temp directory |
 | `DATABASE_SOCKET_DIR` | `/cloudsql/<connection name>` on Cloud Run — see `docs/DEPLOY.md` |
 
 `GOOGLE_WORKSPACE_DOMAIN` has no default on purpose: sign-in refuses to

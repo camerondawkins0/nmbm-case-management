@@ -18,6 +18,7 @@ substitutions:
   _GOOGLE_CLIENT_ID: ""
   _REDIRECT_URI: "" # https://<service-url>/auth/google/callback
   _WORKSPACE_DOMAIN: ""
+  _DOCUMENTS_BUCKET: "" # PROJECT-nmbm-documents
 
 options:
   # Required when the trigger runs as a dedicated service account.
@@ -89,7 +90,7 @@ steps:
           --allow-unauthenticated \
           --port=8080 --cpu=1 --memory=512Mi \
           --min-instances=0 --max-instances=3 --timeout=60s \
-          --set-env-vars="NODE_ENV=production,TRUST_PROXY=true,DATABASE_SOCKET_DIR=/cloudsql/${_SQL_INSTANCE},GOOGLE_OIDC_CLIENT_ID=${_GOOGLE_CLIENT_ID},GOOGLE_OIDC_REDIRECT_URI=${_REDIRECT_URI},GOOGLE_WORKSPACE_DOMAIN=${_WORKSPACE_DOMAIN}" \
+          --set-env-vars="NODE_ENV=production,TRUST_PROXY=true,DATABASE_SOCKET_DIR=/cloudsql/${_SQL_INSTANCE},GOOGLE_OIDC_CLIENT_ID=${_GOOGLE_CLIENT_ID},GOOGLE_OIDC_REDIRECT_URI=${_REDIRECT_URI},GOOGLE_WORKSPACE_DOMAIN=${_WORKSPACE_DOMAIN},DOCUMENTS_BUCKET=${_DOCUMENTS_BUCKET}" \
           --set-secrets="DATABASE_URL=nmbm-database-url:latest,SESSION_SECRET=nmbm-session-secret:latest,GOOGLE_OIDC_CLIENT_SECRET=nmbm-google-client-secret:latest"
 
 images:

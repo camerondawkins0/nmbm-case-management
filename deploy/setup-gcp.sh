@@ -25,6 +25,7 @@ SQL_TIER="${SQL_TIER:-db-custom-1-3840}"
 DB_NAME=nmbm
 DB_USER=nmbm
 REPO=nmbm
+DOCUMENTS_BUCKET="${DOCUMENTS_BUCKET:-${PROJECT_ID}-nmbm-documents}"
 RUNTIME_SA="nmbm-run@${PROJECT_ID}.iam.gserviceaccount.com"
 BUILD_SA="nmbm-build@${PROJECT_ID}.iam.gserviceaccount.com"
 
@@ -36,7 +37,8 @@ gcloud config set project "$PROJECT_ID" >/dev/null
 step "Enabling APIs"
 gcloud services enable \
   run.googleapis.com sqladmin.googleapis.com secretmanager.googleapis.com \
-  artifactregistry.googleapis.com cloudbuild.googleapis.com iam.googleapis.com
+  artifactregistry.googleapis.com cloudbuild.googleapis.com iam.googleapis.com \
+  storage.googleapis.com iamcredentials.googleapis.com
 
 step "Artifact Registry repository '$REPO'"
 exists gcloud artifacts repositories describe "$REPO" --location="$REGION" ||
@@ -55,6 +57,26 @@ exists gcloud sql instances describe "$SQL_INSTANCE" ||
 # means a bad afternoon can be undone to the minute, not to last night.
 # Deletion protection means removing the instance takes a deliberate
 # second step.
+
+step "Documents bucket '$DOCUMENTS_BUCKET'"
+if ! exists gcloud storage buckets describe "gs://$DOCUMENTS_BUCKET"; then
+  # Private, and impossible to make public by accident. The 7-year
+  # retention period (R6) means no object can be deleted or overwritten
+  # before then, by anyone — "nothing is deleted" enforced by storage, not
+  # only by the app. It is left unlocked so it can still be corrected;
+  # locking it is permanent.
+  gcloud storage buckets create "gs://$DOCUMENTS_BUCKET" --location="$REGION" \
+    --uniform-bucket-level-access --public-access-prevention --retention-period=7y
+fi
+# Browsers upload straight to the bucket with a signed URL, which needs
+# CORS. Any origin is allowed because the signature, not the origin, is
+# what authorises an upload; narrow it to the service URL once known.
+CORS_FILE="$(mktemp)"
+cat > "$CORS_FILE" <<'JSON'
+[{"origin": ["*"], "method": ["PUT", "GET"], "responseHeader": ["content-type", "x-goog-content-length-range"], "maxAgeSeconds": 3600}]
+JSON
+gcloud storage buckets update "gs://$DOCUMENTS_BUCKET" --cors-file="$CORS_FILE"
+rm -f "$CORS_FILE"
 
 step "Database and user"
 exists gcloud sql databases describe "$DB_NAME" --instance="$SQL_INSTANCE" ||
@@ -96,13 +118,23 @@ exists gcloud iam service-accounts describe "$RUNTIME_SA" ||
 exists gcloud iam service-accounts describe "$BUILD_SA" ||
   gcloud iam service-accounts create nmbm-build --display-name="NMBM deploys (Cloud Build)"
 
-# The app: connect to Cloud SQL, read its three secrets. Nothing else.
+# The app: connect to Cloud SQL, read its three secrets, write and read
+# documents — but not delete them. Nothing else.
 gcloud projects add-iam-policy-binding "$PROJECT_ID" --condition=None \
   --member="serviceAccount:$RUNTIME_SA" --role=roles/cloudsql.client >/dev/null
 for secret in nmbm-database-url nmbm-session-secret nmbm-google-client-secret; do
   gcloud secrets add-iam-policy-binding "$secret" \
     --member="serviceAccount:$RUNTIME_SA" --role=roles/secretmanager.secretAccessor >/dev/null
 done
+
+gcloud storage buckets add-iam-policy-binding "gs://$DOCUMENTS_BUCKET" \
+  --member="serviceAccount:$RUNTIME_SA" --role=roles/storage.objectCreator >/dev/null
+gcloud storage buckets add-iam-policy-binding "gs://$DOCUMENTS_BUCKET" \
+  --member="serviceAccount:$RUNTIME_SA" --role=roles/storage.objectViewer >/dev/null
+# Cloud Run has no key file, so signing an upload or download URL goes
+# through the IAM signBlob API as the runtime account itself.
+gcloud iam service-accounts add-iam-policy-binding "$RUNTIME_SA" \
+  --member="serviceAccount:$RUNTIME_SA" --role=roles/iam.serviceAccountTokenCreator >/dev/null
 
 # Deploys: push images, manage Cloud Run, act as the runtime account,
 # write build logs. It never reads the secrets itself.
@@ -125,6 +157,7 @@ Done. Values for the Cloud Build trigger's substitutions:
   _SQL_INSTANCE      $CONNECTION
   _RUNTIME_SA        $RUNTIME_SA
   _WORKSPACE_DOMAIN  $WORKSPACE_DOMAIN
+  _DOCUMENTS_BUCKET  $DOCUMENTS_BUCKET
   _GOOGLE_CLIENT_ID  (from the OAuth client — docs/GOOGLE_SETUP.md)
   _REDIRECT_URI      (https://<service-url>/auth/google/callback, after the first deploy)
 

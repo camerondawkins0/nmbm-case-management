@@ -1,6 +1,6 @@
 # Testing
 
-126 tests in `packages/api/test/`, run by vitest against a real Postgres.
+159 tests in `packages/api/test/`, run by vitest against a real Postgres.
 CI runs them on every push with a Postgres 16 service.
 
 ```bash
@@ -37,6 +37,9 @@ dev-login route, and assert on HTTP responses.
 | `follow-ups.test.ts` | M12 queue, recording calls, one result per milestone, re-enrolment requests, readmission stopping the schedule |
 | `search.test.ts` | R10 search scoping, wildcard escaping, intake's duplicate refusal and its audited override |
 | `deployment.test.ts` | Sessions shared across instances and hashed at rest; the web build served with app routes and JSON 404s; security headers; production refusing a missing secret and dev sign-in; the Secure cookie behind a trusted proxy |
+| `documents.test.ts` | Upload, confirm and open through the local storage stand-in; confirm refused until the file arrives; opaque keys; views audited; consent scans same-person only; type and size refused; tampered links refused; other workers' documents 404; void keeps the row and stops it opening |
+| `csv.test.ts` | The formula-injection guard and RFC 4180 quoting, no database |
+| `routes-authorized.test.ts` | Reads `packages/api/src` and fails on any route with neither `authorize()` nor a `PUBLIC_BY_DESIGN` entry, and on entries that are no longer open; no database |
 | `sign-in.test.ts` | OAuth state, refusal reasons, session regeneration, idle timeout, form-post sign-out, audit |
 
 `test/support/fixtures.ts` builds people through the real services
@@ -77,6 +80,11 @@ test.
 | Sessions back in memory; ids stored unhashed; expired rows honoured; sign-out not deleting the row; anonymous sessions saved | deployment |
 | Proxy never trusted; API 404s answered with the app; app routes not served; assets uncached; framing allowed; API responses cacheable; no HSTS | deployment |
 | Production starting without a secret; dev sign-in in production | deployment (the second first went uncaught — see below) |
+| Confirm not checking storage; pending rows listed; views not audited; voided file still opening; consent scan on another person; download not caseload-scoped | documents |
+| Upload signature ignoring type; size not enforced; signature not checked; key carrying the participant id; any file type accepted | documents (the key mutation was first written as a no-op and redone) |
+| Production falling back to local disk; CSP blocking uploads to Cloud Storage | deployment |
+| CSV guard removed; plain numbers guarded; carriage return unquoted; headers unguarded | csv |
+| A route with no gate; a stale `PUBLIC_BY_DESIGN` entry; the bracket matcher stopping early | routes-authorized |
 
 One mutation during the M12 work crashed the SQL rather than changing
 its meaning, which proves nothing; it was redone as a clean change and
@@ -94,10 +102,25 @@ went unnoticed, because closing also ends the assignment so a worker's
 list was still right. A supervisor's list is where the filter is the only
 guard, and there was no test of it.
 
+## The route guard
+
+`routes-authorized.test.ts` is a static scan, not a runtime check. It
+finds `fastify.get(`/`post(`/… calls, matches brackets to get the whole
+call, and looks for `authorize(` or `authorizeAny(` inside it. A new
+route without one fails until it gets a preHandler or a
+`PUBLIC_BY_DESIGN` entry with the reason it's open. The list can only
+shrink in the sense that matters: an entry that becomes guarded fails
+the stale-entry test until it's removed, so the list never claims a
+door is open when it isn't.
+
 ## What isn't covered
 
 - **The web app.** No component or browser tests; the pages have been
   checked by driving them with Playwright by hand.
+- **Real Cloud Storage.** Tests use the local stand-in. The signed-URL
+  code for GCS is Google's library; the bucket's CORS, retention and
+  the service account's lack of delete are set by `deploy/setup-gcp.sh`
+  and checked by hand after the first deploy (DEPLOY.md).
 - **The Google token exchange itself.** Tests stop at the redirect; nobody
   can reach Google from CI, and the verification is Google's library.
 - **Migration 0006's repair of stale assignments.** Rehearsed by hand

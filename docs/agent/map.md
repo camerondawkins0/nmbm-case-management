@@ -1,6 +1,6 @@
 # Map
 
-Where things are. Current as of migration `0009`.
+Where things are. Current as of migration `0010`.
 
 ## Packages
 
@@ -37,9 +37,11 @@ splits out `audit.ts` for the same reason.
 
 ## API routes
 
-54 routes across 13 modules, plus five on the auth plugin. Every route
-outside `PUBLIC_BY_DESIGN` carries an `authorize()` or `authorizeAny()`
-preHandler, and the permission it requires is named in the file.
+59 routes across 14 modules, plus five on the auth plugin and two on the
+local storage stand-in. Every route outside `PUBLIC_BY_DESIGN` carries
+an `authorize()` or `authorizeAny()` preHandler, and the permission it
+requires is named in the file. `test/routes-authorized.test.ts` reads
+the source and fails on any route that has neither — see testing.md.
 
 | Module | Routes |
 |---|---|
@@ -52,11 +54,13 @@ preHandler, and the permission it requires is named in the file.
 | `consents` | `POST /api/consents`, `POST /api/consents/:id/revoke` |
 | `referrals` | `POST /api/referrals`, `POST /api/referrals/:id/outcome` |
 | `programs` | `GET /api/programs`, `POST /api/programs`, `POST /api/cohorts`, `GET /api/cohorts/:id`, `POST /api/cohorts/:id/sessions`, `POST /api/cohorts/:id/enrollments`, `POST /api/enrollments/:id/withdraw`, `POST /api/sessions/:id/attendance`, `GET /api/enrollments/:id/participation` |
+| `documents` | `GET /api/participants/:id/documents`, `POST /api/participants/:id/documents` (returns a signed upload link), `POST /api/documents/:id/confirm`, `GET /api/documents/:id/download-url`, `POST /api/documents/:id/void` |
 | `follow-ups` | `GET /api/follow-ups` (QA's queue), `POST /api/follow-ups` (record a call), `GET /api/follow-ups/re-enrollment-requests` |
 | `dashboard` | `GET /api/dashboard` |
 | `admin` | `GET /api/admin/users`, `GET /api/admin/roles`, `POST /api/admin/users/:id/roles`, `DELETE /api/admin/users/:id/roles/:roleCode`, `POST /api/admin/users/:id/deactivate`, `POST /api/admin/users/:id/reactivate`, `GET /api/admin/audit`, `GET /api/admin/settings`, `PUT /api/admin/settings/:key` |
 | `feedback` | `POST /api/feedback`, `GET /api/feedback/mine`, `GET /api/feedback`, `PATCH /api/feedback/:id/status` |
 | `plugins/auth.ts` | `GET /auth/google/login`, `GET /auth/google/callback`, `POST /auth/logout`, and in non-production with `ALLOW_DEV_LOGIN` only: `GET /auth/dev-login`, `GET /auth/dev-login/accounts` |
+| `lib/storage.ts` | `PUT /api/local-storage/*`, `GET /api/local-storage/*` — registered only when there's no `DOCUMENTS_BUCKET` (development and tests); a signed query string is the gate |
 
 Consents and referrals have no list endpoint of their own. Both are read
 through `GET /api/participants/:id`, because neither is ever looked at
@@ -69,6 +73,8 @@ except in the context of one person's record.
 | `lib/caseload.ts` | `resolveScope`, `caseloadParticipantIds`, `formerCaseload`, `canSeeParticipant` — U5 scoping and R10's closed-record access |
 | `lib/rules.ts` | The M6 no-contact ladder and M9 care plan clocks, derived in one place |
 | `lib/follow-ups.ts` | `followUpSchedule`, `addMonths` — M12's schedule, derived from an episode's end date |
+| `lib/storage.ts` | `StorageProvider`: `GcsStorageProvider` (signed V4 links, size range in the signature) or `LocalStorageProvider` (HMAC-signed stand-in); `opaqueKey`, `createStorageProvider` |
+| `lib/csv.ts` | `csvCell`, `toCsv` — RFC 4180 quoting plus the formula-injection guard. Any CSV export goes through this |
 | `lib/settings.ts` | `getSetting`, `listSettings`, `updateSetting` — admin-changeable values, declared with defaults and bounds in `@nmbm/shared` (`APP_SETTINGS`) |
 
 ## API plugins
@@ -99,7 +105,7 @@ first is behind the session check.
 | `/` | `dashboard-page.tsx` | What needs attention: care plan clocks, the no-contact ladder, notes awaiting review, referrals with no outcome |
 | `/participants` | `participants-page.tsx` | Caseload list, scoped server-side; a Closed tab (everything, for intake and supervisors) or Recently closed (a worker's own former clients, with the date access ends) |
 | `/participants/new` | `intake-page.tsx` | Admission — record, episode and assignment in one act |
-| `/participants/:id` | `participant-detail-page.tsx` | The record: flags, notes, care plan, consents, referrals, episode history; on a closed record, readmission |
+| `/participants/:id` | `participant-detail-page.tsx` | The record: flags, notes, care plan, consents, documents, referrals, episode history; on a closed record, readmission |
 | `/notes/review` | `note-review-page.tsx` | The U6 queue — approve, or return with a reason |
 | `/care-plans/review` | `care-plan-review-page.tsx` | The same, for care plans |
 | `/programs` | `programs-page.tsx` | Programmes and their cohorts |
@@ -114,9 +120,9 @@ first is behind the session check.
 Shared components in `packages/web/src/components/`: `app-shell.tsx`
 (header and navigation, which hides what the signed-in user cannot
 reach), `sign-out-button.tsx`, `brand-mark.tsx`, `flags.tsx` (the attention badges derived in
-`lib/rules.ts`), and the three sections the participant record composes
+`lib/rules.ts`), and the four sections the participant record composes
 — `care-plan-section.tsx`, `consents-section.tsx`,
-`referrals-section.tsx`.
+`documents-section.tsx`, `referrals-section.tsx`.
 
 `lib/use-me.ts` tells signed out, session expired and server
 unreachable apart; `lib/api.ts` handles a session ending mid-page;
@@ -135,7 +141,7 @@ module layout. `enums.ts` wraps `as const` arrays from `@nmbm/shared` in
 `pgEnum`, so an enum is declared once and used in both places — same
 convention as the WSL system this was adapted from.
 
-24 tables and one view:
+25 tables and one view:
 
 | File | Tables |
 |---|---|
@@ -151,6 +157,7 @@ convention as the WSL system this was adapted from.
 | `feedback.ts` | `feedback_items` |
 | `settings.ts` | `app_settings` — one row per setting somebody has changed |
 | `follow-ups.ts` | `follow_up_calls` — one row per call attempt; the schedule isn't stored |
+| `documents.ts` | `documents` — uploaded files; the bytes are in Cloud Storage under an opaque key |
 | `sessions.ts` | `sessions` — sign-in sessions, keyed by a hash of the session id |
 | `views.ts` | `v_no_contact_counts` (rebuilt per episode in 0006), declared to Drizzle with `.existing()` |
 
@@ -169,6 +176,7 @@ in order in `meta/_journal.json`:
 | `0007_app_settings` | `app_settings` |
 | `0008_follow_up_calls` | `follow_up_calls`, one settling result per milestone, search indexes on participants |
 | `0009_sessions` | `sessions` |
+| `0010_documents` | `documents`, `document_status` enum |
 
 ## Seeds
 

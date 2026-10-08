@@ -13,6 +13,7 @@
     "@fastify/cookie": "^9.4.0",
     "@fastify/session": "^10.9.0",
     "@fastify/static": "^7.0.4",
+    "@google-cloud/storage": "^7.22.0",
     "@nmbm/db": "*",
     "@nmbm/shared": "*",
     "fastify": "^4.28.0",

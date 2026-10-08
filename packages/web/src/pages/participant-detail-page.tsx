@@ -7,6 +7,7 @@ import type { ContactResult, EpisodeClosureReason } from "@nmbm/shared";
 import { CarePlanPills, MolinaLetterPill, NoContactPill, Pill } from "../components/flags.js";
 import { CarePlanSection } from "../components/care-plan-section.js";
 import { ConsentsSection } from "../components/consents-section.js";
+import { DocumentsSection } from "../components/documents-section.js";
 import { ReferralsSection } from "../components/referrals-section.js";
 import { Link } from "react-router-dom";
 import { CLOSURE_REASON_LABELS } from "../lib/labels.js";
@@ -196,6 +197,16 @@ export default function ParticipantDetailPage({ me }: { me: Me }) {
       />
 
       <ConsentsSection
+        record={record}
+        me={me}
+        onChanged={(message) => {
+          setNotice(message);
+          load();
+        }}
+        onError={setActionError}
+      />
+
+      <DocumentsSection
         record={record}
         me={me}
         onChanged={(message) => {

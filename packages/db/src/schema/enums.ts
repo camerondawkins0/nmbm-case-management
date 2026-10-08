@@ -1,5 +1,6 @@
 import { pgEnum } from "drizzle-orm/pg-core";
 import {
+  DOCUMENT_STATUSES,
   FOLLOW_UP_OUTCOMES,
   ROLES,
   EPISODE_STATUSES,
@@ -38,3 +39,6 @@ export const feedbackStatusEnum = pgEnum("feedback_status", FEEDBACK_STATUSES);
 
 // M12: what a QA follow-up call came to.
 export const followUpOutcomeEnum = pgEnum("follow_up_outcome", FOLLOW_UP_OUTCOMES);
+
+// Uploaded documents: pending until the file is confirmed in storage.
+export const documentStatusEnum = pgEnum("document_status", DOCUMENT_STATUSES);

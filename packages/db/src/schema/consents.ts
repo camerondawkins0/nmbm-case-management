@@ -10,9 +10,10 @@ import { consentStatusEnum, consentTypeEnum } from "./enums.js";
 // a date that disagree is the failure mode that lets an expired consent
 // authorise a disclosure.
 //
-// No file upload yet: DOCUMENTS_BUCKET is unprovisioned, so documentUrl
-// stays for when Cloud Storage exists. Recording that a form was signed
-// is useful without the scan attached.
+// The scanned form isn't stored here: a scan is a row in documents with
+// consent_id set, so it gets the same pending/confirm, audit and void
+// handling as any other file. documentUrl predates that and is never
+// written; it stays because dropping a column is a migration for no gain.
 export const consents = pgTable("consents", {
   id: uuid("id").primaryKey().defaultRandom(),
   participantId: uuid("participant_id").notNull().references(() => participants.id),

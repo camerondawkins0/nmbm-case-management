@@ -22,6 +22,9 @@ export const PERMISSIONS = [
   "care_plans.write",
   "care_plans.approve", // Clinical Director (U6)
   "consents.write", // record and revoke consent forms (M15/M16)
+  // Upload a file to a record, or void one filed in error. Reading needs
+  // only sight of the participant; every open is audited.
+  "documents.write",
   "referrals.write", // refer out and record what came back (M17)
   "programs.manage", // set up programmes, cohorts and class dates (M14)
   "attendance.record", // mark a roster — the evidence a PO relies on (M14)
@@ -44,6 +47,7 @@ export type Permission = (typeof PERMISSIONS)[number];
 // so the grid stays the single source of truth for "who can do what."
 export const DEFAULT_ROLE_PERMISSIONS: Record<Role, Permission[]> = {
   clinical_director: [
+    "documents.write",
     "follow_ups.record",
     "programs.manage",
     "attendance.record",
@@ -61,6 +65,7 @@ export const DEFAULT_ROLE_PERMISSIONS: Record<Role, Permission[]> = {
   ],
   billing_coordinator: ["participants.read.all", "feedback.submit"],
   intake_specialist: [
+    "documents.write",
     "participants.read.closed",
     "consents.write",
     "referrals.write",
@@ -76,6 +81,7 @@ export const DEFAULT_ROLE_PERMISSIONS: Record<Role, Permission[]> = {
     "feedback.submit",
   ],
   community_health_worker: [
+    "documents.write",
     "attendance.record",
     "consents.write",
     "referrals.write",

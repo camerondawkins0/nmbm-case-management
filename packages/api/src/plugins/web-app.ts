@@ -51,7 +51,9 @@ export async function registerWebApp(fastify: FastifyInstance, dir = process.env
 // framing (clickjacking), no MIME sniffing, no referrer leaking a record
 // URL to another site, and API responses never cached by a browser or a
 // proxy. The CSP is strict because it can be — the build has no inline
-// script or style, and nothing loads from another origin.
+// script or style, and nothing loads from another origin. The one
+// exception is uploads: the browser sends a document straight to Cloud
+// Storage with a signed URL, so that origin is allowed to be connected to.
 export function registerSecurityHeaders(fastify: FastifyInstance, { https }: { https: boolean }) {
   fastify.addHook("onSend", async (request, reply) => {
     reply.header("x-content-type-options", "nosniff");
@@ -59,7 +61,8 @@ export function registerSecurityHeaders(fastify: FastifyInstance, { https }: { h
     reply.header("referrer-policy", "same-origin");
     reply.header(
       "content-security-policy",
-      "default-src 'self'; img-src 'self' data:; style-src 'self'; script-src 'self'; connect-src 'self'; " +
+      "default-src 'self'; img-src 'self' data:; style-src 'self'; script-src 'self'; " +
+        "connect-src 'self' https://storage.googleapis.com; " +
         "font-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'",
     );
     if (https) reply.header("strict-transport-security", "max-age=31536000; includeSubDomains");

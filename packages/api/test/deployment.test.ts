@@ -120,6 +120,9 @@ describe("security headers", () => {
     expect(page.headers["referrer-policy"]).toBe("same-origin");
     expect(page.headers["content-security-policy"]).toContain("frame-ancestors 'none'");
     expect(page.headers["content-security-policy"]).not.toContain("unsafe-inline");
+    // Documents upload straight to Cloud Storage; without this every
+    // upload in production would be blocked by the browser.
+    expect(page.headers["content-security-policy"]).toContain("connect-src 'self' https://storage.googleapis.com");
   });
 
   it("never lets an API response be cached", async () => {
@@ -129,10 +132,31 @@ describe("security headers", () => {
 });
 
 describe("in production", () => {
-  const production = { NODE_ENV: "production", SESSION_SECRET: "x".repeat(40), WEB_DIST_DIR: webDir };
+  const production = {
+    NODE_ENV: "production",
+    SESSION_SECRET: "x".repeat(40),
+    WEB_DIST_DIR: webDir,
+    DOCUMENTS_BUCKET: "nmbm-test-documents",
+  };
+
+  // Local disk on Cloud Run is an instance's scratch space, gone on the
+  // next restart — client documents can't land there.
+  it("refuses to start without a documents bucket", async () => {
+    await expect(startApp({ ...production, DOCUMENTS_BUCKET: "" })).rejects.toThrow(/DOCUMENTS_BUCKET/);
+  });
+
+  it("has no local file-storage routes", async () => {
+    const prod = await startApp(production);
+    try {
+      const res = await prod.app.inject({ method: "GET", url: "/api/local-storage/documents/00000000-0000-0000-0000-000000000000" });
+      expect(res.statusCode).toBe(404);
+    } finally {
+      await prod.app.close();
+    }
+  });
 
   it("refuses to start without a session secret", async () => {
-    await expect(startApp({ NODE_ENV: "production", SESSION_SECRET: "" })).rejects.toThrow(/SESSION_SECRET/);
+    await expect(startApp({ ...production, SESSION_SECRET: "" })).rejects.toThrow(/SESSION_SECRET/);
   });
 
   // With a real account: for someone who doesn't exist the route would

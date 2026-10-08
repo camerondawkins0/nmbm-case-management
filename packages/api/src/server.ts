@@ -16,6 +16,8 @@ import referralRoutes from "./modules/referrals/routes.js";
 import programRoutes from "./modules/programs/routes.js";
 import followUpRoutes from "./modules/follow-ups/routes.js";
 import { registerWebApp, registerSecurityHeaders } from "./plugins/web-app.js";
+import documentRoutes from "./modules/documents/routes.js";
+import { createStorageProvider, registerLocalStorageRoutes, LocalStorageProvider } from "./lib/storage.js";
 
 declare module "fastify" {
   interface FastifyInstance {
@@ -55,6 +57,12 @@ export async function buildServer(options: { logger?: boolean } = {}) {
   await fastify.register(referralRoutes, { db });
   await fastify.register(programRoutes, { db });
   await fastify.register(followUpRoutes, { db });
+
+  const storage = createStorageProvider();
+  await fastify.register(documentRoutes, { db, storage });
+  // Only the development stand-in has routes of its own; production
+  // signs URLs straight to Cloud Storage.
+  if (storage instanceof LocalStorageProvider) await registerLocalStorageRoutes(fastify, storage);
   // Last, so every API and sign-in route is matched first.
   await registerWebApp(fastify);
   await fastify.register(adminRoutes, { db });

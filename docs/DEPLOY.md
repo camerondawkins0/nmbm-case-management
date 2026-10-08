@@ -1,14 +1,15 @@
 # Deploying
 
 One Cloud Run service serves the API and the built web app. Cloud SQL
-holds the data and the sign-in sessions. Every push to `main` builds,
+holds the data and the sign-in sessions; a Cloud Storage bucket holds
+uploaded documents. Every push to `main` builds,
 tests, migrates and deploys — once the trigger below exists.
 
 | File | What it does |
 |---|---|
 | `Dockerfile` | One image for both the service and the release job |
 | `cloudbuild.yaml` | Test → build image → push → migrate and seed grants → deploy |
-| `deploy/setup-gcp.sh` | One-time: registry, Cloud SQL, secrets, service accounts |
+| `deploy/setup-gcp.sh` | One-time: registry, Cloud SQL, documents bucket, secrets, service accounts |
 | `packages/db/src/release.ts` | The release job: migrations, then roles and grants |
 | `packages/db/src/grant-role.ts` | Gives the first administrator their role |
 
@@ -25,15 +26,16 @@ Policy without a violation; Cloud Build's test step passes against a
 
 **Not verified, because there is no Google Cloud project yet:** anything
 that talks to Google Cloud — `deploy/setup-gcp.sh`, the `gcloud` steps in
-`cloudbuild.yaml`, IAM, and the Cloud SQL socket mount itself. Expect the
+`cloudbuild.yaml`, IAM, the Cloud SQL socket mount itself, and signed
+upload links against a real bucket (tests use a local stand-in). Expect the
 first run to need small corrections.
 
 ## Before anything else
 
 1. **The Google Cloud BAA.** NMBM signed the Google *Workspace* BAA
    (R2/R3). That agreement covers Workspace services — Gmail, Drive and
-   so on. It does not cover Google Cloud: Cloud Run, Cloud SQL, Secret
-   Manager and Cloud Logging are under Google Cloud's own BAA, which
+   so on. It does not cover Google Cloud: Cloud Run, Cloud SQL, Cloud
+   Storage, Secret Manager and Cloud Logging are under Google Cloud's own BAA, which
    NMBM has to accept separately for its Cloud organisation. This has to
    be in place before any real client information goes in.
 2. **R4** — whether a BAA is also needed with whoever builds and
@@ -70,7 +72,7 @@ first run to need small corrections.
      --repo-owner=camerondawkins0 --repo-name=nmbm-case-management \
      --branch-pattern='^main$' --build-config=cloudbuild.yaml \
      --service-account="projects/<project>/serviceAccounts/nmbm-build@<project>.iam.gserviceaccount.com" \
-     --substitutions=_SQL_INSTANCE=<from step 1>,_RUNTIME_SA=<from step 1>,_WORKSPACE_DOMAIN=<domain>,_GOOGLE_CLIENT_ID=<client id>,_REDIRECT_URI=https://placeholder.invalid/auth/google/callback
+     --substitutions=_SQL_INSTANCE=<from step 1>,_RUNTIME_SA=<from step 1>,_WORKSPACE_DOMAIN=<domain>,_GOOGLE_CLIENT_ID=<client id>,_DOCUMENTS_BUCKET=<from step 1>,_REDIRECT_URI=https://placeholder.invalid/auth/google/callback
    ```
 
 4. **First deploy.** Run the trigger (or push to `main`). The service
@@ -91,6 +93,15 @@ first run to need small corrections.
 
    Reload the page. Every other role is then assigned on the Staff page
    by that administrator, and audited there.
+
+7. **Check document upload once.** Open any test record, upload a small
+   PDF under Documents, and open it. If the upload fails in the browser
+   with a CORS error, the bucket's CORS rule didn't apply — re-run that
+   step of `setup-gcp.sh`. If confirming fails with "hasn't arrived",
+   the runtime account is missing `storage.objectViewer`. If creating
+   the link fails with `iam.serviceAccounts.signBlob`, it is missing
+   Token Creator on itself — Cloud Run has no key file, so it signs links
+   through the IAM API.
 
 ## Every deploy after that
 
@@ -137,14 +148,36 @@ Two consequences to work with:
 | `NODE_ENV` | `production` | Turns off development sign-in; requires `SESSION_SECRET` |
 | `TRUST_PROXY` | `true` | Cloud Run ends TLS and forwards HTTP; without this the Secure session cookie is never set and sign-in silently fails |
 | `DATABASE_SOCKET_DIR` | `/cloudsql/<connection name>` | The Cloud SQL socket. The driver won't take it from the URL — see `packages/db/src/client.ts` |
+| `DOCUMENTS_BUCKET` | `<project>-nmbm-documents` | Where uploads go. The server refuses to start in production without it, rather than writing client paperwork to the container's disk |
 | `DATABASE_URL`, `SESSION_SECRET`, `GOOGLE_OIDC_CLIENT_SECRET` | Secret Manager | Never in the repository or the trigger |
 | Instances | 0–3, 512 MB | Scales to nothing overnight; ten staff never need more than one. The first request after a quiet spell takes a few seconds |
+
+## The documents bucket
+
+Set up by `setup-gcp.sh`, and deliberately narrow:
+
+- **Private.** Uniform bucket-level access and public access prevention.
+  Files are reached only through 15-minute signed links the app hands
+  out after checking the caller can see that record, and each one is
+  audited.
+- **Nothing is deleted.** A seven-year retention policy, unlocked, so an
+  object can't be removed or overwritten for seven years after upload.
+  The runtime account has create and view, not delete. Seven years
+  is a placeholder; confirm NMBM's retention period and change it with
+  `gcloud storage buckets update --retention-period`. Don't lock the
+  policy until it's confirmed — a locked policy can't be shortened.
+- **CORS** allows `PUT` and `GET` from any origin, because the signed
+  link is the credential, not the origin. Tighten `origin` to the
+  service URL once there's a custom domain.
+- **Keys say nothing.** Objects are `documents/<uuid>`; who a file
+  belongs to is only in the database.
 
 ## Cost, roughly
 
 Cloud SQL is almost all of it — the dedicated 1 vCPU instance is in the
 region of $50–60 a month, plus storage and backups. Cloud Run at this
-traffic, Artifact Registry and Secret Manager come to a few dollars.
+traffic, Artifact Registry, Secret Manager and a few gigabytes of scans in
+Cloud Storage come to a few dollars.
 Check Google's pricing calculator before quoting a figure to NMBM.
 
 ## Logs
