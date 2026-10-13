@@ -1,20 +1,13 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { api, ApiError } from "../lib/api.js";
-import type { AssignableWorker } from "../lib/types.js";
+import type { AssignableWorker, IncomingReferralDetail } from "../lib/types.js";
 import { PARTICIPANT_LABEL } from "@nmbm/shared";
 import type { Payer } from "@nmbm/shared";
 import { SearchResults, useParticipantSearch } from "../components/participant-search.js";
+import { PAYER_OPTIONS } from "../lib/labels.js";
 
-const PAYERS: { value: Payer; label: string }[] = [
-  { value: "medi_cal", label: "Medi-Cal" },
-  { value: "medicare", label: "Medicare" },
-  { value: "molina", label: "Molina" },
-  { value: "kaiser", label: "Kaiser" },
-  { value: "blue_shield", label: "Blue Shield" },
-  { value: "la_health_net", label: "LA Health Net" },
-  { value: "self_pay", label: "Self-pay" },
-];
+const PAYERS = PAYER_OPTIONS;
 
 // Intake in one screen: the record, the episode that starts the 30-day
 // care plan clock, and the named worker. M3 — what a funder
@@ -22,6 +15,12 @@ const PAYERS: { value: Payer; label: string }[] = [
 // only for what the discovery answers already justify.
 export default function IntakePage() {
   const navigate = useNavigate();
+  // Admitting somebody from the referrals queue. The id travels in the
+  // URL, never their name or birthday — those are fetched, so they don't
+  // end up in browser history or request logs.
+  const [params] = useSearchParams();
+  const referralId = params.get("referral");
+  const [referral, setReferral] = useState<IncomingReferralDetail | null>(null);
   const [workers, setWorkers] = useState<AssignableWorker[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
@@ -55,6 +54,22 @@ export default function IntakePage() {
   }, [form.firstName, form.lastName, form.dateOfBirth]);
 
   useEffect(() => {
+    if (!referralId) return;
+    api<IncomingReferralDetail>(`/api/incoming-referrals/${referralId}`)
+      .then((r) => {
+        setReferral(r);
+        setForm((f) => ({
+          ...f,
+          firstName: r.firstName,
+          lastName: r.lastName,
+          dateOfBirth: r.dateOfBirth ?? "",
+          payer: r.payer ?? "",
+        }));
+      })
+      .catch((e) => setError(e instanceof ApiError ? e.message : "Could not load the referral"));
+  }, [referralId]);
+
+  useEffect(() => {
     api<AssignableWorker[]>("/api/participants/assignable-workers")
       .then(setWorkers)
       .catch(() => setWorkers([]));
@@ -71,9 +86,20 @@ export default function IntakePage() {
           ...form,
           payer: form.payer === "" ? undefined : form.payer,
           confirmNotDuplicate: confirmedDifferent || undefined,
+          incomingReferralId: referral?.id,
         }),
       });
-      navigate(`/participants/${result.participant.id}`);
+      // Admitted onto somebody else's caseload, the record is one intake
+      // can't open — say it worked rather than landing on "not found".
+      const id = result.participant.id;
+      const worker = workers.find((w) => w.id === form.assignedWorkerId)?.displayName ?? "their case manager";
+      const notice = `${form.firstName} ${form.lastName} admitted and assigned to ${worker}.`;
+      try {
+        await api(`/api/participants/${id}`);
+        navigate(`/participants/${id}`);
+      } catch {
+        navigate(referral ? "/referrals-in" : "/participants", { state: { notice } });
+      }
     } catch (e) {
       if (e instanceof ApiError && e.code === "possible_duplicate") {
         setPossibleDuplicate(e.message);
@@ -93,6 +119,13 @@ export default function IntakePage() {
       <p className="mt-1 text-sm text-nmbm-ink/60">
         Opens an episode and starts the 30-day care plan countdown.
       </p>
+
+      {referral && (
+        <p className="mt-4 rounded border border-nmbm-ink/10 bg-nmbm-ink/[0.03] px-3 py-2 text-sm text-nmbm-ink/80">
+          Admitting from the referral by {referral.sourceName || "a referrer"} received {referral.receivedDate}.
+          Admitting closes the referral.
+        </p>
+      )}
 
       {error && (
         <p className="mt-4 rounded border border-state-alert/20 bg-state-alert-bg px-3 py-2 text-sm text-state-alert">

@@ -84,3 +84,19 @@ describe("M15/M17: a referral needs a usable release", () => {
     expect(res.body.consentId).toBe(recorded.body.id);
   });
 });
+
+describe("M17: recording what came back", () => {
+  // Found while building incoming referrals: the outcome route checked
+  // the permission but not the caseload, so a referral id was enough to
+  // write onto another worker's client's record.
+  it("only takes an outcome from somebody who can see the participant", async () => {
+    const { participantId } = await admit(db, { workerId: chwId, actorId: chwId });
+    await release(participantId);
+    const referral = (await refer(participantId)).body;
+
+    const other = await signIn(app, (await staff(db, "community_health_worker")).email);
+    const outcome = { status: "accepted", outcomeNote: "Seen on Tuesday" };
+    expect((await other.post(`/api/referrals/${referral.id}/outcome`, outcome)).status).toBe(403);
+    expect((await chw.post(`/api/referrals/${referral.id}/outcome`, outcome)).status).toBe(200);
+  });
+});

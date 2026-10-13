@@ -21,6 +21,9 @@ import FormsPage from "./pages/admin/forms-page.js";
 import FormBuilderPage from "./pages/admin/form-builder-page.js";
 import AssessmentPage from "./pages/assessment-page.js";
 import SelfServePage from "./pages/self-serve-page.js";
+import IncomingReferralsPage from "./pages/incoming-referrals-page.js";
+import IncomingReferralPage from "./pages/incoming-referral-page.js";
+import RecordExportPage from "./pages/record-export-page.js";
 
 export default function App() {
   const location = useLocation();
@@ -86,6 +89,9 @@ function StaffApp() {
         />
         <Route path="/participants/new" element={<IntakePage />} />
         <Route path="/participants/:id" element={<ParticipantDetailPage me={me} />} />
+        <Route path="/participants/:id/export" element={<RecordExportPage />} />
+        <Route path="/referrals-in" element={<IncomingReferralsPage />} />
+        <Route path="/referrals-in/:id" element={<IncomingReferralPage />} />
         <Route path="/care-plans/review" element={<CarePlanReviewPage />} />
         <Route path="/notes/review" element={<NoteReviewPage />} />
         <Route path="/programs" element={<ProgramsPage />} />

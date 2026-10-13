@@ -12,6 +12,7 @@ export function AppShell({ me, children }: { me: Me; children: React.ReactNode }
     { to: "/", label: "Today" },
     { to: "/participants", label: PARTICIPANT_LABEL_PLURAL },
     { to: "/programs", label: "Programmes" },
+    ...(can(me, "incoming_referrals.manage") ? [{ to: "/referrals-in", label: "Referrals in" }] : []),
     ...(can(me, "follow_ups.record") || can(me, "participants.read.closed")
       ? [{ to: "/follow-ups", label: "Follow-ups" }]
       : []),
@@ -25,7 +26,10 @@ export function AppShell({ me, children }: { me: Me; children: React.ReactNode }
 
   return (
     <div className="min-h-screen bg-nmbm-paper">
-      <header className="border-b border-nmbm-ink/10">
+      {/* Printed pages — a participation record, an exported file — are
+          documents in their own right; the app's navigation isn't part
+          of them. */}
+      <header className="border-b border-nmbm-ink/10 print:hidden">
         <div className="flex flex-wrap items-center gap-x-6 gap-y-3 px-6 py-3">
           <Link to="/" className="flex items-center gap-2.5">
             <BrandMark size={34} />
@@ -65,7 +69,7 @@ export function AppShell({ me, children }: { me: Me; children: React.ReactNode }
           </div>
         </div>
       </header>
-      <main className="px-6 py-8">{children}</main>
+      <main className="px-6 py-8 print:p-0">{children}</main>
     </div>
   );
 }

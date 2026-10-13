@@ -7,7 +7,8 @@ import {
   participantListQuerySchema,
   participantSearchSchema,
 } from "@nmbm/shared";
-import { authorize, authorizeAny, CAN_READ_PARTICIPANTS } from "../../plugins/authorize.js";
+import { authorize, authorizeAny, CAN_READ_PARTICIPANTS, getPermissions } from "../../plugins/authorize.js";
+import { forbidden } from "../../plugins/errors.js";
 import { resolveScope } from "../../lib/caseload.js";
 import * as service from "./service.js";
 import * as intake from "./intake.js";
@@ -68,6 +69,11 @@ export default async function participantRoutes(fastify: FastifyInstance, opts: 
     { preHandler: authorize("participants.write") },
     async (request, reply) => {
       const input = intakeSchema.parse(request.body);
+      // Closing a referral is intake's queue to work, not every admitter's.
+      if (input.incomingReferralId) {
+        const held = await getPermissions(db, request.currentUser!.id);
+        if (!held.has("incoming_referrals.manage")) throw forbidden("You can't work the referrals queue");
+      }
       const result = await intake.admitParticipant(db, input, request.currentUser!.id);
       reply.code(201);
       return result;

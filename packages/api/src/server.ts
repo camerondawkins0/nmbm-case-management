@@ -17,6 +17,8 @@ import programRoutes from "./modules/programs/routes.js";
 import followUpRoutes from "./modules/follow-ups/routes.js";
 import { registerWebApp, registerSecurityHeaders } from "./plugins/web-app.js";
 import documentRoutes from "./modules/documents/routes.js";
+import incomingReferralRoutes from "./modules/incoming-referrals/routes.js";
+import recordExportRoutes from "./modules/record-export/routes.js";
 import assessmentRoutes from "./modules/assessments/routes.js";
 import selfServeRoutes from "./modules/assessments/self-serve-routes.js";
 import { createStorageProvider, registerLocalStorageRoutes, LocalStorageProvider } from "./lib/storage.js";
@@ -62,6 +64,8 @@ export async function buildServer(options: { logger?: boolean } = {}) {
 
   const storage = createStorageProvider();
   await fastify.register(documentRoutes, { db, storage });
+  await fastify.register(incomingReferralRoutes, { db });
+  await fastify.register(recordExportRoutes, { db });
   await fastify.register(assessmentRoutes, { db });
   await fastify.register(selfServeRoutes, { db });
   // Only the development stand-in has routes of its own; production

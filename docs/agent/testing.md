@@ -1,6 +1,6 @@
 # Testing
 
-188 tests in `packages/api/test/`, run by vitest against a real Postgres.
+206 tests in `packages/api/test/`, run by vitest against a real Postgres.
 CI runs them on every push with a Postgres 16 service.
 
 ```bash
@@ -39,10 +39,16 @@ dev-login route, and assert on HTTP responses.
 | `deployment.test.ts` | Sessions shared across instances and hashed at rest; the web build served with app routes and JSON 404s; security headers; production refusing a missing secret and dev sign-in; the Secure cookie behind a trusted proxy |
 | `assessments.test.ts` | The show-if evaluator and publish checks (no database), then over HTTP: who can build, published versions frozen, drafts keeping stable ids, one draft, type changes refused, current version on start, answer validation and clearing, required-when-shown, hidden answers dropped on completion, completed final, void, caseload scoping, retired forms, closed episodes |
 | `self-serve.test.ts` | The participant's link: nothing stored in plain, passcode before anything, cookie tied to its own link, lockout, the participant's answers filed as theirs with a null audit actor, idle timeout, expiry and closure, staff kept out of a participant's form, replace and withdraw, caseload scoping |
+| `incoming-referrals.test.ts` | The queue's permission; notes and closing; admitting through intake and readmission settling the referral in the same transaction (and rolling back if it was already dealt with); the queue permission on both admit routes; linking only to a visible, open record; when the referrer is owed an outcome, and recorded once; audit |
+| `record-export.test.ts` | Who can export; purpose required; the audit line with the purpose; the whole record with answers in words; scoping through a role that can export but only sees its own caseload |
 | `documents.test.ts` | Upload, confirm and open through the local storage stand-in; confirm refused until the file arrives; opaque keys; views audited; consent scans same-person only; type and size refused; tampered links refused; other workers' documents 404; void keeps the row and stops it opening |
 | `csv.test.ts` | The formula-injection guard and RFC 4180 quoting, no database |
 | `routes-authorized.test.ts` | Reads `packages/api/src` and fails on any route with neither `authorize()` nor a `PUBLIC_BY_DESIGN` entry, and on entries that are no longer open; no database |
 | `sign-in.test.ts` | OAuth state, refusal reasons, session regeneration, idle timeout, form-post sign-out, audit |
+
+`staffWith(db, [permissions])` in `test/support/fixtures.ts` makes a
+role for the test — for rules no seeded role reaches (an exporter with
+an ordinary caseload; an admitter without the referrals queue).
 
 `test/support/fixtures.ts` builds people through the real services
 (`admit()` goes through intake), with unique names, so tests don't depend
@@ -93,6 +99,10 @@ test.
 | Cookie not tied to its link | self-serve — missed at first: the test reused a cookie on a link nobody had unlocked, which refused for another reason. It now unlocks the second link first |
 | A submitted link still opening | self-serve — only with both guards broken: the form is no longer in progress either |
 | Staff able to edit a participant's form; the view leaking the participant; cookie Lax or site-wide; a lock blamed on staff; participant audit rows hidden from the admin; link routes not caseload-scoped | self-serve |
+| Queue open to every worker; a note not marking it in hand; notes on or closing a dealt-with referral; intake or readmission not settling it; admitting from a dealt-with referral; either admit route ignoring the queue permission; linking unscoped or onto a closed record; outcome owed for a self-referral or entered-in-error; referred-by missing from the record; close unaudited | incoming-referrals |
+| Outcome reported twice | incoming-referrals — only with both guards broken: "is an outcome owed" refuses first, the update's `outcome_reported_at is null` is the race guard |
+| Workers able to export; "other" without words; export unaudited or audited without the purpose; answers as stored codes; export unscoped; notes left out | record-export |
+| Outbound referral outcome not caseload-scoped | consents-referrals — a real gap found while building referrals in; fixed with this test |
 | CSV guard removed; plain numbers guarded; carriage return unquoted; headers unguarded | csv |
 | A route with no gate; a stale `PUBLIC_BY_DESIGN` entry; the bracket matcher stopping early | routes-authorized |
 

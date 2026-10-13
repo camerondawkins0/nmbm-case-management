@@ -179,7 +179,7 @@ that is what every page reads.
 ## What is built
 
 Everything below is running code: a migration, a module, and in most
-cases a page reachable after signing in. Current as of migration `0012`.
+cases a page reachable after signing in. Current as of migration `0013`.
 
 | Area | What works | Where |
 |---|---|---|
@@ -194,6 +194,8 @@ cases a page reachable after signing in. Current as of migration `0012`.
 | Consents (M15/M16) | Four form types, expiry derived at read time from the episode start date, revocation | `modules/consents/` |
 | Forms and assessments (M11/M13) | NMBM build their own forms — the registration form, the needs assessment — with sections, choice lists and follow-up questions that appear only when an earlier answer calls for them; preview, then publish. Published versions never change; editing makes a new version and old answers stay with the wording they were given against. Staff fill one in with the participant or from a paper copy, saved as they go, completed once every required question that's shown is answered, then final — corrected by voiding. Printable | `modules/assessments/`, `packages/shared/src/assessments.ts`, `/admin/forms`, `/assessments/:id` |
 | Participants filling in forms (M13) | The case manager makes a link and a 6-digit passcode on the record and passes them on themselves — no SMS or email service involved. The participant enters the passcode and sees that one form and nothing else, saves as they go, and sends it; it lands on the record as their own words. Links lapse after a set number of days (adjustable, up to 30), lock after five wrong passcodes, and can be replaced or withdrawn | `modules/assessments/links.ts`, `self-serve-routes.ts`, `/f/:token` |
+| Referrals in (M17, R5) | Intake's queue of people referred to NMBM — source, reason, contact attempts — each ending admitted (as a new client, readmitted from the referral, or added to a current stay) or closed with a reason; the referrer's outcome tracked until someone records telling them; who referred a participant shown on their record | `modules/incoming-referrals/`, `/referrals-in` |
+| Whole-record export | The complete record as one document to print, save as PDF or download as data, for a participant's own request, a legal request, a transfer of care or an audit; restricted, purpose required, audited as a disclosure | `modules/record-export/`, `/participants/:id/export` |
 | Documents (M15/M30) | Scans and photos uploaded from the record straight to a private Cloud Storage bucket on a short-lived signed link, shown only once the server has confirmed the file arrived; optionally linked to the consent form it's a scan of; every opening audited; voided rather than deleted, and a voided file can't be opened | `modules/documents/`, `lib/storage.ts`, `components/documents-section.tsx` |
 | Referrals (M17) | Refuses to send without a usable release and distinguishes the three reasons; records the outcome that came back | `modules/referrals/` |
 | Programmes and attendance (M14) | Programmes, cohorts, class dates, rosters, whole-roster marking in one request, and a printable participation record. Disenrolled participants stay on the roster, flagged | `modules/programs/` |
@@ -205,7 +207,7 @@ cases a page reachable after signing in. Current as of migration `0012`.
 | Audit (M30) | Append-only, written inside the transaction that performs the action, read-only endpoint | `plugins/audit.ts` |
 | Feedback (M31) | In-app issue reporting and a triage queue, because NMBM has no IT staff | `modules/feedback/`, `docs/SUPPORT.md` |
 
-80 API routes across 15 modules, 30 tables and one view, 19 pages plus
+89 API routes across 17 modules, 32 tables and one view, 22 pages plus
 two holding screens (no role yet; server unreachable).
 `docs/agent/map.md` lists them route by route and page by page.
 
@@ -237,7 +239,7 @@ Two different reasons, and they shouldn't be reported as one number.
 
 **Not blocked — ours to do:**
 
-- **Test coverage stops at the API.** 188 tests run through the real
+- **Test coverage stops at the API.** 206 tests run through the real
   server against a real Postgres on every push, covering every rule in
   `docs/agent/invariants.md`, and each has been proved by breaking the
   rule and watching it fail. The web app has no automated tests; its

@@ -1,6 +1,6 @@
 # Map
 
-Where things are. Current as of migration `0012`.
+Where things are. Current as of migration `0013`.
 
 ## Packages
 
@@ -37,7 +37,7 @@ splits out `audit.ts` for the same reason.
 
 ## API routes
 
-80 routes across 15 modules, plus five on the auth plugin and two on the
+89 routes across 17 modules, plus five on the auth plugin and two on the
 local storage stand-in. Every route outside `PUBLIC_BY_DESIGN` carries
 an `authorize()` or `authorizeAny()` preHandler, and the permission it
 requires is named in the file. `test/routes-authorized.test.ts` reads
@@ -55,6 +55,8 @@ the source and fails on any route that has neither — see testing.md.
 | `referrals` | `POST /api/referrals`, `POST /api/referrals/:id/outcome` |
 | `programs` | `GET /api/programs`, `POST /api/programs`, `POST /api/cohorts`, `GET /api/cohorts/:id`, `POST /api/cohorts/:id/sessions`, `POST /api/cohorts/:id/enrollments`, `POST /api/enrollments/:id/withdraw`, `POST /api/sessions/:id/attendance`, `GET /api/enrollments/:id/participation` |
 | `assessments` | Forms: `GET /api/assessment-forms`, `POST /api/assessment-forms`, `GET /api/assessment-forms/:id`, `POST /api/assessment-forms/:id/drafts`, `POST /api/assessment-forms/:id/active`, `GET /api/assessment-versions/:id`, `PUT /api/assessment-versions/:id/questions` (draft only), `POST /api/assessment-versions/:id/publish`. On a record: `GET /api/participants/:id/assessments`, `POST /api/participants/:id/assessments`, `GET /api/assessments/:id`, `PATCH /api/assessments/:id/answers`, `POST /api/assessments/:id/complete`, `POST /api/assessments/:id/void`. The participant's link: `POST /api/participants/:id/assessment-links` (make one), `POST /api/assessments/:id/link` (replace it), `POST /api/assessments/:id/link/revoke`; and, public by design in `self-serve-routes.ts`, `POST /api/self-serve/:token/unlock`, `GET /api/self-serve/:token`, `PATCH /api/self-serve/:token/answers`, `POST /api/self-serve/:token/submit` |
+| `incoming-referrals` | `GET /api/incoming-referrals?view=open\|outcome_owed\|all`, `GET /api/incoming-referrals/counts`, `POST /api/incoming-referrals`, `GET /api/incoming-referrals/:id`, `POST /api/incoming-referrals/:id/notes`, `POST /api/incoming-referrals/:id/close`, `POST /api/incoming-referrals/:id/link` (to an already-active record), `POST /api/incoming-referrals/:id/outcome-reported`. Admitting from one goes through intake or readmission with `incomingReferralId` |
+| `record-export` | `POST /api/participants/:id/record-export` — the whole record, with a purpose; audited |
 | `documents` | `GET /api/participants/:id/documents`, `POST /api/participants/:id/documents` (returns a signed upload link), `POST /api/documents/:id/confirm`, `GET /api/documents/:id/download-url`, `POST /api/documents/:id/void` |
 | `follow-ups` | `GET /api/follow-ups` (QA's queue), `POST /api/follow-ups` (record a call), `GET /api/follow-ups/re-enrollment-requests` |
 | `dashboard` | `GET /api/dashboard` |
@@ -109,6 +111,9 @@ first is behind the session check.
 | `/participants/new` | `intake-page.tsx` | Admission — record, episode and assignment in one act |
 | `/participants/:id` | `participant-detail-page.tsx` | The record: flags, notes, care plan, consents, forms and assessments, documents, referrals, episode history; on a closed record, readmission |
 | `/assessments/:id` | `assessment-page.tsx` | Filling in a form (saves as you go, follow-ups appear as earlier answers are given), or reading and printing a completed one |
+| `/participants/:id/export` | `record-export-page.tsx` | Choose a purpose, then the whole record laid out for print / PDF, plus a data download |
+| `/referrals-in` | `incoming-referrals-page.tsx` | Intake's queue of people referred to NMBM: to deal with, referrer still to be told, all |
+| `/referrals-in/:id` | `incoming-referral-page.tsx` | One referral: notes, matching records, admit / readmit / add to current stay / close, referrer told |
 | `/notes/review` | `note-review-page.tsx` | The U6 queue — approve, or return with a reason |
 | `/care-plans/review` | `care-plan-review-page.tsx` | The same, for care plans |
 | `/programs` | `programs-page.tsx` | Programmes and their cohorts |
@@ -150,7 +155,7 @@ module layout. `enums.ts` wraps `as const` arrays from `@nmbm/shared` in
 `pgEnum`, so an enum is declared once and used in both places — same
 convention as the WSL system this was adapted from.
 
-30 tables and one view:
+32 tables and one view:
 
 | File | Tables |
 |---|---|
@@ -167,6 +172,7 @@ convention as the WSL system this was adapted from.
 | `settings.ts` | `app_settings` — one row per setting somebody has changed |
 | `follow-ups.ts` | `follow_up_calls` — one row per call attempt; the schedule isn't stored |
 | `assessments.ts` | `assessment_forms`, `assessment_form_versions`, `assessment_questions`, `assessments`, `assessment_links` (hashes only) — answers are a jsonb map keyed by each question's stable id |
+| `incoming-referrals.ts` | `incoming_referrals`, `incoming_referral_notes` |
 | `documents.ts` | `documents` — uploaded files; the bytes are in Cloud Storage under an opaque key |
 | `sessions.ts` | `sessions` — sign-in sessions, keyed by a hash of the session id |
 | `views.ts` | `v_no_contact_counts` (rebuilt per episode in 0006), declared to Drizzle with `.existing()` |
@@ -189,6 +195,7 @@ in order in `meta/_journal.json`:
 | `0010_documents` | `documents`, `document_status` enum |
 | `0011_assessments` | The four form and assessment tables; one draft per form |
 | `0012_assessment_links` | `assessment_links`, one live link per assessment; `audit_log.actor_user_id` nullable for things a participant did |
+| `0013_incoming_referrals` | The two referral-in tables; checks that admitted has a record and closed has a reason |
 
 ## Seeds
 
@@ -205,8 +212,9 @@ in order in `meta/_journal.json`:
   Walsh is the disenrolled one, for R10; Price, Liu and Moreno show
   M12's overdue, due and asked-to-come-back states), and a
   running Anger Management cohort with six weekly sessions and three
-  deliberately different attendance histories, and an invented "Example
-  needs assessment" with two follow-up rules. Nothing in it is real.
+  deliberately different attendance histories, an invented "Example
+  needs assessment" with two follow-up rules, and three referrals in
+  (new, being chased, closed with the referrer still to be told). Nothing in it is real.
 
 ## Deployment
 

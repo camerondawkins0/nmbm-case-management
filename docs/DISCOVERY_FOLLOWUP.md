@@ -173,10 +173,21 @@ the same thing when M23 work starts.
   twelve. That may be exactly right, or it may be a slip in how the
   answer was phrased. Worth one sentence of confirmation, since it
   changes when every form on file lapses.
-- **Do referrals come in as well as go out?** M17 asked and the answer
-  only covered outbound. Inbound referrals aren't modelled. R5's answer
-  mentions expecting SUD referrals, which suggests they do arrive —
-  who sends them and what needs recording is unknown.
+- **Referrals in — built on assumptions, to confirm.** M17's answer
+  only covered outbound; R5 implies they arrive. Built as intake's queue
+  with broad source types (plan, hospital, clinic, court/probation,
+  community organisation, self, other). To confirm: who actually sends
+  them and whether any plan sends a file rather than a call or fax (that
+  is the CalAIM data exchange question); who works the queue (granted to
+  intake, Clinical Director, Program Manager); whether referrers want
+  the outcome by a particular route or deadline. A substance-use
+  referral is recorded like any other — 42 CFR Part 2 handling (R5) is
+  still not built, so SUD detail should stay out of the free-text
+  reason until it is.
+- **Who may export a whole record?** Granted to the Clinical Director and
+  QA, with a purpose and an audit line. NMBM may have a privacy officer
+  or a records-request process this should match — and may want a
+  second person to approve a legal-request export.
 - **A partner directory?** Referrals name the partner agency as free
   text, because NMBM hasn't given their list of partners. Once they do,
   a directory makes outcomes reportable by agency ("how many did we send

@@ -1,7 +1,7 @@
 import { eq } from "drizzle-orm";
 import type { Db } from "@nmbm/db";
-import { users, roles, userRoles, notes, assignments, episodes } from "@nmbm/db";
-import type { Payer, Role, ContactResult } from "@nmbm/shared";
+import { users, roles, userRoles, notes, assignments, episodes, permissions, rolePermissions } from "@nmbm/db";
+import type { Payer, Permission, Role, ContactResult } from "@nmbm/shared";
 import { admitParticipant } from "../../src/modules/participants/intake.js";
 
 // Every test builds the people it needs, with names nobody else uses, so
@@ -86,4 +86,19 @@ export async function backdateAssignmentEnd(db: Db, participantId: string, daysA
 // Moves when an episode ended, to put a closure months in the past.
 export async function backdateEpisodeEnd(db: Db, episodeId: string, endDate: string) {
   await db.update(episodes).set({ endDate }).where(eq(episodes.id, episodeId));
+}
+
+// Somebody holding exactly these permissions, through a role made for
+// the test. For rules no seeded role reaches — grants are NMBM's to
+// change, so a check that the defaults happen to satisfy still needs
+// proving.
+export async function staffWith(db: Db, codes: Permission[]) {
+  const [role] = await db.insert(roles).values({ code: unique("custom"), label: "Test role" }).returning();
+  for (const code of codes) {
+    const [perm] = await db.select().from(permissions).where(eq(permissions.code, code));
+    await db.insert(rolePermissions).values({ roleId: role.id, permissionId: perm.id });
+  }
+  const user = await staff(db, null);
+  await db.insert(userRoles).values({ userId: user.id, roleId: role.id });
+  return user;
 }

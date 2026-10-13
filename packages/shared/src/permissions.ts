@@ -26,6 +26,14 @@ export const PERMISSIONS = [
   // only sight of the participant; every open is audited.
   "documents.write",
   "referrals.write", // refer out and record what came back (M17)
+  // People referred *to* NMBM: the queue before anyone is admitted. It
+  // holds names of people who aren't participants yet, so it isn't
+  // open to every worker.
+  "incoming_referrals.manage",
+  // A participant's complete record as one document — for their own
+  // request, a court, a transfer of care. A disclosure, so it's audited
+  // with a purpose and held by few.
+  "records.export",
   // Build and publish NMBM's own forms — the registration form, the
   // needs assessment (M11/M13). Changes what every worker is asked to
   // collect, so it sits with the people who decide that.
@@ -53,6 +61,8 @@ export type Permission = (typeof PERMISSIONS)[number];
 // so the grid stays the single source of truth for "who can do what."
 export const DEFAULT_ROLE_PERMISSIONS: Record<Role, Permission[]> = {
   clinical_director: [
+    "records.export",
+    "incoming_referrals.manage",
     "assessments.write",
     "assessments.manage",
     "documents.write",
@@ -73,6 +83,7 @@ export const DEFAULT_ROLE_PERMISSIONS: Record<Role, Permission[]> = {
   ],
   billing_coordinator: ["participants.read.all", "feedback.submit"],
   intake_specialist: [
+    "incoming_referrals.manage",
     "assessments.write",
     "documents.write",
     "participants.read.closed",
@@ -101,6 +112,7 @@ export const DEFAULT_ROLE_PERMISSIONS: Record<Role, Permission[]> = {
     "feedback.submit",
   ],
   program_manager: [
+    "incoming_referrals.manage",
     "assessments.manage",
     "programs.manage",
     "attendance.record",
@@ -118,7 +130,7 @@ export const DEFAULT_ROLE_PERMISSIONS: Record<Role, Permission[]> = {
     "referrals.write",
     "feedback.submit",
   ],
-  quality_assurance_coordinator: ["participants.read.all", "follow_ups.record", "feedback.submit"],
+  quality_assurance_coordinator: ["records.export", "participants.read.all", "follow_ups.record", "feedback.submit"],
   system_administrator: [
     "assessments.manage",
     "programs.manage",

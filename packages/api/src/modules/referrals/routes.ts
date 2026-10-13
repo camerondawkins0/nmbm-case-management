@@ -27,6 +27,12 @@ export default async function referralRoutes(fastify: FastifyInstance, opts: { d
     { preHandler: authorize("referrals.write") },
     async (request) => {
       const input = referralOutcomeSchema.parse(request.body);
+      // The same caseload rule as making the referral. Without it, a
+      // referral id was enough to write an outcome onto somebody else's
+      // client's record.
+      const referral = await service.findReferral(db, request.params.id);
+      const caller = await resolveScope(db, request.currentUser!.id);
+      await assertCanSee(db, caller, referral.participantId);
       return service.recordOutcome(db, request.params.id, input, request.currentUser!.id);
     },
   );

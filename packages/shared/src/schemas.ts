@@ -35,6 +35,9 @@ export const intakeSchema = z.object({
   // unless the person at the desk confirms it's somebody else. A
   // returning participant should be readmitted onto their own record.
   confirmNotDuplicate: z.boolean().optional(),
+  // Admitting someone who was referred in: the referral is marked
+  // admitted and linked in the same transaction as the admission.
+  incomingReferralId: z.string().uuid().optional(),
 });
 export type Intake = z.infer<typeof intakeSchema>;
 
@@ -72,6 +75,10 @@ export const episodeCreateSchema = z.object({
   participantId: z.string().uuid(),
   startDate: z.string().date(),
   assignedWorkerId: z.string().uuid(),
+  // Readmitted because somebody referred them back: the referral is
+  // settled in the same transaction. Done here rather than afterwards,
+  // because once the record is active again intake can't see it.
+  incomingReferralId: z.string().uuid().optional(),
 });
 export type EpisodeCreate = z.infer<typeof episodeCreateSchema>;
 

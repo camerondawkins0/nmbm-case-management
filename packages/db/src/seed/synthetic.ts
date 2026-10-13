@@ -20,6 +20,8 @@ import {
   assessmentForms,
   assessmentFormVersions,
   assessmentQuestions,
+  incomingReferrals,
+  incomingReferralNotes,
 } from "../schema/index.js";
 import type {
   Payer,
@@ -587,6 +589,55 @@ async function main() {
       prompt: "Tell us about food at home this month.",
       showIf: { mode: "all", conditions: [{ questionId: ids.needs, op: "eq", value: "food" }] },
     },
+  ]);
+
+  // Referrals in: one just arrived, one being chased, one turned down
+  // whose referrer still needs telling. Invented, like everything here.
+  const intakeId = staffByEmail.get("p.nair@nmbm.example.org")!;
+  await db.insert(incomingReferrals).values([
+    {
+      receivedDate: isoDate(daysAgo(1)),
+      sourceType: "hospital",
+      sourceName: "Harbor General discharge planning",
+      sourceContact: "Discharge desk, ext. 4410",
+      firstName: "Rosa",
+      lastName: "Delgado",
+      dateOfBirth: "1979-02-14",
+      payer: "medi_cal",
+      reason: "Discharged after a fall; lives alone, needs help with appointments and food.",
+      recordedById: intakeId,
+    },
+    {
+      receivedDate: isoDate(daysAgo(5)),
+      sourceType: "health_plan",
+      sourceName: "Molina care coordination",
+      sourceContact: "care.coord@molina.example.org",
+      firstName: "Andre",
+      lastName: "Whitaker",
+      payer: "molina",
+      reason: "Missed three primary care visits; plan asks for community health worker support.",
+      status: "contacting",
+      recordedById: intakeId,
+    },
+    {
+      receivedDate: isoDate(daysAgo(12)),
+      sourceType: "court_probation",
+      sourceName: "County probation, Dept. 7",
+      firstName: "Kevin",
+      lastName: "Moss",
+      reason: "Court-ordered anger management.",
+      status: "closed",
+      closeReason: "declined",
+      closeNote: "Chose a programme closer to home.",
+      closedById: intakeId,
+      closedAt: daysAgo(2),
+      recordedById: intakeId,
+    },
+  ]);
+  const [chased] = await db.select().from(incomingReferrals).where(eq(incomingReferrals.lastName, "Whitaker"));
+  await db.insert(incomingReferralNotes).values([
+    { referralId: chased.id, body: "Called, no answer. Left a voicemail.", createdById: intakeId, createdAt: daysAgo(4) },
+    { referralId: chased.id, body: "Called again; number rings out.", createdById: intakeId, createdAt: daysAgo(2) },
   ]);
 
   console.log(

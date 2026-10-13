@@ -14,6 +14,7 @@ import * as consentService from "../consents/service.js";
 import * as referralService from "../referrals/service.js";
 import * as programService from "../programs/service.js";
 import * as followUpService from "../follow-ups/service.js";
+import * as incomingReferralService from "../incoming-referrals/service.js";
 
 function decorate(row: Awaited<ReturnType<typeof repository.findById>>) {
   const flags = participantFlags(row);
@@ -57,15 +58,16 @@ export async function getParticipant(db: Db, caller: CallerScope, id: string) {
   }
   const row = await repository.findById(db, id);
   if (!row) throw notFound("Participant not found");
-  const [episodes, notes, consents, referrals, programs, followUps] = await Promise.all([
+  const [episodes, notes, consents, referrals, programs, followUps, referralsIn] = await Promise.all([
     repository.listEpisodes(db, id),
     repository.listNotes(db, id),
     consentService.listForParticipant(db, id),
     referralService.listForParticipant(db, id),
     programService.listEnrollmentsForParticipant(db, id),
     followUpService.scheduleForParticipant(db, id),
+    incomingReferralService.listForParticipant(db, id),
   ]);
-  return { ...decorate(row), episodes, notes, consents, referrals, programs, followUps };
+  return { ...decorate(row), episodes, notes, consents, referrals, programs, followUps, referralsIn };
 }
 
 export async function createParticipant(

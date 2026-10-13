@@ -1,5 +1,8 @@
 import { pgEnum } from "drizzle-orm/pg-core";
 import {
+  INCOMING_REFERRAL_SOURCES,
+  INCOMING_REFERRAL_STATUSES,
+  INCOMING_REFERRAL_CLOSE_REASONS,
   ASSESSMENT_MODES,
   ASSESSMENT_STATUSES,
   FORM_VERSION_STATUSES,
@@ -52,3 +55,8 @@ export const formVersionStatusEnum = pgEnum("form_version_status", FORM_VERSION_
 export const questionTypeEnum = pgEnum("question_type", QUESTION_TYPES);
 export const assessmentStatusEnum = pgEnum("assessment_status", ASSESSMENT_STATUSES);
 export const assessmentModeEnum = pgEnum("assessment_mode", ASSESSMENT_MODES);
+
+// People referred to NMBM (M17, inbound).
+export const incomingReferralSourceEnum = pgEnum("incoming_referral_source", INCOMING_REFERRAL_SOURCES);
+export const incomingReferralStatusEnum = pgEnum("incoming_referral_status", INCOMING_REFERRAL_STATUSES);
+export const incomingReferralCloseReasonEnum = pgEnum("incoming_referral_close_reason", INCOMING_REFERRAL_CLOSE_REASONS);

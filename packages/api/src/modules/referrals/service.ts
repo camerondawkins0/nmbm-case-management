@@ -132,6 +132,12 @@ export async function createReferral(db: Db, input: ReferralCreate, referredById
   return row;
 }
 
+export async function findReferral(db: Db, id: string) {
+  const [row] = await db.select().from(referrals).where(eq(referrals.id, id));
+  if (!row) throw notFound("Referral not found");
+  return row;
+}
+
 export async function recordOutcome(
   db: Db,
   id: string,

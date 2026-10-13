@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { api, ApiError } from "../lib/api.js";
 import { can } from "../lib/use-me.js";
 import type { AssignableWorker, EpisodeSummary, Me, ParticipantDetail } from "../lib/types.js";
@@ -11,7 +11,7 @@ import { DocumentsSection } from "../components/documents-section.js";
 import { AssessmentsSection } from "../components/assessments-section.js";
 import { ReferralsSection } from "../components/referrals-section.js";
 import { Link } from "react-router-dom";
-import { CLOSURE_REASON_LABELS } from "../lib/labels.js";
+import { CLOSURE_REASON_LABELS, REFERRAL_SOURCE_LABELS } from "../lib/labels.js";
 import { FOLLOW_UP_OUTCOME_LABELS } from "@nmbm/shared";
 import type { FollowUpSchedule } from "../lib/types.js";
 import { FollowUpCallForm } from "../components/follow-up-call-form.js";
@@ -19,6 +19,9 @@ import { FollowUpCallForm } from "../components/follow-up-call-form.js";
 export default function ParticipantDetailPage({ me }: { me: Me }) {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  // Arrived from the referrals queue to readmit a returning client.
+  const [params] = useSearchParams();
+  const fromReferral = params.get("referral");
   const [record, setRecord] = useState<ParticipantDetail | null>(null);
   // A failed load means there is nothing to show. A rejected action —
   // the disenrolment gate, say — must not take the record off screen
@@ -69,6 +72,14 @@ export default function ParticipantDetailPage({ me }: { me: Me }) {
             {record.workerName && ` · ${record.workerName}`}
             {record.startDate && ` · enrolled ${record.startDate}`}
           </p>
+          {can(me, "records.export") && (
+            <Link
+              to={`/participants/${record.id}/export`}
+              className="mt-1 inline-block text-xs text-nmbm-ink/60 underline underline-offset-2 hover:text-nmbm-ink"
+            >
+              Export the full record
+            </Link>
+          )}
         </div>
         <div className="flex flex-wrap items-center gap-1.5">
           {isOpen ? (
@@ -95,9 +106,15 @@ export default function ParticipantDetailPage({ me }: { me: Me }) {
             Not on anyone's caseload. The history below is kept in full; readmitting opens a new
             episode with its own care plan clock and contact count.
           </p>
+          {fromReferral && can(me, "episodes.write") && (
+            <p className="mt-2 text-sm text-nmbm-ink/80">
+              Readmitting from a referral — the referral closes when they're readmitted.
+            </p>
+          )}
           {can(me, "episodes.write") && (
             <ReadmitForm
               participantId={record.id}
+              incomingReferralId={fromReferral}
               earliest={lastEpisode.endDate}
               onDone={async (message) => {
                 // Readmitted to somebody else's caseload, the record is an
@@ -186,6 +203,21 @@ export default function ParticipantDetailPage({ me }: { me: Me }) {
             load();
           }}
         />
+      )}
+
+      {record.referralsIn.length > 0 && (
+        <section className="mt-6 rounded border border-nmbm-ink/10 p-4">
+          <h2 className="text-sm font-semibold uppercase tracking-wide text-nmbm-ink/50">Referred to NMBM</h2>
+          <ul className="mt-2 flex flex-col gap-2 text-sm">
+            {record.referralsIn.map((r) => (
+              <li key={r.id}>
+                <span className="font-medium text-nmbm-ink">{r.sourceName || REFERRAL_SOURCE_LABELS[r.sourceType]}</span>
+                <span className="text-xs text-nmbm-ink/50"> · received {r.receivedDate}</span>
+                <p className="text-nmbm-ink/70">{r.reason}</p>
+              </li>
+            ))}
+          </ul>
+        </section>
       )}
 
       <CarePlanSection
@@ -573,11 +605,13 @@ function EpisodeHistory({ episodes }: { episodes: EpisodeSummary[] }) {
 // on one record instead of a duplicate being created at the front desk.
 function ReadmitForm({
   participantId,
+  incomingReferralId,
   earliest,
   onDone,
   onError,
 }: {
   participantId: string;
+  incomingReferralId: string | null;
   earliest: string | null;
   onDone: (message: string) => void | Promise<void>;
   onError: (message: string) => void;
@@ -599,7 +633,12 @@ function ReadmitForm({
     try {
       await api("/api/episodes", {
         method: "POST",
-        body: JSON.stringify({ participantId, startDate, assignedWorkerId: workerId }),
+        body: JSON.stringify({
+          participantId,
+          startDate,
+          assignedWorkerId: workerId,
+          incomingReferralId: incomingReferralId ?? undefined,
+        }),
       });
       const worker = workers.find((w) => w.id === workerId)?.displayName ?? "the worker";
       await onDone(`Readmitted and assigned to ${worker}.`);

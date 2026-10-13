@@ -6,6 +6,7 @@ import { CARE_PLAN_COMPLETION_DAYS } from "@nmbm/shared";
 import { AppError, conflict, notFound } from "../../plugins/errors.js";
 import { possibleDuplicates } from "./repository.js";
 import { writeAudit } from "../../plugins/audit.js";
+import { markAdmitted } from "../incoming-referrals/service.js";
 
 function isoDate(d: Date) {
   return d.toISOString().slice(0, 10);
@@ -73,6 +74,18 @@ export async function admitParticipant(db: Db, input: Intake, actorId: string) {
           ? `; admitted as a different person despite ${duplicates.length} record(s) with the same date of birth and a matching name`
           : ""),
     });
+
+    // Admitted from a referral: the referral closes in the same act, so
+    // there's never a person on the caseload whose referral still sits
+    // in intake's queue as unanswered.
+    if (input.incomingReferralId) {
+      await markAdmitted(
+        tx as unknown as Db,
+        input.incomingReferralId,
+        { participantId: participant.id, episodeId: episode.id },
+        actorId,
+      );
+    }
 
     return { participant, episode };
   });

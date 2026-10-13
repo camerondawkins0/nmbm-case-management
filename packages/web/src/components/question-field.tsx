@@ -153,15 +153,8 @@ export function QuestionField({
   );
 }
 
-// Answers as text, for a completed assessment and the print view.
-export function answerText(question: FormQuestion, value: AnswerValue | undefined): string | null {
-  if (value === undefined) return null;
-  const options = question.type === "yes_no" ? YES_NO_OPTIONS : question.options;
-  const label = (v: string) => options.find((o) => o.value === v)?.label ?? v;
-  if (Array.isArray(value)) return value.map(label).join(", ");
-  if (question.type === "yes_no" || question.type === "single_choice") return label(String(value));
-  return String(value);
-}
+// Kept as a re-export so pages import one module for questions.
+export { answerText } from "@nmbm/shared";
 
 // Consecutive questions under the same heading print together.
 export function bySection<Q extends { section: string | null }>(questions: Q[]) {

@@ -8,6 +8,7 @@ import { noContactState } from "../../lib/rules.js";
 import * as repository from "./repository.js";
 import * as notesRepository from "../notes/repository.js";
 import { writeAudit } from "../../plugins/audit.js";
+import { markAdmitted } from "../incoming-referrals/service.js";
 
 // Readmission (M2): a new episode, linked to the one it follows, with a
 // named worker — the same one act as intake, for somebody already on
@@ -49,6 +50,14 @@ export async function openEpisode(db: Db, input: EpisodeCreate, actorId: string)
       entityId: input.participantId,
       detail: `episode ${episode.id} opened, assigned to ${worker.displayName}`,
     });
+    if (input.incomingReferralId) {
+      await markAdmitted(
+        tx as unknown as Db,
+        input.incomingReferralId,
+        { participantId: input.participantId, episodeId: episode.id },
+        actorId,
+      );
+    }
     return episode;
   });
 }

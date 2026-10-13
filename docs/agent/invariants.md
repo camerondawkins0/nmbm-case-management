@@ -399,6 +399,52 @@ email alone doesn't open the form.
 - Making, replacing and withdrawing a link are caseload-scoped and
   audited.
 
+## A referral in ends admitted or closed, and the referrer hears (M17, R5)
+
+- **The queue is `incoming_referrals.manage`'s** (intake, Clinical
+  Director, Program Manager). It holds names of people who aren't
+  participants yet. Once admitted, "referred by" shows on the record to
+  anyone who can open it.
+- **new → contacting → admitted | closed.** A note marks it in hand.
+  Closed needs a reason; "entered in error" is how a mistake goes away.
+  Nothing is deleted. DB checks: admitted has a participant and episode,
+  closed has a reason.
+- **Admitting settles it in the same transaction.** Intake
+  (`POST /api/participants/intake`) and readmission (`POST /api/episodes`)
+  take `incomingReferralId`. If the referral was already dealt with, the
+  whole admission rolls back. Readmission is the path for a returning
+  client, because once the record is active again intake can't see it
+  to link afterwards. `link` is only for somebody already active, and
+  needs sight of their record.
+- **Using a referral to admit needs the queue permission too**, on both
+  routes. No default role admits without it, but grants are NMBM's to
+  change.
+- **The referrer is owed the outcome** once a referral is admitted or
+  closed, unless it was a self-referral or closed as duplicate / entered
+  in error. "Referrer told" is recorded once, with who.
+- Recorded, closed, admitted and outcome-reported are audited.
+
+## Exporting a whole record is a disclosure (HIPAA right of access)
+
+- **`records.export`** — Clinical Director and QA to start. Separate from
+  reading: a worker who can open a record can't export it.
+- **A purpose is required** (participant request, legal request,
+  transfer of care, funder audit, other — "other" needs words) and goes
+  in the audit line with the export, as `record.exported`. Written
+  before the export is returned.
+- **Scoped like the record**: out of scope is 404, the export permission
+  never widens what can be seen.
+- **Everything on the record, in words**: episodes, case managers,
+  referrals in and out, notes (every status), care plans, consents,
+  programmes with attendance, assessments with answers as option labels
+  against the version's wording, follow-up calls, the documents list.
+  `omitted` says what isn't there (document files, the audit log).
+- Nothing is stored: the export exists in the response and whatever the
+  person prints or saves. It's a POST so a browser never prefetches or
+  replays it.
+- When 42 CFR Part 2 is built, substance-use records will need
+  segmenting out of this unless the consent covers the disclosure.
+
 ## Exports neutralise spreadsheet formulas
 
 Every CSV goes through `lib/csv.ts`. A cell starting `=`, `+`, `-`, `@`,

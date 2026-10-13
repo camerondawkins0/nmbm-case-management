@@ -1,4 +1,8 @@
 import type {
+  IncomingReferralCloseReason,
+  IncomingReferralSource,
+  IncomingReferralStatus,
+  RecordExportPurpose,
   Answers,
   AssessmentMode,
   AssessmentStatus,
@@ -337,6 +341,144 @@ export type SearchResult = {
   workerName: string | null;
 };
 
+// Who referred a participant to NMBM, on their record.
+export type ReferralIn = {
+  id: string;
+  receivedDate: string;
+  sourceType: IncomingReferralSource;
+  sourceName: string | null;
+  reason: string;
+  episodeId: string | null;
+  outcomeReportedAt: string | null;
+};
+
+export type IncomingReferralRow = {
+  id: string;
+  receivedDate: string;
+  sourceType: IncomingReferralSource;
+  sourceName: string | null;
+  firstName: string;
+  lastName: string;
+  dateOfBirth: string | null;
+  reason: string;
+  status: IncomingReferralStatus;
+  closeReason: IncomingReferralCloseReason | null;
+  participantId: string | null;
+  outcomeReportedAt: string | null;
+  recordedByName: string;
+  lastActivity: string | null;
+  attempts: number;
+  daysWaiting: number;
+};
+
+export type IncomingReferralDetail = {
+  id: string;
+  receivedDate: string;
+  sourceType: IncomingReferralSource;
+  sourceName: string | null;
+  sourceContact: string | null;
+  firstName: string;
+  lastName: string;
+  dateOfBirth: string | null;
+  phone: string | null;
+  payer: Payer | null;
+  reason: string;
+  status: IncomingReferralStatus;
+  createdAt: string;
+  recordedByName: string | null;
+  participantId: string | null;
+  admittedAt: string | null;
+  admittedByName: string | null;
+  closeReason: IncomingReferralCloseReason | null;
+  closeNote: string | null;
+  closedAt: string | null;
+  closedByName: string | null;
+  outcomeReportedAt: string | null;
+  outcomeReportedByName: string | null;
+  outcomeOwed: boolean;
+  notes: { id: string; body: string; createdAt: string; createdByName: string }[];
+};
+
+export type RecordExport = {
+  generatedAt: string;
+  generatedByName: string | null;
+  purpose: RecordExportPurpose;
+  purposeNote: string | null;
+  participant: {
+    id: string;
+    firstName: string;
+    lastName: string;
+    dateOfBirth: string;
+    payer: Payer | null;
+    recordCreatedAt: string;
+  };
+  episodes: {
+    id: string;
+    status: string;
+    startDate: string;
+    endDate: string | null;
+    closureReason: EpisodeClosureReason | null;
+    closureNote: string | null;
+  }[];
+  caseManagers: { name: string; startedAt: string; endedAt: string | null }[];
+  referralsIn: ReferralIn[];
+  notes: {
+    id: string;
+    contactResult: ContactResult;
+    body: string;
+    createdAt: string;
+    authorName: string;
+    status: NoteStatus;
+    reviewNote: string | null;
+    approvedAt: string | null;
+  }[];
+  carePlans: {
+    status: CarePlanStatus;
+    goals: string;
+    createdAt: string;
+    approvedAt: string | null;
+    approvedByName: string | null;
+  }[];
+  consents: ParticipantConsent[];
+  referralsOut: ParticipantReferral[];
+  programmes: {
+    status: string;
+    cohortName: string;
+    programName: string;
+    startDate: string;
+    attendance: { date: string; topic: string | null; status: AttendanceStatus }[];
+  }[];
+  assessments: {
+    id: string;
+    formName: string;
+    versionNumber: number;
+    mode: AssessmentMode;
+    status: AssessmentStatus;
+    startedAt: string;
+    completedAt: string | null;
+    voidReason: string | null;
+    answers: { section: string | null; question: string; answer: string | null }[];
+  }[];
+  followUpCalls: {
+    milestoneMonths: number;
+    outcome: string;
+    note: string | null;
+    servicesFeedback: string | null;
+    calledAt: string;
+    calledByName: string;
+  }[];
+  documents: {
+    description: string;
+    originalFilename: string;
+    status: string;
+    uploadedAt: string | null;
+    uploadedByName: string;
+    consentFormName: string | null;
+    voidReason: string | null;
+  }[];
+  omitted: string[];
+};
+
 export type ParticipantDetail = ParticipantRow & {
   episodes: EpisodeSummary[];
   followUps: FollowUpSchedule | null;
@@ -344,6 +486,7 @@ export type ParticipantDetail = ParticipantRow & {
   consents: ParticipantConsent[];
   referrals: ParticipantReferral[];
   programs: ParticipantProgram[];
+  referralsIn: ReferralIn[];
 };
 
 export type Me = {

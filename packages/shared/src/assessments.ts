@@ -320,3 +320,18 @@ export const sendToParticipantSchema = z.object({ formId: z.string().uuid() });
 export const unlockSchema = z.object({
   passcode: z.string().trim().regex(/^\d{6}$/, { message: "The passcode is six digits" }),
 });
+
+// An answer as words: option labels rather than their stored values.
+// Shared so the screen, the print view and the record export can't
+// describe the same answer differently.
+export function answerText(
+  q: { type: QuestionType; options: QuestionOption[] },
+  value: AnswerValue | undefined,
+): string | null {
+  if (value === undefined) return null;
+  const options = q.type === "yes_no" ? YES_NO_OPTIONS : q.options;
+  const label = (v: string) => options.find((o) => o.value === v)?.label ?? v;
+  if (Array.isArray(value)) return value.map(label).join(", ");
+  if (q.type === "yes_no" || q.type === "single_choice") return label(String(value));
+  return String(value);
+}
