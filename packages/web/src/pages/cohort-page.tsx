@@ -259,7 +259,7 @@ export default function CohortPage({ me }: { me: Me }) {
   );
 }
 
-// R10/M14: NMBM's answer — disenrolment means the person no longer
+// R10/M14: NMBM's answer — disenrollment means the person no longer
 // receives services from NMBM, so flag them on the roster rather than
 // withdrawing them. A court-ordered class may continue regardless, and
 // whether it does is the facilitator's call, not the system's.

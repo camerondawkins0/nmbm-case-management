@@ -28,7 +28,7 @@ const rowCount = async () => (await db.select({ n: sql<number>`count(*)::int` })
 describe("sessions are shared, and survive a restart", () => {
   // Cloud Run runs more than one instance and replaces them on every
   // deploy. With sessions in memory, each of those signed people out.
-  it("honours a session on another instance of the server", async () => {
+  it("honors a session on another instance of the server", async () => {
     const user = await staff(db, "community_health_worker");
     const first = await signIn(app, user.email);
     const second = await startApp({ WEB_DIST_DIR: webDir });

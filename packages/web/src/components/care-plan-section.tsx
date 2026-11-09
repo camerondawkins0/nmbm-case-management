@@ -88,7 +88,7 @@ export function CarePlanSection({
           {record.carePlanGoals ??
             (record.episodeStatus === "open"
               ? "No care plan written yet."
-              : "No open episode — a care plan belongs to an enrolment.")}
+              : "No open episode — a care plan belongs to an enrollment.")}
         </p>
       )}
 

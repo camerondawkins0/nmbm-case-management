@@ -17,9 +17,9 @@ export default {
           },
           paper: "#ffffff",
         },
-        // Functional, not brand. The logo is a two-colour mark and
-        // inventing brand colours to signal "overdue" would misrepresent
-        // it — docs/BRANDING.md says to keep state colours separate.
+        // Functional, not brand. The logo is a two-color mark and
+        // inventing brand colors to signal "overdue" would misrepresent
+        // it — docs/BRANDING.md says to keep state colors separate.
         state: {
           alert: "#b91c1c",
           "alert-bg": "#fef2f2",

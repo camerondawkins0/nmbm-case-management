@@ -95,7 +95,7 @@ describe("R10 intake refuses a likely duplicate", () => {
     expect(res.body.error).toBe("possible_duplicate");
   });
 
-  it("catches a changed surname by first name and date of birth", async () => {
+  it("catches a changed last name by first name and date of birth", async () => {
     const worker = await staff(db, "community_health_worker");
     const p = await person(worker.id, "Renamed", "1967-07-07");
     const res = await intake.post("/api/participants/intake", intakeBody("Renamed", "Newsurname", "1967-07-07", worker.id));

@@ -5,7 +5,7 @@ import type { ProgramSummary } from "../lib/types.js";
 import { Pill } from "../components/flags.js";
 
 // M14. NMBM run Anger Management now; Domestic Violence waits on LA
-// County. A cohort is one run of a programme, so the same class twice a
+// County. A cohort is one run of a program, so the same class twice a
 // year keeps its rosters apart.
 export default function ProgramsPage() {
   const [programs, setPrograms] = useState<ProgramSummary[] | null>(null);
@@ -18,7 +18,7 @@ export default function ProgramsPage() {
 
   return (
     <div className="mx-auto max-w-3xl">
-      <h1 className="text-2xl font-semibold text-nmbm-ink">Programmes</h1>
+      <h1 className="text-2xl font-semibold text-nmbm-ink">Programs</h1>
       <p className="mt-1 text-sm text-nmbm-ink/60">
         Attendance here is evidence someone outside NMBM relies on — every mark records who took
         it and when.

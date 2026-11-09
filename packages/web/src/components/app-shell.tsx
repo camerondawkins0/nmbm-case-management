@@ -11,7 +11,7 @@ export function AppShell({ me, children }: { me: Me; children: React.ReactNode }
   const links = [
     { to: "/", label: "Today" },
     { to: "/participants", label: PARTICIPANT_LABEL_PLURAL },
-    { to: "/programs", label: "Programmes" },
+    { to: "/programs", label: "Programs" },
     ...(can(me, "incoming_referrals.manage") ? [{ to: "/referrals-in", label: "Referrals in" }] : []),
     ...(can(me, "follow_ups.record") || can(me, "participants.read.closed")
       ? [{ to: "/follow-ups", label: "Follow-ups" }]

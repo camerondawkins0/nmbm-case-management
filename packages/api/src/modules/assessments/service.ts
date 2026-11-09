@@ -324,7 +324,7 @@ export async function start(
   const version = await currentVersion(db, form.id);
   if (!version) throw unprocessable("This form hasn't been published yet");
 
-  // Filed against the enrolment it was taken in, so a needs assessment
+  // Filed against the enrollment it was taken in, so a needs assessment
   // from a previous stay reads as that, not as today's picture.
   const [episode] = await db
     .select()
@@ -372,7 +372,7 @@ export async function get(db: Db, id: string) {
 }
 
 // Answers go on an assessment only while it's open, and only while its
-// enrolment is: the same rule notes follow, so nothing is added to a
+// enrollment is: the same rule notes follow, so nothing is added to a
 // closed stay after the fact.
 //
 // actorId is the staff member, or null for the participant through
@@ -395,7 +395,7 @@ async function requireOpen(db: Db, id: string, actorId: string | null) {
     );
   }
   const [episode] = await db.select().from(episodes).where(eq(episodes.id, row.episodeId));
-  if (episode?.status !== "open") throw conflict("The enrolment this assessment belongs to has closed");
+  if (episode?.status !== "open") throw conflict("The enrollment this assessment belongs to has closed");
   return row;
 }
 

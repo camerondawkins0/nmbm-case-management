@@ -47,7 +47,7 @@ export default async function episodeRoutes(fastify: FastifyInstance, opts: { db
   );
 
   // M6: recording the Molina warning letter is what unblocks a
-  // no-contact disenrolment for those participants.
+  // no-contact disenrollment for those participants.
   fastify.post<{ Params: { id: string } }>(
     "/api/episodes/:id/disenrollment-letter",
     { preHandler: authorize("episodes.write") },

@@ -59,7 +59,7 @@ export const REFERRAL_SOURCE_LABELS: Record<IncomingReferralSource, string> = {
   hospital: "Hospital",
   clinic: "Clinic",
   court_probation: "Court or probation",
-  community_org: "Community organisation",
+  community_org: "Community organization",
   self: "Self-referral",
   other: "Other",
 };

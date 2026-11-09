@@ -212,7 +212,7 @@ describe("the participant's side", () => {
     expect((await p.view()).status).toBe(401);
   });
 
-  it("stops working when it expires or the enrolment closes", async () => {
+  it("stops working when it expires or the enrollment closes", async () => {
     const s = await sent();
     await db
       .update(assessmentLinks)
@@ -226,7 +226,7 @@ describe("the participant's side", () => {
   });
 });
 
-describe("the case manager afterwards", () => {
+describe("the case manager afterward", () => {
   it("can't edit what the participant is filling in, but can void it", async () => {
     const s = await sent();
     const edit = await chw.patch(`/api/assessments/${s.assessmentId}/answers`, { answers: { [ids.housed]: "yes" } });

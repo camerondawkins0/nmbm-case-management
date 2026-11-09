@@ -26,12 +26,12 @@ export function Pill({
 export function NoContactPill({ flags }: { flags: NoContactFlags }) {
   if (flags.count === 0) return null;
   if (flags.disenrollmentEligible) {
-    return <Pill tone="alert">{flags.count} missed · disenrolment allowed</Pill>;
+    return <Pill tone="alert">{flags.count} missed · disenrollment allowed</Pill>;
   }
   if (flags.warning) {
     return (
       <Pill tone="warn">
-        {flags.count} missed · {flags.attemptsUntilDisenrollment} more before disenrolment
+        {flags.count} missed · {flags.attemptsUntilDisenrollment} more before disenrollment
       </Pill>
     );
   }

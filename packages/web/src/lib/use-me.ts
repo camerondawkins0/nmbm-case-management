@@ -26,10 +26,10 @@ export function useMe(): State & { retry: () => void } {
   }, []);
 
   useEffect(() => {
-    let cancelled = false;
+    let canceled = false;
     fetch("/api/me", { credentials: "include" })
       .then(async (res) => {
-        if (cancelled) return;
+        if (canceled) return;
         if (res.ok) {
           setState({ status: "signed-in", me: (await res.json()) as Me });
         } else if (res.status === 401) {
@@ -40,10 +40,10 @@ export function useMe(): State & { retry: () => void } {
         }
       })
       .catch(() => {
-        if (!cancelled) setState({ status: "unavailable" });
+        if (!canceled) setState({ status: "unavailable" });
       });
     return () => {
-      cancelled = true;
+      canceled = true;
     };
   }, [attempt]);
 

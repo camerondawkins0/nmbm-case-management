@@ -40,7 +40,7 @@ step, not an optional notification.
 Both halves are a gate on the close action, not a banner next to it:
 `closeEpisode` refuses and says how many attempts are still needed, or
 that the letter has to be recorded first. The gate binds **only the
-`no_contact` closure reason** — somebody who completes the programme,
+`no_contact` closure reason** — somebody who completes the program,
 moves away or asks to leave exits without any of this, and blocking
 those would be inventing a rule NMBM never asked for.
 
@@ -53,7 +53,7 @@ These don't collapse into one clock — a plan can be late on the
 completion deadline and still be due for its next 2-week review, and the
 UI has to be able to say both at once.
 
-## Consents expire a year after enrolment, not after signing (M16)
+## Consents expire a year after enrollment, not after signing (M16)
 
 NMBM's words were "our consents can expire at a year after the client is
 enrolled" — the anchor is the episode's start date, not the signature.
@@ -65,7 +65,7 @@ shown. Still marked "are we in agreement" in discovery.
 Whether a consent has expired is **derived at read time** from that
 date, never read off the stored status column. A row saying "active"
 next to a date in the past is precisely the bug that lets an expired
-authorisation release someone's information, and nothing here runs a job
+authorization release someone's information, and nothing here runs a job
 to keep a stored status honest. `status` only carries a decision a
 person made: revoked.
 
@@ -75,7 +75,7 @@ M15 asked whether a signature "unlocks something else, like a referral".
 It does, and unlike other consent gates this one refuses rather than
 warns: sending a participant's information to an outside agency without
 a current release isn't NMBM's preference to weigh, because there is
-nothing authorising the disclosure. The refusal distinguishes *no
+nothing authorizing the disclosure. The refusal distinguishes *no
 release on file*, *expired* and *revoked*, because those lead to
 different next actions.
 
@@ -84,8 +84,8 @@ general — stays open. This rule doesn't settle it and shouldn't be read
 as having settled it.
 
 Revoking a release stops new referrals but leaves existing ones pointing
-at it. What was authorised at the time is a fact about the past, and the
-referral records which consent authorised it.
+at it. What was authorized at the time is a fact about the past, and the
+referral records which consent authorized it.
 
 ## Disenrollment archives immediately, but never hides the record (R10)
 
@@ -130,11 +130,11 @@ How that's held, and what must not be undone:
   transaction — the same one act as intake. Reassignment on a closed
   record is refused: readmission is the way back.
 
-Disenrolment does not withdraw anyone from a programme cohort. NMBM:
-disenrolment "means they are no longer receiving or participating in
+Disenrollment does not withdraw anyone from a program cohort. NMBM:
+disenrollment "means they are no longer receiving or participating in
 services with the provider" — a court-ordered class may carry on
 regardless. The roster flags them with the date services ended and
-leaves the enrolment and its attendance alone.
+leaves the enrollment and its attendance alone.
 
 Retention is separately confirmed at 7 years (R6, California state
 requirement) — that governs when a closed record eventually leaves
@@ -210,12 +210,12 @@ someone next opened the record.
 
 Three things are computed at read time rather than kept in a column:
 whether a consent has expired, how long the current run of failed
-contacts is, and where somebody stands against a programme's completion
+contacts is, and where somebody stands against a program's completion
 threshold. All three share a failure mode — a stored value drifts
 silently, and nothing here runs a job to keep it honest, so the row
 would go on asserting something false until a person noticed. An
 expired release that still reads "active" is how information leaves the
-building without authorisation.
+building without authorization.
 
 Stored status columns carry only decisions a person made: revoked,
 returned, closed, withdrawn. Those don't drift, because nothing but a
@@ -249,7 +249,7 @@ route does. Two consequences worth keeping:
 - **Readmission stops the old schedule.** Only a participant's latest,
   closed episode is followed up; once they're back in services there's
   nobody to call. The new episode gets its own schedule when it ends.
-- **"Wants services again" is a list, not a task to tick.** It's derived
+- **"Wants services again" is a list, not a task to check off.** It's derived
   — anyone reached who asked to come back and hasn't been readmitted
   since — so readmitting them is what clears it.
 - A missed milestone drops out of the queue when the next one falls due
@@ -262,7 +262,7 @@ route does. Two consequences worth keeping:
   three rules as the record itself. It must never be a way to learn
   that someone is on another worker's caseload.
 - Intake refuses a new record with the same date of birth and the same
-  first *or* last name — loose on purpose, so a changed surname doesn't
+  first *or* last name — loose on purpose, so a changed last name doesn't
   slip through. The refusal doesn't say whose record matched, since the
   person at the desk may not be allowed to open it. They can override it
   by confirming it's a different person, and the override is written to
@@ -272,7 +272,7 @@ route does. Two consequences worth keeping:
 
 - The Google round trip carries a one-use `state` token bound to the
   session. Without it, anyone could complete sign-in in a victim's
-  browser with the attacker's own authorisation code, and the victim
+  browser with the attacker's own authorization code, and the victim
   would enter participant notes into the attacker's account.
 - The domain is checked on the verified token, not trusted from the
   `hd` hint, and there is no default domain: unset means refuse.
@@ -346,7 +346,7 @@ the app, not in code. No scoring: M11 says no licensed instruments.
   a question's `stable_id`, and options on their `value`, so rewording
   either doesn't orphan anything. A question can't change kind of answer
   (text to number, say) across versions — publish refuses; add a new one.
-- **Show-if rules only look backwards**, and must name options the
+- **Show-if rules only look backward**, and must name options the
   earlier question still has. Checked at publish, not on save, because
   drafts are written out of order. The evaluator (`visibleQuestionIds` in
   `@nmbm/shared`) is the only answer to "which questions apply", used by
@@ -384,7 +384,7 @@ email alone doesn't open the form.
 - **Every way a link stops working looks the same to the holder** (404,
   "ask your case manager"): expired (`self_serve_link_days`, 1–30,
   default 7), withdrawn, replaced, locked, submitted, the form voided or
-  completed, or the enrolment closed. The record says which.
+  completed, or the enrollment closed. The record says which.
 - **The participant sees the form and nothing else** — no name, no ids,
   no case manager. `participantView` returns three keys.
 - **Same rules as staff** for answers and completion: the participant
@@ -414,7 +414,7 @@ email alone doesn't open the form.
   take `incomingReferralId`. If the referral was already dealt with, the
   whole admission rolls back. Readmission is the path for a returning
   client, because once the record is active again intake can't see it
-  to link afterwards. `link` is only for somebody already active, and
+  to link afterward. `link` is only for somebody already active, and
   needs sight of their record.
 - **Using a referral to admit needs the queue permission too**, on both
   routes. No default role admits without it, but grants are NMBM's to
@@ -436,7 +436,7 @@ email alone doesn't open the form.
   never widens what can be seen.
 - **Everything on the record, in words**: episodes, case managers,
   referrals in and out, notes (every status), care plans, consents,
-  programmes with attendance, assessments with answers as option labels
+  programs with attendance, assessments with answers as option labels
   against the version's wording, follow-up calls, the documents list.
   `omitted` says what isn't there (document files, the audit log).
 - Nothing is stored: the export exists in the response and whatever the
@@ -445,7 +445,7 @@ email alone doesn't open the form.
 - When 42 CFR Part 2 is built, substance-use records will need
   segmenting out of this unless the consent covers the disclosure.
 
-## Exports neutralise spreadsheet formulas
+## Exports neutralize spreadsheet formulas
 
 Every CSV goes through `lib/csv.ts`. A cell starting `=`, `+`, `-`, `@`,
 tab or carriage return gets a leading apostrophe, because a spreadsheet

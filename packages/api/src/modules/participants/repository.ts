@@ -69,7 +69,7 @@ export async function listForParticipantIds(db: Db, ids: string[]) {
 // R10's other half: the record stays retrievable, for a returning
 // participant or a contractor/grantor request. Anyone with no open
 // episode who has had at least one, with the most recent closure —
-// that's what a person looking for them will recognise.
+// that's what a person looking for them will recognize.
 export async function listClosed(db: Db) {
   const latest = db
     .selectDistinctOn([episodes.participantId], {

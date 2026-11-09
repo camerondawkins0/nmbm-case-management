@@ -4,7 +4,7 @@
 // person at the screen, which is the reason they're distinguished at
 // all — "sign-in failed" leaves them nowhere to go.
 export const SIGN_IN_ERRORS = [
-  "cancelled", // they backed out at Google's account chooser
+  "canceled", // they backed out at Google's account chooser
   "expired", // the attempt went stale, or was started in another tab
   "wrong_domain", // a Google account outside NMBM's Workspace
   "unverified", // Google hasn't verified the account's email

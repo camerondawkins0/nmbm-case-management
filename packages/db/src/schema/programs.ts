@@ -4,7 +4,7 @@ import { users } from "./users.js";
 import { cohortStatusEnum, cohortEnrollmentStatusEnum, attendanceStatusEnum } from "./enums.js";
 
 // M14. The roster exists to answer a question asked from outside the
-// organisation — "did this person attend?" — so every mark carries who
+// organization — "did this person attend?" — so every mark carries who
 // recorded it and when.
 export const programs = pgTable("programs", {
   id: uuid("id").primaryKey().defaultRandom(),
@@ -22,7 +22,7 @@ export const programCohorts = pgTable("program_cohorts", {
   endDate: date("end_date"),
   facilitatorId: uuid("facilitator_id").references(() => users.id),
   // Nullable: NMBM hasn't said how many sessions completion takes, and
-  // court-mandated programmes usually have a number. Until they give
+  // court-mandated programs usually have a number. Until they give
   // it, the system counts without judging.
   requiredSessions: integer("required_sessions"),
   status: cohortStatusEnum("status").notNull().default("planned"),
@@ -57,7 +57,7 @@ export const sessionAttendance = pgTable(
   {
     id: uuid("id").primaryKey().defaultRandom(),
     sessionId: uuid("session_id").notNull().references(() => cohortSessions.id),
-    // Keyed on the enrolment: you can only be marked for a class you
+    // Keyed on the enrollment: you can only be marked for a class you
     // were on the roster for.
     enrollmentId: uuid("enrollment_id").notNull().references(() => cohortEnrollments.id),
     status: attendanceStatusEnum("status").notNull(),

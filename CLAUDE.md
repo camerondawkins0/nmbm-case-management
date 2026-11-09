@@ -14,7 +14,7 @@ and what's specific to NMBM.
 | Anything | this file |
 | Where code lives, route by route and page by page | `docs/agent/map.md` |
 | Running or writing tests | `docs/agent/testing.md` |
-| Changing domain behaviour | `docs/agent/invariants.md` |
+| Changing domain behavior | `docs/agent/invariants.md` |
 | What's built vs. stubbed, and why it's shaped this way | `docs/ARCHITECTURE.md` |
 | What NMBM hasn't answered yet | `docs/DISCOVERY_FOLLOWUP.md` |
 | Touching colors, fonts, or the logo | `docs/BRANDING.md` |
@@ -59,7 +59,7 @@ behind it (`/auth/dev-login?email=…`) is never registered when
 
 ## Hard rules
 
-1. **Nothing is deleted.** Void, retire, revoke, disenrol. NMBM confirmed
+1. **Nothing is deleted.** Void, retire, revoke, disenroll. NMBM confirmed
    this directly (discovery M30: "I like the voiding of it to be able to
    get the information").
 2. **Authorization is opt-in and enforced server-side.** Every route
@@ -84,7 +84,7 @@ behind it (`/auth/dev-login?email=…`) is never registered when
    suite has been through this (the table is in `docs/agent/testing.md`),
    and the first pass found a rule no test was guarding.
 9. **Derive state that can drift; store only decisions a person made.**
-   Consent expiry, the no-contact run and programme completion are
+   Consent expiry, the no-contact run and program completion are
    computed at read time. A stored status that nothing keeps honest goes
    on asserting something false until somebody notices — and the thing
    it asserts is usually about a real person. See
@@ -95,6 +95,10 @@ behind it (`/auth/dev-login?email=…`) is never registered when
 
 ## Working agreements
 
+- North American English everywhere: screens, messages, code, comments,
+  docs and stored values (program, enrollment, canceled, -ize). NMBM is
+  in California. The applied migrations keep their original spelling,
+  because they're never edited.
 - Branch: `main` is still safe to push to directly, because the Cloud
   Build trigger doesn't exist yet. **Once it does, a push to `main`
   deploys production** — tests, migration and all — and work moves to

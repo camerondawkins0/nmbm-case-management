@@ -61,7 +61,7 @@ describe("exporting a whole record", () => {
     await chw.post("/api/consents", {
       participantId,
       type: "release_of_information",
-      formName: "Authorisation to release information",
+      formName: "Authorization to release information",
       signedDate: isoDaysAgo(1),
     });
     await chw.post("/api/referrals", { participantId, partnerName: "Food Bank", serviceType: "Food" });

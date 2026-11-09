@@ -26,7 +26,7 @@ export const ASSESSMENT_STATUSES = ["in_progress", "completed", "voided"] as con
 export type AssessmentStatus = (typeof ASSESSMENT_STATUSES)[number];
 
 // How the answers got into the system. NMBM do all three today (M13):
-// a worker asking the questions, a paper copy typed up afterwards, and
+// a worker asking the questions, a paper copy typed up afterward, and
 // the participant filling it in on a tablet or from a link. Reports
 // need to tell a self-report from a transcription.
 export const ASSESSMENT_MODES = ["with_staff", "from_paper", "self"] as const;

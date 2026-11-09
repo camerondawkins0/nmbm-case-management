@@ -86,12 +86,12 @@ export const CONSENT_TYPES = [
 export type ConsentType = (typeof CONSENT_TYPES)[number];
 
 // M16: "our consents can expire at a year after the client is enrolled"
-// — note the anchor is enrolment, not the signature date. Still marked
+// — note the anchor is enrollment, not the signature date. Still marked
 // "are we in agreement" in discovery, so it stays a named constant.
 export const CONSENT_VALID_DAYS = 365;
 
 // M17: outbound referrals. "Do referrals come in, and who sends them?"
-// was never really answered, so inbound isn't modelled.
+// was never really answered, so inbound isn't modeled.
 export const REFERRAL_STATUSES = [
   "sent",
   "accepted",
@@ -108,9 +108,9 @@ export type ReferralStatus = (typeof REFERRAL_STATUSES)[number];
 export const REFERRAL_FOLLOW_UP_DAYS = 14;
 
 // M14: NMBM run Anger Management now; Domestic Violence classes wait on
-// LA County approval. A cohort is one run of a programme, so the same
-// programme twice a year doesn't mix its rosters.
-export const COHORT_STATUSES = ["planned", "running", "completed", "cancelled"] as const;
+// LA County approval. A cohort is one run of a program, so the same
+// program twice a year doesn't mix its rosters.
+export const COHORT_STATUSES = ["planned", "running", "completed", "canceled"] as const;
 export type CohortStatus = (typeof COHORT_STATUSES)[number];
 
 export const COHORT_ENROLLMENT_STATUSES = ["enrolled", "completed", "withdrawn"] as const;

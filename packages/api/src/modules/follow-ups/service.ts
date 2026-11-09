@@ -74,7 +74,7 @@ export async function listQueue(db: Db) {
   const items = closed.flatMap((episode) =>
     followUpSchedule(episode.endDate!, calls.get(episode.episodeId) ?? [], today)
       .filter((m) => m.state === "due" || m.state === "overdue" || (m.state === "upcoming" && m.dueDate <= horizon))
-      .map((m) => ({ ...episode, ...summarise(m) })),
+      .map((m) => ({ ...episode, ...summarize(m) })),
   );
   items.sort((a, b) => a.dueDate.localeCompare(b.dueDate));
   return {
@@ -84,7 +84,7 @@ export async function listQueue(db: Db) {
   };
 }
 
-function summarise(m: Milestone) {
+function summarize(m: Milestone) {
   const last = m.attempts.at(-1);
   return {
     months: m.months,
@@ -166,7 +166,7 @@ export async function recordCall(db: Db, input: FollowUpCall, actorId: string) {
 
 // M12: "This may lead to re-enrollment." Everyone who asked to come back
 // and hasn't been readmitted since — which is derived, so readmitting
-// them is what takes them off this list; nobody has to tick it off.
+// them is what takes them off this list; nobody has to check it off.
 export async function listReEnrollmentRequests(db: Db) {
   return db
     .select({

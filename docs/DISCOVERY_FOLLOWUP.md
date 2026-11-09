@@ -8,7 +8,7 @@ This doc tracks what is **unanswered**. For what has been **built**
 against the answers that did arrive, see "What is built" in
 `docs/ARCHITECTURE.md` — as of migration `0008` that covers sign-in, intake,
 episodes, readmission and search, follow-up calls, notes and the M6 ladder, care plans and the M9 clocks,
-consents, referrals, programmes and attendance, staff administration
+consents, referrals, programs and attendance, staff administration
 and the audit log.
 
 ## Answered — Part 3 compliance
@@ -58,7 +58,7 @@ and the audit log.
   for a window NMBM's system administrator sets on the Settings page.
   90 days is both the default and the maximum (confirmed); it can be
   shortened to anything down to 0. Changes are audited.
-- **Does disenrolment withdraw someone from their classes?** No —
+- **Does disenrollment withdraw someone from their classes?** No —
   "disenrollment typically means they are no longer receiving or
   participating in services with the provider." The roster flags them
   ("Services ended <date>") and leaves them enrolled; attendance can
@@ -80,7 +80,7 @@ and the audit log.
   the original discovery. The signed BAA (R2/R3) is Google *Workspace*'s,
   which covers Workspace services. Cloud Run, Cloud SQL, Secret Manager
   and Cloud Logging — where this system runs and its data lives — are
-  under Google Cloud's separate BAA, which NMBM's Cloud organisation has
+  under Google Cloud's separate BAA, which NMBM's Cloud organization has
   to accept. Needed before any real client information goes in.
 - **R7** — KPIs are due out of the system by the 5th of every month for
   one contract, believed to be Full Circle Health Net. The exact fields
@@ -141,10 +141,10 @@ the same thing when M23 work starts.
 
 - **U1/U3** — Department/role list still needs final confirmation before
   permissions are designed against it.
-- **Who closes an episode?** Surfaced while building the disenrolment
+- **Who closes an episode?** Surfaced while building the disenrollment
   gate, not from the original discovery. As the grid stands, a CHW can
   log the failed attempts and see the three-strike prompt, but cannot
-  disenrol or record the Molina warning letter — only the Clinical
+  disenroll or record the Molina warning letter — only the Clinical
   Director and Intake Specialist hold `episodes.write`. That may well be
   right (a supervisor executes the exit), but M6 is worded as though the
   CHW drives it. Confirm before the grid is signed off, because it
@@ -167,7 +167,7 @@ the same thing when M23 work starts.
   still outstanding. Built with four types (general services, release of
   information, photo/media, other) — the release is the one the referral
   gate keys on. The real list should replace this.
-- **Expiry: a year from enrolment, or from signing?** M16 says "a year
+- **Expiry: a year from enrollment, or from signing?** M16 says "a year
   after the client is enrolled", which is what's built — so a release
   signed eleven months into an episode is valid for one month, not
   twelve. That may be exactly right, or it may be a slip in how the
@@ -176,7 +176,7 @@ the same thing when M23 work starts.
 - **Referrals in — built on assumptions, to confirm.** M17's answer
   only covered outbound; R5 implies they arrive. Built as intake's queue
   with broad source types (plan, hospital, clinic, court/probation,
-  community organisation, self, other). To confirm: who actually sends
+  community organization, self, other). To confirm: who actually sends
   them and whether any plan sends a file rather than a call or fax (that
   is the CalAIM data exchange question); who works the queue (granted to
   intake, Clinical Director, Program Manager); whether referrers want
@@ -197,12 +197,12 @@ the same thing when M23 work starts.
   keeps appearing until someone records that the service happened. That
   matches M17's "what happened with the client", but it means more
   chasing. Flag set at 14 days, which is a guess.
-- **How many sessions complete a programme?** Anger Management and
+- **How many sessions complete a program?** Anger Management and
   Domestic Violence are typically court-mandated with a set number, and
   M14 didn't give one. A cohort can carry a threshold and the seed uses
   12 as a placeholder; without a real number the record reports
-  attendance and leaves the judgement to the reader. Needed per
-  programme, and possibly per referral source.
+  attendance and leaves the judgment to the reader. Needed per
+  program, and possibly per referral source.
 - **What does a probation officer actually need on the page?** The
   participation record shows dates, topics, attendance and who marked
   each class. If POs or the courts expect a particular wording, a
@@ -210,7 +210,7 @@ the same thing when M23 work starts.
   before anyone relies on this.
 - **Does an excused absence count toward completion?** Currently it
   doesn't, and it's reported separately from an unexcused one. Court
-  programmes often treat these differently and NMBM will know the rule.
+  programs often treat these differently and NMBM will know the rule.
 - **Who runs the classes?** `attendance.record` is granted to the
   Clinical Director, Program Manager, CHWs, interns and the health
   educator; `programs.manage` only to the Clinical Director, Program

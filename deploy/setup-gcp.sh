@@ -70,7 +70,7 @@ if ! exists gcloud storage buckets describe "gs://$DOCUMENTS_BUCKET"; then
 fi
 # Browsers upload straight to the bucket with a signed URL, which needs
 # CORS. Any origin is allowed because the signature, not the origin, is
-# what authorises an upload; narrow it to the service URL once known.
+# what authorizes an upload; narrow it to the service URL once known.
 CORS_FILE="$(mktemp)"
 cat > "$CORS_FILE" <<'JSON'
 [{"origin": ["*"], "method": ["PUT", "GET"], "responseHeader": ["content-type", "x-goog-content-length-range"], "maxAgeSeconds": 3600}]
@@ -166,6 +166,6 @@ Trigger service account: $BUILD_SA
 Next: docs/DEPLOY.md, "Connecting the repository".
 
 Before any real client data: confirm the Google Cloud BAA is accepted for
-this project's organisation. The Workspace BAA does not cover Cloud Run,
+this project's organization. The Workspace BAA does not cover Cloud Run,
 Cloud SQL or Secret Manager.
 EOF

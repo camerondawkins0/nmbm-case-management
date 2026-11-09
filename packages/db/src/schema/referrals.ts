@@ -17,7 +17,7 @@ export const referrals = pgTable("referrals", {
   serviceType: text("service_type").notNull(),
   reason: text("reason"),
   // Not nullable on purpose: nothing goes to a partner agency without
-  // the release that authorised it, and the row records which one.
+  // the release that authorized it, and the row records which one.
   consentId: uuid("consent_id").notNull().references(() => consents.id),
   referredById: uuid("referred_by_id").notNull().references(() => users.id),
   referredAt: timestamp("referred_at", { withTimezone: true }).notNull().defaultNow(),

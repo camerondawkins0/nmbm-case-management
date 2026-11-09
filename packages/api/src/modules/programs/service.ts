@@ -83,7 +83,7 @@ export async function listPrograms(db: Db) {
 
 export async function createProgram(db: Db, input: ProgramCreate, actorId: string) {
   const [existing] = await db.select().from(programs).where(eq(programs.name, input.name));
-  if (existing) throw conflict("A programme with that name already exists");
+  if (existing) throw conflict("A program with that name already exists");
 
   const [row] = await db.insert(programs).values(input).returning();
   await writeAudit(db, {
@@ -98,7 +98,7 @@ export async function createProgram(db: Db, input: ProgramCreate, actorId: strin
 
 export async function createCohort(db: Db, input: CohortCreate, actorId: string) {
   const [program] = await db.select().from(programs).where(eq(programs.id, input.programId));
-  if (!program) throw notFound("Programme not found");
+  if (!program) throw notFound("Program not found");
 
   const [row] = await db
     .insert(programCohorts)
@@ -150,7 +150,7 @@ async function loadCohort(db: Db, cohortId: string) {
 
 export async function enroll(db: Db, cohortId: string, participantId: string, actorId: string) {
   const cohort = await loadCohort(db, cohortId);
-  if (cohort.status === "completed" || cohort.status === "cancelled") {
+  if (cohort.status === "completed" || cohort.status === "canceled") {
     throw conflict("That cohort is closed");
   }
   const [existing] = await db
@@ -183,7 +183,7 @@ export async function withdraw(db: Db, enrollmentId: string, reason: string, act
     .select()
     .from(cohortEnrollments)
     .where(eq(cohortEnrollments.id, enrollmentId));
-  if (!enrollment) throw notFound("Enrolment not found");
+  if (!enrollment) throw notFound("Enrollment not found");
   if (enrollment.status === "withdrawn") throw conflict("Already withdrawn");
 
   // Withdrawn, not removed — the classes they did attend still happened
@@ -223,7 +223,7 @@ export async function getCohort(db: Db, cohortId: string) {
       firstName: participants.firstName,
       lastName: participants.lastName,
       withdrawnReason: cohortEnrollments.withdrawnReason,
-      // R10/M14: NMBM chose to flag, not withdraw — disenrolment ends
+      // R10/M14: NMBM chose to flag, not withdraw — disenrollment ends
       // services with NMBM, but a court-ordered class may carry on, and
       // the facilitator needs to know which people that applies to.
       servicesEndedOn: sql<string | null>`(
@@ -298,7 +298,7 @@ export async function participationRecord(db: Db, enrollmentId: string) {
     .innerJoin(programs, eq(programs.id, programCohorts.programId))
     .where(eq(cohortEnrollments.id, enrollmentId));
 
-  if (!enrollment) throw notFound("Enrolment not found");
+  if (!enrollment) throw notFound("Enrollment not found");
 
   const rows = await db
     .select({
@@ -353,7 +353,7 @@ export function participationOutcome(input: {
   sessionsHeld: number;
 }): ParticipationOutcome {
   // NMBM hasn't given a completion threshold, so a cohort without one
-  // reports what happened and leaves the judgement to the reader.
+  // reports what happened and leaves the judgment to the reader.
   if (input.requiredSessions === null) return "no_requirement";
   if (input.attended >= input.requiredSessions) return "met";
   // Not enough classes have been held yet for anyone to have met it.

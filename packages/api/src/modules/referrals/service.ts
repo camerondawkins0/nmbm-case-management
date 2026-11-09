@@ -83,7 +83,7 @@ export async function listAwaitingOutcome(db: Db, participantIds: string[] | nul
 // general — is still unanswered, and this deliberately doesn't settle
 // it. Sending a participant's information to an outside agency is the
 // one case where the answer isn't NMBM's preference to make: without a
-// signed release there is nothing authorising the disclosure. Every
+// signed release there is nothing authorizing the disclosure. Every
 // other consent-gated action stays a warning until they decide.
 export async function createReferral(db: Db, input: ReferralCreate, referredById: string) {
   const [episode] = await db
@@ -127,7 +127,7 @@ export async function createReferral(db: Db, input: ReferralCreate, referredById
     action: "referral.sent",
     entityType: "referral",
     entityId: row.id,
-    detail: `${input.serviceType} → ${input.partnerName}, authorised by consent ${usable.id}`,
+    detail: `${input.serviceType} → ${input.partnerName}, authorized by consent ${usable.id}`,
   });
   return row;
 }

@@ -9,9 +9,9 @@ type Notice = { tone: "alert" | "info"; title: string; body: string };
 // CHW at a front desk, not whoever configured Google. "Sign-in failed"
 // with no next step turns into a phone call.
 const ERROR_NOTICES: Record<SignInError, Notice> = {
-  cancelled: {
+  canceled: {
     tone: "info",
-    title: "Sign-in was cancelled",
+    title: "Sign-in was canceled",
     body: "Nothing was changed. Choose your NMBM account when you're ready.",
   },
   expired: {
@@ -127,7 +127,7 @@ export default function LoginPage({ expired = false }: { expired?: boolean }) {
           <div className="flex gap-2.5 border-t border-nmbm-ink/10 bg-nmbm-ink/[0.025] px-7 py-4 text-xs leading-relaxed text-nmbm-ink/60">
             <LockIcon />
             <p>
-              This system holds confidential client information. Access is limited to authorised
+              This system holds confidential client information. Access is limited to authorized
               staff, and sign-ins and changes are recorded.
             </p>
           </div>
@@ -208,7 +208,7 @@ function DevSignIn({ returnTo }: { returnTo: string | null }) {
 }
 
 // Google's own mark, as its sign-in branding guidelines ask for on a
-// "Sign in with Google" button — not NMBM's brand, so it keeps its colours.
+// "Sign in with Google" button — not NMBM's brand, so it keeps its colors.
 function GoogleG() {
   return (
     <svg width="18" height="18" viewBox="0 0 48 48" aria-hidden="true">

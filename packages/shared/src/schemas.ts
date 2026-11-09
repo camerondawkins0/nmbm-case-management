@@ -76,7 +76,7 @@ export const episodeCreateSchema = z.object({
   startDate: z.string().date(),
   assignedWorkerId: z.string().uuid(),
   // Readmitted because somebody referred them back: the referral is
-  // settled in the same transaction. Done here rather than afterwards,
+  // settled in the same transaction. Done here rather than afterward,
   // because once the record is active again intake can't see it.
   incomingReferralId: z.string().uuid().optional(),
 });
@@ -120,7 +120,7 @@ export const feedbackStatusUpdateSchema = z.object({
 export type FeedbackStatusUpdate = z.infer<typeof feedbackStatusUpdateSchema>;
 
 // M15: recording that a form was signed. The expiry is computed from
-// the episode's enrolment date rather than supplied, so it can't be
+// the episode's enrollment date rather than supplied, so it can't be
 // quietly set to something convenient.
 export const consentCreateSchema = z.object({
   participantId: z.string().uuid(),
@@ -135,7 +135,7 @@ export const consentRevokeSchema = z.object({
 });
 export type ConsentRevoke = z.infer<typeof consentRevokeSchema>;
 
-// M17. No consentId: the service picks the release that authorises the
+// M17. No consentId: the service picks the release that authorizes the
 // disclosure, so a caller can't nominate an unrelated or expired one.
 export const referralCreateSchema = z.object({
   participantId: z.string().uuid(),
@@ -151,7 +151,7 @@ export const referralOutcomeSchema = z.object({
 });
 export type ReferralOutcome = z.infer<typeof referralOutcomeSchema>;
 
-// M14: a programme, and one run of it.
+// M14: a program, and one run of it.
 export const programCreateSchema = z.object({
   name: z.string().min(1).max(120),
   description: z.string().min(1).optional(),

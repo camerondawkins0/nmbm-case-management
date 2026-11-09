@@ -21,7 +21,7 @@ afterAll(async () => app?.close());
 
 // A running class with one session and two people on the roster.
 async function classOfTwo() {
-  const program = await director.post("/api/programs", { name: unique("Programme ") });
+  const program = await director.post("/api/programs", { name: unique("Program ") });
   const cohort = await director.post("/api/cohorts", {
     programId: program.body.id,
     name: unique("Cohort "),
@@ -92,7 +92,7 @@ describe("M14: attendance is evidence", () => {
   });
 });
 
-describe("R10 on the roster: disenrolment flags, never withdraws", () => {
+describe("R10 on the roster: disenrollment flags, never withdraws", () => {
   it("keeps the person enrolled, flags the date services ended, and still takes marks", async () => {
     const c = await classOfTwo();
     await director.post(`/api/episodes/${c.people[0].episodeId}/close`, { closureReason: "completed" });

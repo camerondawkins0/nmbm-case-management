@@ -146,7 +146,7 @@ export default function RecordExportPage() {
         </p>
       </header>
 
-      <Section title="Enrolments" empty={doc.episodes.length === 0}>
+      <Section title="Enrollments" empty={doc.episodes.length === 0}>
         <ul className="text-sm">
           {doc.episodes.map((e) => (
             <li key={e.id}>
@@ -255,8 +255,8 @@ export default function RecordExportPage() {
         </ul>
       </Section>
 
-      <Section title="Programmes and attendance" empty={doc.programmes.length === 0}>
-        {doc.programmes.map((g, i) => (
+      <Section title="Programs and attendance" empty={doc.programs.length === 0}>
+        {doc.programs.map((g, i) => (
           <div key={i} className="mb-3 break-inside-avoid text-sm">
             <p className="font-medium">
               {g.programName} — {g.cohortName} (from {g.startDate}) · {words(g.status)}

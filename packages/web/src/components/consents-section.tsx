@@ -30,7 +30,7 @@ export function ConsentsSection({
   const writable = can(me, "consents.write");
   const [adding, setAdding] = useState(false);
   const [type, setType] = useState<ConsentType>("release_of_information");
-  const [formName, setFormName] = useState("Authorisation to release information");
+  const [formName, setFormName] = useState("Authorization to release information");
   const [signedDate, setSignedDate] = useState(new Date().toISOString().slice(0, 10));
   const [busy, setBusy] = useState(false);
 
@@ -53,9 +53,9 @@ export function ConsentsSection({
         <h2 className="text-sm font-semibold uppercase tracking-wide text-nmbm-ink/50">
           Consent forms
         </h2>
-        {/* A form is recorded against an enrolment, so a closed record
+        {/* A form is recorded against an enrollment, so a closed record
             can't take a new one — but revoking stays available below:
-            somebody who has left can still withdraw an authorisation. */}
+            somebody who has left can still withdraw an authorization. */}
         {writable && record.episodeStatus === "open" && !adding && (
           <button
             onClick={() => setAdding(true)}
@@ -155,7 +155,7 @@ export function ConsentsSection({
             </label>
           </div>
           <p className="mt-2 text-xs text-nmbm-ink/50">
-            Expiry is set to one year from enrolment, per NMBM's rule — not from the signature
+            Expiry is set to one year from enrollment, per NMBM's rule — not from the signature
             date.
           </p>
           <div className="mt-2 flex gap-2">

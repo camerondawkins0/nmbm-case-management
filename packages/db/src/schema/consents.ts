@@ -8,7 +8,7 @@ import { consentStatusEnum, consentTypeEnum } from "./enums.js";
 // made; whether a consent has expired is derived from expiresDate at
 // read time rather than flipped by a scheduled job. A stored status and
 // a date that disagree is the failure mode that lets an expired consent
-// authorise a disclosure.
+// authorize a disclosure.
 //
 // The scanned form isn't stored here: a scan is a row in documents with
 // consent_id set, so it gets the same pending/confirm, audit and void
@@ -17,8 +17,8 @@ import { consentStatusEnum, consentTypeEnum } from "./enums.js";
 export const consents = pgTable("consents", {
   id: uuid("id").primaryKey().defaultRandom(),
   participantId: uuid("participant_id").notNull().references(() => participants.id),
-  // Which enrolment the expiry was counted from — M16 anchors it to
-  // enrolment, not to the signature.
+  // Which enrollment the expiry was counted from — M16 anchors it to
+  // enrollment, not to the signature.
   episodeId: uuid("episode_id").references(() => episodes.id),
   type: consentTypeEnum("type").notNull().default("general_services"),
   formName: text("form_name").notNull(),

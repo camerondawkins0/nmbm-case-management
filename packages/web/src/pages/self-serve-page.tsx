@@ -147,7 +147,7 @@ export default function SelfServePage() {
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
-    if (!window.confirm("Send your answers now? You won't be able to change them afterwards.")) return;
+    if (!window.confirm("Send your answers now? You won't be able to change them afterward.")) return;
     setBusy(true);
     setMessage(null);
     try {

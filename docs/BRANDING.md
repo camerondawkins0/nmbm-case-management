@@ -92,7 +92,7 @@ of leaving system-ui as the permanent choice.
    (`login-page.tsx`, `app-shell.tsx`,
    `participation-record-page.tsx`), or trace it into the SVG if it
    needs to stay inline (e.g. to recolor per theme). Print the
-   participation record afterwards — a raster logo that looks fine at
+   participation record afterward — a raster logo that looks fine at
    44px in a header can be visibly rough on paper.
 5. Ask NMBM whether a font, minimum clear space, or usage guideline
    exists beyond what's visible in the mark itself.

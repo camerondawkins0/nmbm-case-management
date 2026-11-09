@@ -14,7 +14,7 @@ COPY packages/shared/package.json packages/shared/
 COPY packages/db/package.json packages/db/
 COPY packages/api/package.json packages/api/
 COPY packages/web/package.json packages/web/
-# `npm ls` afterwards because npm 10 can report "Exit handler never
+# `npm ls` afterward because npm 10 can report "Exit handler never
 # called!" after a failed download and still exit 0 — the build would
 # then fail two steps later with a baffling "tsc: not found".
 RUN npm ci --no-audit --no-fund && npm ls --all >/dev/null

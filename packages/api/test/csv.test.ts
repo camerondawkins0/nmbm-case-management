@@ -13,7 +13,7 @@ describe("CSV export", () => {
     expect(row).toContain("'=HYPERLINK");
   });
 
-  it.each(["=1+1", "+1 555 0100", "-x", "@SUM(A1)", "\tstart", "\rstart"])("neutralises a cell starting %j", (value) => {
+  it.each(["=1+1", "+1 555 0100", "-x", "@SUM(A1)", "\tstart", "\rstart"])("neutralizes a cell starting %j", (value) => {
     const cell = line(toCsv([{ v: value }])).replace(/^"|"$/g, "");
     // The apostrophe has to be the first thing in the cell, not merely
     // present, for a spreadsheet to read the cell as text.

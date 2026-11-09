@@ -67,11 +67,11 @@ export default function ParticipationRecordPage() {
           </dd>
           <dt className="text-nmbm-ink/50">Date of birth</dt>
           <dd className="text-nmbm-ink">{enrollment.dateOfBirth}</dd>
-          <dt className="text-nmbm-ink/50">Programme</dt>
+          <dt className="text-nmbm-ink/50">Program</dt>
           <dd className="text-nmbm-ink">{enrollment.programName}</dd>
           <dt className="text-nmbm-ink/50">Cohort</dt>
           <dd className="text-nmbm-ink">{enrollment.cohortName}</dd>
-          <dt className="text-nmbm-ink/50">Enrolment</dt>
+          <dt className="text-nmbm-ink/50">Enrollment</dt>
           <dd className="text-nmbm-ink">{enrollment.status}</dd>
         </dl>
 

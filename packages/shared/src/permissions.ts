@@ -40,7 +40,7 @@ export const PERMISSIONS = [
   "assessments.manage",
   // Fill one in on a participant's record, with them or from paper.
   "assessments.write",
-  "programs.manage", // set up programmes, cohorts and class dates (M14)
+  "programs.manage", // set up programs, cohorts and class dates (M14)
   "attendance.record", // mark a roster — the evidence a PO relies on (M14)
   // M12: "it would be nice for our QA to be able to make the calls".
   "follow_ups.record",

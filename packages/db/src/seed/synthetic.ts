@@ -76,7 +76,7 @@ type Fixture = {
   // no_contact entries since the last successful contact.
   contacts: ContactResult[];
   carePlan?: { status: CarePlanStatus; reviewDueDaysAgo: number; goals: string };
-  // M15/M16: "release" is what authorises a referral. "expired" puts
+  // M15/M16: "release" is what authorizes a referral. "expired" puts
   // one on file that no longer does, so the gate has something real to
   // refuse.
   release?: "valid" | "expired" | "none";
@@ -243,7 +243,7 @@ const FIXTURES: Fixture[] = [
         note: "Lost her job last month; asked to be re-enrolled for food and rent help.",
       },
     ],
-    demonstrates: "M12 call leading to re-enrolment — waiting on intake",
+    demonstrates: "M12 call leading to re-enrollment — waiting on intake",
   },
 ];
 
@@ -363,7 +363,7 @@ async function main() {
 
     if (fixture.release && fixture.release !== "none") {
       const signed = daysAgo(fixture.enrolledDaysAgo - 1);
-      // M16 anchors expiry to enrolment. The "expired" fixture is
+      // M16 anchors expiry to enrollment. The "expired" fixture is
       // backdated so its window has already closed.
       const anchor =
         fixture.release === "expired" ? daysAgo(CONSENT_VALID_DAYS + 40) : startDate;
@@ -376,7 +376,7 @@ async function main() {
           participantId: participant.id,
           episodeId: episode.id,
           type: "release_of_information",
-          formName: "Authorisation to release information",
+          formName: "Authorization to release information",
           signedDate: isoDate(signed),
           expiresDate: isoDate(expires),
           recordedById: workerId,
@@ -423,7 +423,7 @@ async function main() {
     }
   }
 
-  // M14: Anger Management is the programme NMBM said is running now.
+  // M14: Anger Management is the program NMBM said is running now.
   // Domestic Violence is seeded as planned-but-not-started, because
   // it's waiting on LA County approval.
   const [angerManagement] = await db
@@ -446,7 +446,7 @@ async function main() {
     .insert(programCohorts)
     .values({
       programId: angerManagement.id,
-      name: "Anger Management — Autumn 2026",
+      name: "Anger Management — Fall 2026",
       startDate: isoDate(daysAgo(42)),
       facilitatorId,
       // A real number here would come from NMBM; 12 is a placeholder so
@@ -473,7 +473,7 @@ async function main() {
         sessionDate: isoDate(daysAgo(week * 7)),
         topic: [
           "Ground rules and triggers",
-          "Recognising escalation",
+          "Recognizing escalation",
           "Time-outs and self-talk",
           "Communication under stress",
           "Repair after conflict",
@@ -577,7 +577,7 @@ async function main() {
         { value: "food", label: "Food" },
         { value: "transport", label: "Transport" },
         { value: "benefits", label: "Help with benefits" },
-        { value: "counselling", label: "Counselling" },
+        { value: "counseling", label: "Counseling" },
       ],
     },
     {
@@ -628,7 +628,7 @@ async function main() {
       reason: "Court-ordered anger management.",
       status: "closed",
       closeReason: "declined",
-      closeNote: "Chose a programme closer to home.",
+      closeNote: "Chose a program closer to home.",
       closedById: intakeId,
       closedAt: daysAgo(2),
       recordedById: intakeId,

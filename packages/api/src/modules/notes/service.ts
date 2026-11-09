@@ -19,7 +19,7 @@ export async function recordNote(
 ) {
   // The M6 run is counted per episode, so a note filed against a closed
   // episode — or somebody else's — would silently fall out of the count
-  // the disenrolment gate relies on. Only the open one takes notes.
+  // the disenrollment gate relies on. Only the open one takes notes.
   const episode = await repository.openEpisodeFor(db, input.participantId);
   if (!episode) throw conflict("This participant has no open episode — readmit them first");
   if (episode.id !== input.episodeId) throw conflict("Notes can only be added to the open episode");

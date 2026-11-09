@@ -99,6 +99,13 @@
       "when": 1760400000000,
       "tag": "0013_incoming_referrals",
       "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "7",
+      "when": 1762646400000,
+      "tag": "0014_cohort_status_canceled",
+      "breakpoints": true
     }
   ]
 }

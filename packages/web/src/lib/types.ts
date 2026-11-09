@@ -236,7 +236,7 @@ export type ParticipantProgram = {
 
 // R10: a closed record is reached only by asking for it, and is shown
 // by how it ended — that is what somebody looking for a former
-// participant will recognise.
+// participant will recognize.
 export type ClosedParticipantRow = {
   id: string;
   firstName: string;
@@ -441,7 +441,7 @@ export type RecordExport = {
   }[];
   consents: ParticipantConsent[];
   referralsOut: ParticipantReferral[];
-  programmes: {
+  programs: {
     status: string;
     cohortName: string;
     programName: string;

@@ -89,7 +89,7 @@ export async function reissue(db: Db, assessmentId: string, actorId: string) {
   if (row.mode !== "self") throw conflict("Only a form the participant fills in themselves has a link");
   if (row.status !== "in_progress") throw conflict("This form is no longer open");
   const [episode] = await db.select().from(episodes).where(eq(episodes.id, row.episodeId));
-  if (episode?.status !== "open") throw conflict("The enrolment this form belongs to has closed");
+  if (episode?.status !== "open") throw conflict("The enrollment this form belongs to has closed");
   return db.transaction(async (raw) => {
     const tx = raw as unknown as Db;
     const link = await issue(tx, assessmentId, actorId);
@@ -164,7 +164,7 @@ export async function linkStates(db: Db, assessmentIds: string[]) {
  * ------------------------------------------------------------------ */
 
 // A link that can still be used: not replaced, revoked, locked, spent
-// or expired, on a form that's still open in an enrolment that is.
+// or expired, on a form that's still open in an enrollment that is.
 async function usableLink(db: Db, token: string) {
   const [row] = await db
     .select({ link: assessmentLinks, assessment: assessments, episodeStatus: episodes.status })

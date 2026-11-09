@@ -5,7 +5,7 @@ myself until we get an IT"), so triage can't rely on someone at NMBM
 reading a ticket queue and deciding what to build. This doc is what
 replaces that.
 
-The maintainer is external to NMBM as an organisation, but is being
+The maintainer is external to NMBM as an organization, but is being
 given an account in their Google Workspace. That means they can sign in
 to this system like any other user and hold `feedback.manage` directly —
 which is simpler than the out-of-band route this doc originally

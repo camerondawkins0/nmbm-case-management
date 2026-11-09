@@ -16,7 +16,7 @@ import * as service from "./service.js";
 export default async function programRoutes(fastify: FastifyInstance, opts: { db: Db }) {
   const { db } = opts;
 
-  // Reading the programme list needs no more than being able to read
+  // Reading the program list needs no more than being able to read
   // participants — a facilitator has to find their class before they
   // can mark it.
   fastify.get(
@@ -99,7 +99,7 @@ export default async function programRoutes(fastify: FastifyInstance, opts: { db
 
   // Proof of participation. Readable by anyone who can see the
   // participant — the person producing it for a probation officer is
-  // usually the case manager, not a programme administrator.
+  // usually the case manager, not a program administrator.
   fastify.get<{ Params: { id: string } }>(
     "/api/enrollments/:id/participation",
     { preHandler: authorizeAny(CAN_READ_PARTICIPANTS) },

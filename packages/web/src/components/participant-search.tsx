@@ -25,18 +25,18 @@ export function useParticipantSearch(query: { q?: string; dob?: string } | null)
       setResults(null);
       return;
     }
-    let cancelled = false;
+    let canceled = false;
     // Wait for a pause in typing rather than querying every keystroke.
     const timer = setTimeout(() => {
       const params = new URLSearchParams();
       if (query.q) params.set("q", query.q);
       if (query.dob) params.set("dob", query.dob);
       api<SearchResult[]>(`/api/participants/search?${params}`)
-        .then((rows) => !cancelled && setResults(rows))
-        .catch(() => !cancelled && setResults([]));
+        .then((rows) => !canceled && setResults(rows))
+        .catch(() => !canceled && setResults([]));
     }, 250);
     return () => {
-      cancelled = true;
+      canceled = true;
       clearTimeout(timer);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps

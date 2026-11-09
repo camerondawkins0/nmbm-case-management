@@ -210,7 +210,7 @@ export default function AssessmentPage({ me }: { me: Me }) {
           className="mt-6 flex flex-col gap-6"
           onSubmit={(e) => {
             e.preventDefault();
-            if (window.confirm("Complete this assessment? It can't be edited afterwards.")) complete();
+            if (window.confirm("Complete this assessment? It can't be edited afterward.")) complete();
           }}
         >
           {bySection(shown).map((group, i) => (

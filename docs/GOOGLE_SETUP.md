@@ -25,7 +25,7 @@ changes, even if the Cloud Run service is recreated.
 
 ## What to create
 
-**A GCP project inside NMBM's organisation**, not a personal one. This
+**A GCP project inside NMBM's organization**, not a personal one. This
 matters for the next item.
 
 **An OAuth client**, type *Web application*. Two settings carry real

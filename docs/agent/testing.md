@@ -29,12 +29,12 @@ dev-login route, and assert on HTTP responses.
 | `rules.test.ts` | Pure functions, no database: the M6 ladder, M9 clocks, participation outcome, consent status, sign-in return path |
 | `authorization.test.ts` | 401/403, read-all vs read-own, U5 caseload scoping, not-found for another worker's id |
 | `no-contact.test.ts` | M6 close gate, Molina letter, the run resetting on contact, other exits unblocked |
-| `consents-referrals.test.ts` | M16 expiry from enrolment; M17 release gate and its three refusal reasons |
-| `disenrolment.test.ts` | R10: off the caseload on close, closed-record access (intake, last worker, window and its 90-day cap), readmission starting a fresh run |
+| `consents-referrals.test.ts` | M16 expiry from enrollment; M17 release gate and its three refusal reasons |
+| `disenrollment.test.ts` | R10: off the caseload on close, closed-record access (intake, last worker, window and its 90-day cap), readmission starting a fresh run |
 | `attendance.test.ts` | M14 whole-roster marking, correction not duplication, off-roster refusal, recorder names, disenrolled people flagged not withdrawn |
 | `sign-off.test.ts` | U6 notes and care plans reviewed by someone other than the author |
 | `follow-up-schedule.test.ts` | M12 date arithmetic and milestone states, no database |
-| `follow-ups.test.ts` | M12 queue, recording calls, one result per milestone, re-enrolment requests, readmission stopping the schedule |
+| `follow-ups.test.ts` | M12 queue, recording calls, one result per milestone, re-enrollment requests, readmission stopping the schedule |
 | `search.test.ts` | R10 search scoping, wildcard escaping, intake's duplicate refusal and its audited override |
 | `deployment.test.ts` | Sessions shared across instances and hashed at rest; the web build served with app routes and JSON 404s; security headers; production refusing a missing secret and dev sign-in; the Secure cookie behind a trusted proxy |
 | `assessments.test.ts` | The show-if evaluator and publish checks (no database), then over HTTP: who can build, published versions frozen, drafts keeping stable ids, one draft, type changes refused, current version on start, answer validation and clearing, required-when-shown, hidden answers dropped on completion, completed final, void, caseload scoping, retired forms, closed episodes |
@@ -63,29 +63,29 @@ test.
 
 | Rule broken | Caught by |
 |---|---|
-| Close no longer ends the assignment | disenrolment: deactivation, former-worker window, readmission |
-| Active list stops filtering on open episode | disenrolment: read-all list (added after this first went uncaught) |
-| No-contact view counts per person, not per episode | disenrolment: readmission starts a fresh run |
+| Close no longer ends the assignment | disenrollment: deactivation, former-worker window, readmission |
+| Active list stops filtering on open episode | disenrollment: read-all list (added after this first went uncaught) |
+| No-contact view counts per person, not per episode | disenrollment: readmission starts a fresh run |
 | Referral release gate skipped | all three refusal-reason tests |
-| Consent expiry anchored to signing date | consent expiry from enrolment |
+| Consent expiry anchored to signing date | consent expiry from enrollment |
 | M6 five-attempt gate / Molina letter gate removed | no-contact |
-| Former-worker access not tied to the worker, or to any past worker rather than the last | disenrolment |
-| `read.closed` reaching active cases | disenrolment: intake gets nothing active |
-| Notes on a closed episode; reassigning a closed record | disenrolment |
-| Readmission not linked to the previous episode | disenrolment |
-| Former-worker ceiling back to 365 | disenrolment: cap |
+| Former-worker access not tied to the worker, or to any past worker rather than the last | disenrollment |
+| `read.closed` reaching active cases | disenrollment: intake gets nothing active |
+| Notes on a closed episode; reassigning a closed record | disenrollment |
+| Readmission not linked to the previous episode | disenrollment |
+| Former-worker ceiling back to 365 | disenrollment: cap |
 | `read.all` not accepted on caseload routes | authorization |
 | Caseload scoping dropped | authorization |
 | Participation outcome back to pass/fail | rules: perfect attendance part-way is in progress |
 | Re-marking inserts a second row; off-roster marks accepted; roster flag never set | attendance |
-| OAuth state unchecked; session not regenerated; idle timeout ignored; return path unsanitised; sign-out form parser removed | sign-in, rules |
+| OAuth state unchecked; session not regenerated; idle timeout ignored; return path unsanitized; sign-out form parser removed | sign-in, rules |
 | CHW note not queued; note returned without a reason | sign-off |
 | Unanswered call settling a milestone; milestones never lapsing; no early window; unclamped month arithmetic | follow-up-schedule, follow-ups |
-| Second result allowed; calls allowed before due; schedule continuing after readmission; re-enrolment request surviving readmission | follow-ups |
+| Second result allowed; calls allowed before due; schedule continuing after readmission; re-enrollment request surviving readmission | follow-ups |
 | Queue open to any reader; Today counts shown to everyone | follow-ups |
 | Search returning everything; intake seeing active records; wildcards unescaped | search |
 | Duplicate guard off, or ignoring first name; override not audited | search |
-| Sessions back in memory; ids stored unhashed; expired rows honoured; sign-out not deleting the row; anonymous sessions saved | deployment |
+| Sessions back in memory; ids stored unhashed; expired rows honored; sign-out not deleting the row; anonymous sessions saved | deployment |
 | Proxy never trusted; API 404s answered with the app; app routes not served; assets uncached; framing allowed; API responses cacheable; no HSTS | deployment |
 | Production starting without a secret; dev sign-in in production | deployment (the second first went uncaught — see below) |
 | Confirm not checking storage; pending rows listed; views not audited; voided file still opening; consent scan on another person; download not caseload-scoped | documents |
@@ -95,7 +95,7 @@ test.
 | Answers unchecked; unknown questions accepted; clearing ignored; required ignoring visibility; hidden answers kept; completion unaudited; start or read not caseload-scoped; retired form or closed episode startable | assessments |
 | Hidden answers still driving a chain; unanswered satisfying "is not"; multiple choice compared as text; a CHW able to build forms | assessments |
 | A completed assessment editable | assessments — only with both guards broken: the save also refuses at the `UPDATE`, so breaking the first alone changes nothing |
-| Passcode unchecked; never locking; a locked, expired, voided or closed-enrolment link still opening; idle timeout ignored; token stored or looked up in plain; old link surviving a replacement; link not spent on submit | self-serve |
+| Passcode unchecked; never locking; a locked, expired, voided or closed-enrollment link still opening; idle timeout ignored; token stored or looked up in plain; old link surviving a replacement; link not spent on submit | self-serve |
 | Cookie not tied to its link | self-serve — missed at first: the test reused a cookie on a link nobody had unlocked, which refused for another reason. It now unlocks the second link first |
 | A submitted link still opening | self-serve — only with both guards broken: the form is no longer in progress either |
 | Staff able to edit a participant's form; the view leaking the participant; cookie Lax or site-wide; a lock blamed on staff; participant audit rows hidden from the admin; link routes not caseload-scoped | self-serve |

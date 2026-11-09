@@ -183,7 +183,7 @@ export async function buildExport(
     carePlans: carePlanRows,
     consents,
     referralsOut,
-    programmes: enrollments.map(({ enrollmentId, ...e }) => ({
+    programs: enrollments.map(({ enrollmentId, ...e }) => ({
       ...e,
       attendance: attendance.filter((x) => x.enrollmentId === enrollmentId).map(({ enrollmentId: _e, ...x }) => x),
     })),

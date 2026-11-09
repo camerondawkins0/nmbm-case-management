@@ -24,7 +24,7 @@ export default function ParticipantDetailPage({ me }: { me: Me }) {
   const fromReferral = params.get("referral");
   const [record, setRecord] = useState<ParticipantDetail | null>(null);
   // A failed load means there is nothing to show. A rejected action —
-  // the disenrolment gate, say — must not take the record off screen
+  // the disenrollment gate, say — must not take the record off screen
   // with it, so the two are tracked separately.
   const [loadError, setLoadError] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
@@ -156,12 +156,12 @@ export default function ParticipantDetailPage({ me }: { me: Me }) {
           </p>
           <p className="mt-1">
             {noContact.disenrollmentEligible
-              ? "Disenrolment is now allowed."
-              : `${noContact.attemptsUntilDisenrollment} more attempt(s) needed before disenrolment is allowed.`}
+              ? "Disenrollment is now allowed."
+              : `${noContact.attemptsUntilDisenrollment} more attempt(s) needed before disenrollment is allowed.`}
           </p>
           {noContact.molinaLetterRequired && (
             <p className="mt-2">
-              Molina requires a disenrolment warning letter before this case can be closed.
+              Molina requires a disenrollment warning letter before this case can be closed.
               {can(me, "episodes.write") && record.episodeId && (
                 <button
                   onClick={() =>
@@ -264,26 +264,26 @@ export default function ParticipantDetailPage({ me }: { me: Me }) {
       {record.programs.length > 0 && (
         <section className="mt-6 rounded border border-nmbm-ink/10 p-4">
           <h2 className="text-sm font-semibold uppercase tracking-wide text-nmbm-ink/50">
-            Programmes
+            Programs
           </h2>
           <ul className="mt-3 flex flex-col gap-2">
-            {record.programs.map((enrolment) => (
+            {record.programs.map((enrollment) => (
               <li
-                key={enrolment.enrollmentId}
+                key={enrollment.enrollmentId}
                 className="flex flex-wrap items-center justify-between gap-2 rounded border border-nmbm-ink/10 px-3 py-2 text-sm"
               >
                 <span>
-                  <Link to={`/cohorts/${enrolment.cohortId}`} className="font-medium text-nmbm-ink hover:underline">
-                    {enrolment.programName}
+                  <Link to={`/cohorts/${enrollment.cohortId}`} className="font-medium text-nmbm-ink hover:underline">
+                    {enrollment.programName}
                   </Link>
                   <span className="block text-xs text-nmbm-ink/50">
-                    {enrolment.cohortName} · {enrolment.status}
+                    {enrollment.cohortName} · {enrollment.status}
                   </span>
                 </span>
                 {/* M14: the reason this record exists — proof for a
                     probation officer, reachable from the case. */}
                 <Link
-                  to={`/enrollments/${enrolment.enrollmentId}/participation`}
+                  to={`/enrollments/${enrollment.enrollmentId}/participation`}
                   className="text-xs text-nmbm-gold-dark hover:underline"
                 >
                   Proof of participation

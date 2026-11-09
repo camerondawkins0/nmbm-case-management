@@ -1,6 +1,6 @@
 # Map
 
-Where things are. Current as of migration `0013`.
+Where things are. Current as of migration `0014`.
 
 ## Packages
 
@@ -116,7 +116,7 @@ first is behind the session check.
 | `/referrals-in/:id` | `incoming-referral-page.tsx` | One referral: notes, matching records, admit / readmit / add to current stay / close, referrer told |
 | `/notes/review` | `note-review-page.tsx` | The U6 queue — approve, or return with a reason |
 | `/care-plans/review` | `care-plan-review-page.tsx` | The same, for care plans |
-| `/programs` | `programs-page.tsx` | Programmes and their cohorts |
+| `/programs` | `programs-page.tsx` | Programs and their cohorts |
 | `/follow-ups` | `follow-ups-page.tsx` | M12: QA's call queue, and who asked to come back (intake sees only the latter) |
 | `/cohorts/:id` | `cohort-page.tsx` | The M14 grid — sessions across, people down — and the take-attendance panel; flags anyone whose NMBM services have ended |
 | `/enrollments/:id/participation` | `participation-record-page.tsx` | The printable proof a probation officer receives |
@@ -187,7 +187,7 @@ in order in `meta/_journal.json`:
 | `0002_case_management_rules` | Care plans, assignments, audit log, `v_no_contact_counts` |
 | `0003_note_review` | The U6 review columns on notes and care plans |
 | `0004_referrals_and_consents` | `consents`, `referrals` |
-| `0005_programs_and_attendance` | The five programme and attendance tables |
+| `0005_programs_and_attendance` | The five program and attendance tables |
 | `0006_episode_scoped_caseload` | One open episode per participant; repair of assignments left open on closed episodes; `v_no_contact_counts` rebuilt per episode |
 | `0007_app_settings` | `app_settings` |
 | `0008_follow_up_calls` | `follow_up_calls`, one settling result per milestone, search indexes on participants |
@@ -196,6 +196,7 @@ in order in `meta/_journal.json`:
 | `0011_assessments` | The four form and assessment tables; one draft per form |
 | `0012_assessment_links` | `assessment_links`, one live link per assessment; `audit_log.actor_user_id` nullable for things a participant did |
 | `0013_incoming_referrals` | The two referral-in tables; checks that admitted has a record and closed has a reason |
+| `0014_cohort_status_canceled` | Renames the cohort status `cancelled` to `canceled` (North American spelling) |
 
 ## Seeds
 

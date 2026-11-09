@@ -23,7 +23,7 @@ describe("the Google round trip", () => {
   });
 
   // Without the state check, anyone could complete sign-in in a
-  // victim's browser with the attacker's own authorisation code.
+  // victim's browser with the attacker's own authorization code.
   it("refuses a callback whose state doesn't match this browser's", async () => {
     const start = await app.inject({ method: "GET", url: "/auth/google/login" });
     const cookie = sessionCookie(start.headers["set-cookie"])!;
@@ -40,9 +40,9 @@ describe("the Google round trip", () => {
     expect(location(res)).toBe("/login?error=expired");
   });
 
-  it("reports a cancellation at Google as cancelled", async () => {
+  it("reports a cancellation at Google as canceled", async () => {
     const res = await app.inject({ method: "GET", url: "/auth/google/callback?error=access_denied" });
-    expect(location(res)).toBe("/login?error=cancelled");
+    expect(location(res)).toBe("/login?error=canceled");
   });
 
   it("explains an unconfigured installation instead of failing with a 500", async () => {

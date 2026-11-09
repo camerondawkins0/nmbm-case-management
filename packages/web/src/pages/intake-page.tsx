@@ -39,7 +39,7 @@ export default function IntakePage() {
   });
 
   // R10: a returning client belongs on their existing record. Look as
-  // soon as there's a birthday or a surname to go on, before anyone has
+  // soon as there's a birthday or a last name to go on, before anyone has
   // typed out the rest of the form.
   const returningQuery = form.dateOfBirth
     ? { dob: form.dateOfBirth }
@@ -167,7 +167,7 @@ export default function IntakePage() {
             />
           </label>
           <label className={label}>
-            Enrolment date
+            Enrollment date
             <input
               required
               type="date"
@@ -194,7 +194,7 @@ export default function IntakePage() {
           </select>
           {form.payer === "molina" && (
             <span className="text-xs text-nmbm-ink/50">
-              Molina cases require a warning letter before a no-contact disenrolment.
+              Molina cases require a warning letter before a no-contact disenrollment.
             </span>
           )}
         </label>

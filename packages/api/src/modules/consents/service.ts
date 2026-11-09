@@ -22,9 +22,9 @@ function today() {
   return new Date().toISOString().slice(0, 10);
 }
 
-// Whether a consent authorises anything right now. Derived rather than
+// Whether a consent authorizes anything right now. Derived rather than
 // read off the stored status: a row that says "active" with a date in
-// the past is exactly the bug that lets an expired consent authorise a
+// the past is exactly the bug that lets an expired consent authorize a
 // disclosure, and nothing here runs a job to keep the two in step.
 export function effectiveStatus(row: {
   revokedAt: Date | null;
@@ -60,7 +60,7 @@ export async function listForParticipant(db: Db, participantId: string) {
 }
 
 // M16: "our consents can expire at a year after the client is enrolled"
-// — the anchor is the enrolment date, not the signature. Computed here
+// — the anchor is the enrollment date, not the signature. Computed here
 // rather than accepted from the caller so it can't be set to something
 // convenient, and the episode it was counted from is recorded.
 export async function recordConsent(db: Db, input: ConsentCreate, recordedById: string) {
@@ -70,7 +70,7 @@ export async function recordConsent(db: Db, input: ConsentCreate, recordedById: 
     .where(and(eq(episodes.participantId, input.participantId), eq(episodes.status, "open")));
 
   if (!episode) {
-    throw conflict("No open episode — a consent is scoped to an enrolment");
+    throw conflict("No open episode — a consent is scoped to an enrollment");
   }
   if (input.signedDate > today()) {
     throw badRequest("A consent can't be signed in the future");
@@ -103,8 +103,8 @@ export async function recordConsent(db: Db, input: ConsentCreate, recordedById: 
 }
 
 // Revoked, never deleted (hard rule 1). A revoked release stops
-// authorising new disclosures; referrals already sent keep pointing at
-// it, because what was authorised at the time is a fact about the past.
+// authorizing new disclosures; referrals already sent keep pointing at
+// it, because what was authorized at the time is a fact about the past.
 export async function revokeConsent(db: Db, id: string, reason: string, actorId: string) {
   const [row] = await db.select().from(consents).where(eq(consents.id, id));
   if (!row) throw notFound("Consent not found");
@@ -126,7 +126,7 @@ export async function revokeConsent(db: Db, id: string, reason: string, actorId:
   return { ...updated, status: effectiveStatus(updated) };
 }
 
-// The release that authorises sharing with a partner agency. Returns
+// The release that authorizes sharing with a partner agency. Returns
 // the usable one if there is one, so the referral gate can explain
 // precisely what's missing rather than just refusing.
 export async function findUsableRelease(db: Db, participantId: string) {

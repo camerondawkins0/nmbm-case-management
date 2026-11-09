@@ -4,7 +4,7 @@ import { episodes } from "./episodes.js";
 import { users } from "./users.js";
 import { followUpOutcomeEnum } from "./enums.js";
 
-// M12: one row per QA call attempt after disenrolment. The schedule
+// M12: one row per QA call attempt after disenrollment. The schedule
 // itself isn't stored — due dates come from the episode's end date — so
 // see docs/agent/invariants.md before adding a "due" column here.
 export const followUpCalls = pgTable("follow_up_calls", {

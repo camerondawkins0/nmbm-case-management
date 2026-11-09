@@ -145,7 +145,7 @@ export default fp(async function authPlugin(fastify: FastifyInstance, opts: { db
       }
       // Bound to this browser's session and checked on the way back.
       // Without it, anyone could send a victim through the callback with
-      // the attacker's own authorisation code and have them working —
+      // the attacker's own authorization code and have them working —
       // and entering participant notes — in the attacker's account.
       const state = randomBytes(32).toString("base64url");
       request.session.oauthState = state;
@@ -173,7 +173,7 @@ export default fp(async function authPlugin(fastify: FastifyInstance, opts: { db
       const expected = request.session.oauthState;
       request.session.oauthState = undefined;
 
-      if (error) return refuse(reply, error === "access_denied" ? "cancelled" : "google_failed");
+      if (error) return refuse(reply, error === "access_denied" ? "canceled" : "google_failed");
       if (!configured) return refuse(reply, "not_configured");
       if (!code || !state || !expected || !sameString(state, expected)) {
         return refuse(reply, "expired");

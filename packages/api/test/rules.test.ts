@@ -25,7 +25,7 @@ describe("M6 no-contact ladder", () => {
     expect(three.attemptsUntilDisenrollment).toBe(2);
   });
 
-  it("allows disenrolment at five", () => {
+  it("allows disenrollment at five", () => {
     const five = noContactState({ ...base, consecutiveNoContacts: 5 });
     expect(five.disenrollmentEligible).toBe(true);
     expect(five.attemptsUntilDisenrollment).toBe(0);
@@ -80,7 +80,7 @@ describe("M14 participation outcome", () => {
     expect(participationOutcome({ requiredSessions: 12, attended: 12, sessionsHeld: 12 })).toBe("met");
   });
 
-  it("makes no judgement when no requirement has been set", () => {
+  it("makes no judgment when no requirement has been set", () => {
     expect(participationOutcome({ requiredSessions: null, attended: 3, sessionsHeld: 6 })).toBe("no_requirement");
   });
 });

@@ -22,7 +22,7 @@ const release = (participantId: string, signedDate = isoDaysAgo(1)) =>
   chw.post("/api/consents", {
     participantId,
     type: "release_of_information",
-    formName: "Authorisation to release information",
+    formName: "Authorization to release information",
     signedDate,
   });
 
@@ -32,7 +32,7 @@ const refer = (participantId: string) =>
 describe("M16: consent expiry", () => {
   // "A year after the client is enrolled" — not after signing. A form
   // signed eleven months in is good for one more month, not twelve.
-  it("counts a year from the enrolment date, not the signature", async () => {
+  it("counts a year from the enrollment date, not the signature", async () => {
     const start = isoDaysAgo(330);
     const { participantId } = await admit(db, { workerId: chwId, actorId: chwId, startDate: start });
     const res = await release(participantId, isoDaysAgo(2));
@@ -76,7 +76,7 @@ describe("M15/M17: a referral needs a usable release", () => {
     expect(res.body.message).toMatch(/revoked/);
   });
 
-  it("sends with a current release, and records which one authorised it", async () => {
+  it("sends with a current release, and records which one authorized it", async () => {
     const { participantId } = await admit(db, { workerId: chwId, actorId: chwId });
     const recorded = await release(participantId);
     const res = await refer(participantId);

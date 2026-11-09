@@ -12,7 +12,7 @@ declare module "vitest" {
 
 const repoRoot = fileURLToPath(new URL("../../..", import.meta.url));
 
-// Every run gets its own database, created here and dropped afterwards,
+// Every run gets its own database, created here and dropped afterward,
 // so a test can never touch a development or demo database — only the
 // server named in the URL is shared. The schema comes from the real
 // migrations and the grants from the real reference seed: a test that

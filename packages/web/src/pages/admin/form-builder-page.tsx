@@ -503,7 +503,7 @@ export default function FormBuilderPage() {
                 onClick={() => {
                   if (
                     !window.confirm(
-                      "Publish this version? New forms will use it from now on, and it can't be edited afterwards.",
+                      "Publish this version? New forms will use it from now on, and it can't be edited afterward.",
                     )
                   )
                     return;

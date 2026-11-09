@@ -99,13 +99,13 @@ export async function closeEpisode(
 
     if (!state.disenrollmentEligible) {
       throw unprocessable(
-        `Needs ${NO_CONTACT_DISENROLLMENT_THRESHOLD} failed contact attempts before disenrolment; ` +
+        `Needs ${NO_CONTACT_DISENROLLMENT_THRESHOLD} failed contact attempts before disenrollment; ` +
           `there are ${state.count}. ${state.attemptsUntilDisenrollment} more required.`,
       );
     }
     if (state.molinaLetterRequired) {
       throw unprocessable(
-        "Molina requires the disenrolment warning letter to be sent before closing. " +
+        "Molina requires the disenrollment warning letter to be sent before closing. " +
           "Record it on the episode first.",
       );
     }

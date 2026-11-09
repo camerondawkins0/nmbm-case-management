@@ -8,7 +8,7 @@ export async function insert(
   db: Db,
   input: { participantId: string; startDate: string; readmittedFromEpisodeId: string | null },
 ) {
-  // M9: the 30-day care-plan completion countdown starts at enrolment,
+  // M9: the 30-day care-plan completion countdown starts at enrollment,
   // so it's stamped here rather than computed at read time — the
   // deadline shouldn't move if the rule changes later.
   const carePlanDueDate = new Date(input.startDate);

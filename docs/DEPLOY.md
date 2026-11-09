@@ -36,11 +36,11 @@ first run to need small corrections.
    (R2/R3). That agreement covers Workspace services — Gmail, Drive and
    so on. It does not cover Google Cloud: Cloud Run, Cloud SQL, Cloud
    Storage, Secret Manager and Cloud Logging are under Google Cloud's own BAA, which
-   NMBM has to accept separately for its Cloud organisation. This has to
+   NMBM has to accept separately for its Cloud organization. This has to
    be in place before any real client information goes in.
 2. **R4** — whether a BAA is also needed with whoever builds and
    maintains this. See `docs/DISCOVERY_FOLLOWUP.md`.
-3. **A Google Cloud project inside NMBM's organisation**, with billing
+3. **A Google Cloud project inside NMBM's organization**, with billing
    attached. Not a personal project — `docs/GOOGLE_SETUP.md` explains why
    the OAuth client depends on it.
 

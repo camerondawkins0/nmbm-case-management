@@ -26,7 +26,7 @@ async function caseWith(results: ("contacted" | "no_contact")[], payer: "medi_ca
 const close = (episodeId: string, closureReason: string) =>
   director.post(`/api/episodes/${episodeId}/close`, { closureReason });
 
-describe("M6: disenrolment for no contact is a gate", () => {
+describe("M6: disenrollment for no contact is a gate", () => {
   it("refuses at four consecutive misses and says how many more are needed", async () => {
     const { episodeId } = await caseWith(["no_contact", "no_contact", "no_contact", "no_contact"]);
     const res = await close(episodeId, "no_contact");
