@@ -3,7 +3,7 @@ import { api, ApiError } from "../../lib/api.js";
 import type { AdminUser, AuditEntry } from "../../lib/types.js";
 import { Pill } from "../../components/flags.js";
 
-type Role = { id: string; code: string; label: string };
+type Role = { id: string; code: string; label: string; builtin: boolean };
 
 // M31: "Dayna and myself until we get an IT." Until this screen, the
 // only way to give someone a role was to run a seed script against the
@@ -102,13 +102,20 @@ export default function AdminUsersPage() {
                 className="rounded border border-nmbm-ink/20 px-2 py-1 text-sm"
               >
                 <option value="">Add a role…</option>
-                {roles
-                  .filter((r) => !user.roles.some((ur) => ur.code === r.code))
-                  .map((r) => (
-                    <option key={r.code} value={r.code}>
-                      {r.label}
-                    </option>
-                  ))}
+                {[true, false].map((builtin) => {
+                  const choices = roles.filter((r) => r.builtin === builtin && !user.roles.some((ur) => ur.code === r.code));
+                  return (
+                    choices.length > 0 && (
+                      <optgroup key={String(builtin)} label={builtin ? "Built-in roles" : "Added roles"}>
+                        {choices.map((r) => (
+                          <option key={r.code} value={r.code}>
+                            {r.label}
+                          </option>
+                        ))}
+                      </optgroup>
+                    )
+                  );
+                })}
               </select>
               <button
                 disabled={!adding[user.id]}

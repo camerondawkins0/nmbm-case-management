@@ -14,8 +14,8 @@ export async function seedReference(db: ReturnType<typeof createDb>) {
 
   await db
     .insert(roles)
-    .values(ROLES.map((code) => ({ code, label: ROLE_LABELS[code] })))
-    .onConflictDoNothing();
+    .values(ROLES.map((code) => ({ code, label: ROLE_LABELS[code], builtin: true })))
+    .onConflictDoUpdate({ target: roles.code, set: { builtin: true } });
 
   const intended = await intendedGrants(db);
   for (const [roleId, codes] of intended) {

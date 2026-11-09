@@ -1,6 +1,6 @@
 # Map
 
-Where things are. Current as of migration `0015`.
+Where things are. Current as of migration `0016`.
 
 ## Packages
 
@@ -37,7 +37,7 @@ splits out `audit.ts` for the same reason.
 
 ## API routes
 
-94 routes across 17 modules, plus five on the auth plugin and two on the
+97 routes across 17 modules, plus five on the auth plugin and two on the
 local storage stand-in. Every route outside `PUBLIC_BY_DESIGN` carries
 an `authorize()` or `authorizeAny()` preHandler, and the permission it
 requires is named in the file. `test/routes-authorized.test.ts` reads
@@ -60,7 +60,7 @@ the source and fails on any route that has neither — see testing.md.
 | `documents` | `GET /api/participants/:id/documents`, `POST /api/participants/:id/documents` (returns a signed upload link), `POST /api/documents/:id/confirm`, `GET /api/documents/:id/download-url`, `POST /api/documents/:id/void` |
 | `follow-ups` | `GET /api/follow-ups` (QA's queue), `POST /api/follow-ups` (record a call), `GET /api/follow-ups/re-enrollment-requests` |
 | `dashboard` | `GET /api/dashboard` |
-| `admin` | `GET /api/admin/users`, `GET /api/admin/roles`, `POST /api/admin/users/:id/roles`, `DELETE /api/admin/users/:id/roles/:roleCode`, `POST /api/admin/users/:id/deactivate`, `POST /api/admin/users/:id/reactivate`, `GET /api/admin/audit`, `GET /api/admin/settings`, `PUT /api/admin/settings/:key`, `GET /api/admin/permissions`, `PUT /api/admin/roles/:role/permissions/:permission` (`admin/permissions.ts`) |
+| `admin` | `GET /api/admin/users`, `GET /api/admin/roles`, `POST /api/admin/users/:id/roles`, `DELETE /api/admin/users/:id/roles/:roleCode`, `POST /api/admin/users/:id/deactivate`, `POST /api/admin/users/:id/reactivate`, `GET /api/admin/audit`, `GET /api/admin/settings`, `PUT /api/admin/settings/:key`, `GET /api/admin/permissions`, `PUT /api/admin/roles/:role/permissions/:permission`, `POST /api/admin/roles`, `PATCH /api/admin/roles/:role`, `POST /api/admin/roles/:role/retire` (`admin/permissions.ts`) |
 | `feedback` | `POST /api/feedback`, `GET /api/feedback/mine`, `GET /api/feedback`, `PATCH /api/feedback/:id/status` |
 | `plugins/auth.ts` | `GET /auth/google/login`, `GET /auth/google/callback`, `POST /auth/logout`, and in non-production with `ALLOW_DEV_LOGIN` only: `GET /auth/dev-login`, `GET /auth/dev-login/accounts` |
 | `lib/storage.ts` | `PUT /api/local-storage/*`, `GET /api/local-storage/*` — registered only when there's no `DOCUMENTS_BUCKET` (development and tests); a signed query string is the gate |
@@ -121,7 +121,7 @@ first is behind the session check.
 | `/cohorts/:id` | `cohort-page.tsx` | The M14 grid — sessions across, people down — and the take-attendance panel; flags anyone whose NMBM services have ended. For `programs.manage` (`components/cohort-setup.tsx`): start / complete / cancel / reopen, add class dates, enroll by search, withdraw with a reason |
 | `/enrollments/:id/participation` | `participation-record-page.tsx` | The printable proof a probation officer receives |
 | `/admin/users` | `admin/users-page.tsx` | Staff, roles, deactivation |
-| `/admin/permissions` | `admin/permissions-page.tsx` | The role × permission grid NMBM change themselves; gold dot = differs from the default |
+| `/admin/permissions` | `admin/permissions-page.tsx` | What each role can do, one role at a time or compared; search, area and changes-only filters; new, renamed and retired custom roles. Gold dot = differs from the default |
 | `/admin/settings` | `admin/settings-page.tsx` | Settings NMBM change themselves (the former-worker window) |
 | `/feedback` | `feedback-page.tsx` | Report an issue |
 | `/admin/forms` | `admin/forms-page.tsx` | NMBM's forms: which exist, which version is live |
@@ -201,6 +201,7 @@ in order in `meta/_journal.json`:
 | `0013_incoming_referrals` | The two referral-in tables; checks that admitted has a record and closed has a reason |
 | `0014_cohort_status_canceled` | Renames the cohort status `cancelled` to `canceled` (North American spelling) |
 | `0015_configurable_programs_and_permissions` | Program completion rules (default classes, late/excused count) and `role_permission_overrides` |
+| `0016_custom_roles` | `roles.builtin`, `active`, `description`, `created_by_id`, `created_at`; active role names unique ignoring capitals |
 
 ## Seeds
 
@@ -209,12 +210,13 @@ in order in `meta/_journal.json`:
 - `reference.ts` is **required**. It writes the roles, permissions and
   grants that `authorize()` reads, and without it every authenticated
   route returns 403 — which presents as a broken login rather than as
-  missing data. Each of the nine roles gets the defaults in
+  missing data. Each of the nine built-in roles gets the defaults in
   `DEFAULT_ROLE_PERMISSIONS` with NMBM's own choices
   (`role_permission_overrides`, made on the Permissions page) laid over
   them, so a deploy never undoes a choice. It also revokes grants that
   are neither, so removing a default from the code actually takes
-  it away instead of leaving it granted forever.
+  it away instead of leaving it granted forever. Roles NMBM added
+  themselves are left exactly as they are.
 - `synthetic.ts` is invented demo data: staff at `@nmbm.example.org`,
   twelve participants whose fixtures each exercise one rule (Irene
   Walsh is the disenrolled one, for R10; Price, Liu and Moreno show

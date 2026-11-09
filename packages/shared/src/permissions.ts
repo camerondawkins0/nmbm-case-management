@@ -1,3 +1,4 @@
+import { z } from "zod";
 import type { Role } from "./roles.js";
 
 // Permission codes are the unit `authorize()` checks against — never a
@@ -180,3 +181,45 @@ export const PERMISSION_INFO: Record<Permission, { group: string; label: string;
 // The permissions that keep the app administrable. A change that would
 // leave no active person holding one of these is refused.
 export const LOCKOUT_PERMISSIONS: Permission[] = ["admin.roles.manage", "admin.users.manage"];
+
+// Custom roles: a name NMBM choose for a set of the permissions above.
+export const roleCreateSchema = z.object({
+  label: z.string().trim().min(2).max(80),
+  description: z.string().trim().max(300).nullish(),
+  // Start as a copy of an existing role's permissions, or empty.
+  copyFrom: z.string().min(1).max(100).nullish(),
+});
+
+export const roleUpdateSchema = z
+  .object({
+    label: z.string().trim().min(2).max(80).optional(),
+    description: z.string().trim().max(300).nullish(),
+  })
+  .refine((v) => Object.keys(v).length > 0, { message: "Nothing to change" });
+
+// Permissions that do nothing on their own, and what they need with them.
+// Shown as a warning on the role, not enforced: a role is often built up
+// one box at a time, and refusing the intermediate steps would make that
+// impossible. The server still checks every request against what the
+// role actually holds.
+const SEES_CLIENTS: Permission[] = ["participants.read.own", "participants.read.all"];
+export const PERMISSION_NEEDS: Partial<Record<Permission, { anyOf: Permission[]; why: string }>> = {
+  "notes.write": { anyOf: SEES_CLIENTS, why: "notes are written on a client's record" },
+  "care_plans.write": { anyOf: SEES_CLIENTS, why: "care plans are written on a client's record" },
+  "consents.write": { anyOf: SEES_CLIENTS, why: "consents are recorded on a client's record" },
+  "referrals.write": { anyOf: SEES_CLIENTS, why: "referrals are made from a client's record" },
+  "documents.write": { anyOf: SEES_CLIENTS, why: "documents are uploaded to a client's record" },
+  "assessments.write": { anyOf: SEES_CLIENTS, why: "forms are filled in on a client's record" },
+  "episodes.write": { anyOf: [...SEES_CLIENTS, "participants.read.closed"], why: "closing and readmitting happen on a client's record" },
+  "records.export": { anyOf: SEES_CLIENTS, why: "only records they can see can be exported" },
+  "participants.assign": { anyOf: ["participants.read.all"], why: "reassigning needs sight of other caseloads" },
+};
+
+export function permissionWarnings(held: Permission[]) {
+  const has = new Set(held);
+  return held.flatMap((p) => {
+    const need = PERMISSION_NEEDS[p];
+    if (!need || need.anyOf.some((n) => has.has(n))) return [];
+    return [{ permission: p, needs: need.anyOf, why: need.why }];
+  });
+}

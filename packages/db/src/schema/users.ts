@@ -14,8 +14,15 @@ export const users = pgTable("users", {
 
 export const roles = pgTable("roles", {
   id: uuid("id").primaryKey().defaultRandom(),
-  code: text("code").notNull().unique(), // matches Role in @nmbm/shared
+  // One of Role in @nmbm/shared for the nine built in; generated for a
+  // role NMBM add themselves. See migration 0016.
+  code: text("code").notNull().unique(),
   label: text("label").notNull(),
+  builtin: boolean("builtin").notNull().default(false),
+  active: boolean("active").notNull().default(true),
+  description: text("description"),
+  createdById: uuid("created_by_id"),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
 export const permissions = pgTable("permissions", {

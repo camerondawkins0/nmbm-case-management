@@ -505,8 +505,10 @@ export type Me = {
 };
 
 // A note a reviewer sent back to its author, with why (U6).
+export type GridRole = { code: string; label: string; description: string | null; builtin: boolean; people: number };
+
 export type PermissionGrid = {
-  roles: { code: string; label: string }[];
+  roles: GridRole[];
   permissions: { code: Permission; group: string; label: string; description: string }[];
   grants: Record<string, Permission[]>;
   defaults: Record<string, Permission[]>;

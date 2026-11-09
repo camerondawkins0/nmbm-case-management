@@ -179,13 +179,13 @@ that is what every page reads.
 ## What is built
 
 Everything below is running code: a migration, a module, and in most
-cases a page reachable after signing in. Current as of migration `0015`.
+cases a page reachable after signing in. Current as of migration `0016`.
 
 | Area | What works | Where |
 |---|---|---|
 | Deployment | One Docker image for the service and its release job; Cloud Build tests, migrates and deploys; sessions in Postgres so restarts and extra instances don't sign anyone out; the API serves the web build with strict security headers | `Dockerfile`, `cloudbuild.yaml`, `deploy/`, `docs/DEPLOY.md` |
 | Sign-in (M27) | Google OIDC against a named Workspace domain with a one-use `state` token, a fresh session id at sign-in, an idle timeout and a hard ceiling, audited sign-in and sign-out; a login page that says why a sign-in was refused and what to do next; a holding page for accounts with no role; sign-out in the header. Dev login is double-gated behind `NODE_ENV !== "production"` and `ALLOW_DEV_LOGIN` | `plugins/auth.ts`, `pages/login-page.tsx`, `docs/GOOGLE_SETUP.md` |
-| Authorization | Permission codes, never role names, read from the database at request time. NMBM change which role holds what on the Permissions page; their choices survive deploys, and a change that would leave nobody able to administer the system is refused. A test reads the source and fails on any route with no permission check that isn't listed as public on purpose, with a reason | `plugins/authorize.ts`, `packages/shared/src/permissions.ts`, `test/routes-authorized.test.ts` |
+| Authorization | Permission codes, never role names, read from the database at request time. NMBM change which role holds what on the Permissions page; their choices survive deploys, and add roles of their own. A change that would leave nobody able to administer the system is refused, and nobody who only manages staff can give a role that does more than they can. A test reads the source and fails on any route with no permission check that isn't listed as public on purpose, with a reason | `plugins/authorize.ts`, `packages/shared/src/permissions.ts`, `test/routes-authorized.test.ts` |
 | Caseload (U5) | A front-line worker's list, dashboard and participant record are scoped server-side to their own assignments | `lib/caseload.ts` |
 | Participants and intake (M3/M4/R10) | Admission opens the record, the episode and the assignment in one transaction; reassignment; assignable-worker list. The list is active people only. Closed records: all of them for intake and supervisors, and a worker's own former clients for up to 90 days (adjustable downward) | `modules/participants/`, `lib/caseload.ts` |
 | Episodes (M2/M6/R10) | Close — which ends the assignment — and readmission, which opens a new linked episode with a named worker. The payer-conditional disenrollment-warning letter gate | `modules/episodes/` |
@@ -207,7 +207,7 @@ cases a page reachable after signing in. Current as of migration `0015`.
 | Audit (M30) | Append-only, written inside the transaction that performs the action, read-only endpoint | `plugins/audit.ts` |
 | Feedback (M31) | In-app issue reporting and a triage queue, because NMBM has no IT staff | `modules/feedback/`, `docs/SUPPORT.md` |
 
-94 API routes across 17 modules, 33 tables and one view, 23 pages plus
+97 API routes across 17 modules, 33 tables and one view, 23 pages plus
 two holding screens (no role yet; server unreachable).
 `docs/agent/map.md` lists them route by route and page by page.
 

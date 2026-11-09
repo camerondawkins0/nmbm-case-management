@@ -1,8 +1,9 @@
 import type { Db } from "@nmbm/db";
 import { users, roles, userRoles, assignments, participants } from "@nmbm/db";
-import { eq, and, isNull, sql } from "drizzle-orm";
+import { eq, and, isNull, sql, desc } from "drizzle-orm";
 import { conflict, notFound, badRequest } from "../../plugins/errors.js";
 import { writeAudit } from "../../plugins/audit.js";
+import { assertActorHoldsRole, assertNotLockedOut } from "./permissions.js";
 
 // M31: "Dayna and myself until we get an IT." Until this existed, roles
 // could only be granted by running the seed script against the database,
@@ -52,8 +53,13 @@ export async function listUsers(db: Db) {
   return [...byUser.values()];
 }
 
+// The roles that can be given to somebody: retired ones can't.
 export async function listRoles(db: Db) {
-  return db.select({ id: roles.id, code: roles.code, label: roles.label }).from(roles);
+  return db
+    .select({ id: roles.id, code: roles.code, label: roles.label, builtin: roles.builtin })
+    .from(roles)
+    .where(eq(roles.active, true))
+    .orderBy(desc(roles.builtin), roles.label);
 }
 
 async function loadUser(db: Db, userId: string) {
@@ -66,6 +72,8 @@ export async function grantRole(db: Db, userId: string, roleCode: string, actorI
   const user = await loadUser(db, userId);
   const [role] = await db.select().from(roles).where(eq(roles.code, roleCode));
   if (!role) throw notFound("Role not found");
+  if (!role.active) throw conflict("That role has been retired");
+  await assertActorHoldsRole(db, actorId, role.id, role.label);
 
   const [existing] = await db
     .select()
@@ -79,7 +87,7 @@ export async function grantRole(db: Db, userId: string, roleCode: string, actorI
     action: "user.role_granted",
     entityType: "user",
     entityId: userId,
-    detail: `${role.code} granted to ${user.email}`,
+    detail: `${role.label} given to ${user.email}`,
   });
   return { granted: role.code };
 }
@@ -89,25 +97,20 @@ export async function revokeRole(db: Db, userId: string, roleCode: string, actor
   const [role] = await db.select().from(roles).where(eq(roles.code, roleCode));
   if (!role) throw notFound("Role not found");
 
-  // Locking every administrator out of the admin screen is not a thing
-  // a single click should be able to do.
-  if (roleCode === "system_administrator") {
-    const [{ count }] = await db
-      .select({ count: sql<number>`count(*)::int` })
-      .from(userRoles)
-      .where(eq(userRoles.roleId, role.id));
-    if (count <= 1) throw conflict("That's the last system administrator — grant another first");
-  }
-
-  await db
-    .delete(userRoles)
-    .where(and(eq(userRoles.userId, userId), eq(userRoles.roleId, role.id)));
-  await writeAudit(db, {
-    actorUserId: actorId,
-    action: "user.role_revoked",
-    entityType: "user",
-    entityId: userId,
-    detail: `${role.code} revoked from ${user.email}`,
+  // Taking the last way to manage staff or permissions away from
+  // the last person who has it is not a thing one click should do —
+  // whichever role carries it now that roles are NMBM's to change.
+  await db.transaction(async (raw) => {
+    const tx = raw as unknown as Db;
+    await tx.delete(userRoles).where(and(eq(userRoles.userId, userId), eq(userRoles.roleId, role.id)));
+    await assertNotLockedOut(tx);
+    await writeAudit(tx, {
+      actorUserId: actorId,
+      action: "user.role_revoked",
+      entityType: "user",
+      entityId: userId,
+      detail: `${role.label} taken from ${user.email}`,
+    });
   });
   return { revoked: role.code };
 }
@@ -133,16 +136,17 @@ export async function deactivateUser(db: Db, userId: string, actorId: string) {
     );
   }
 
-  await db
-    .update(users)
-    .set({ active: false, deactivatedAt: new Date() })
-    .where(eq(users.id, userId));
-  await writeAudit(db, {
-    actorUserId: actorId,
-    action: "user.deactivated",
-    entityType: "user",
-    entityId: userId,
-    detail: user.email,
+  await db.transaction(async (raw) => {
+    const tx = raw as unknown as Db;
+    await tx.update(users).set({ active: false, deactivatedAt: new Date() }).where(eq(users.id, userId));
+    await assertNotLockedOut(tx);
+    await writeAudit(tx, {
+      actorUserId: actorId,
+      action: "user.deactivated",
+      entityType: "user",
+      entityId: userId,
+      detail: user.email,
+    });
   });
   return { deactivated: user.email };
 }
@@ -150,6 +154,14 @@ export async function deactivateUser(db: Db, userId: string, actorId: string) {
 export async function reactivateUser(db: Db, userId: string, actorId: string) {
   const user = await loadUser(db, userId);
   if (user.active) throw conflict("Already active");
+  // Reactivating hands back whatever their roles carry, so it's held to
+  // the same rule as giving a role: nothing you can't do yourself.
+  const theirRoles = await db
+    .select({ id: roles.id, label: roles.label })
+    .from(userRoles)
+    .innerJoin(roles, and(eq(roles.id, userRoles.roleId), eq(roles.active, true)))
+    .where(eq(userRoles.userId, userId));
+  for (const role of theirRoles) await assertActorHoldsRole(db, actorId, role.id, role.label);
   await db
     .update(users)
     .set({ active: true, deactivatedAt: null })

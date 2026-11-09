@@ -1,7 +1,7 @@
 import type { FastifyRequest, FastifyReply } from "fastify";
 import type { Db } from "@nmbm/db";
-import { userRoles, rolePermissions, permissions as permissionsTable } from "@nmbm/db";
-import { eq } from "drizzle-orm";
+import { userRoles, rolePermissions, roles, permissions as permissionsTable } from "@nmbm/db";
+import { and, eq } from "drizzle-orm";
 import type { Permission } from "@nmbm/shared";
 
 // Computed from the caller's roles at request time (not cached on the
@@ -13,6 +13,9 @@ export async function getPermissions(db: Db, userId: string): Promise<Set<Permis
     .from(userRoles)
     .innerJoin(rolePermissions, eq(rolePermissions.roleId, userRoles.roleId))
     .innerJoin(permissionsTable, eq(permissionsTable.id, rolePermissions.permissionId))
+    // A retired role grants nothing, even to somebody still recorded as
+    // holding it.
+    .innerJoin(roles, and(eq(roles.id, userRoles.roleId), eq(roles.active, true)))
     .where(eq(userRoles.userId, userId));
   return new Set(grants.map((g) => g.code as Permission));
 }

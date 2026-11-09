@@ -216,7 +216,9 @@ the same thing when M23 work starts.
 - **Who runs the classes — and every other who-does-what question
   below.** NMBM will decide and set it themselves on the Permissions page
   (System Administrator holds "Change permissions"). The grants in the
-  code are only the starting point; NMBM's changes survive deploys.
+  code are only the starting point; NMBM's changes survive deploys. If
+  none of the nine roles fits someone, NMBM can add a role of their own
+  there.
 - **Who may admit a participant?** Intake currently needs
   `participants.write`, held by the Intake Specialist and Clinical
   Director — a CHW cannot admit. Consistent with U3, worth confirming

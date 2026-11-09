@@ -113,6 +113,13 @@
       "when": 1762732800000,
       "tag": "0015_configurable_programs_and_permissions",
       "breakpoints": true
+    },
+    {
+      "idx": 16,
+      "version": "7",
+      "when": 1762819200000,
+      "tag": "0016_custom_roles",
+      "breakpoints": true
     }
   ]
 }

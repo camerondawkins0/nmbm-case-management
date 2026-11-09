@@ -93,7 +93,7 @@ export async function backdateEpisodeEnd(db: Db, episodeId: string, endDate: str
 // change, so a check that the defaults happen to satisfy still needs
 // proving.
 export async function staffWith(db: Db, codes: Permission[]) {
-  const [role] = await db.insert(roles).values({ code: unique("custom"), label: "Test role" }).returning();
+  const [role] = await db.insert(roles).values({ code: unique("custom"), label: unique("Test role ") }).returning();
   for (const code of codes) {
     const [perm] = await db.select().from(permissions).where(eq(permissions.code, code));
     await db.insert(rolePermissions).values({ roleId: role.id, permissionId: perm.id });

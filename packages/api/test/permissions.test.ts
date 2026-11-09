@@ -64,7 +64,7 @@ describe("NMBM change their own permission grid", () => {
     expect((await director.get("/api/admin/permissions")).status).toBe(403);
     expect((await director.put("/api/admin/roles/community_health_worker/permissions/records.export", { granted: true })).status).toBe(403);
     const grid = (await admin.get("/api/admin/permissions")).body;
-    expect(grid.roles).toHaveLength(9);
+    expect(grid.roles.filter((r: { builtin: boolean }) => r.builtin)).toHaveLength(9);
     expect(grid.permissions.find((p: { code: string }) => p.code === "records.export").label).toBe("Export whole records");
   });
 

@@ -4,7 +4,7 @@ import { z } from "zod";
 import { authorize } from "../../plugins/authorize.js";
 import * as service from "./service.js";
 import * as audit from "./audit.js";
-import { appSettingUpdateSchema, rolePermissionSchema } from "@nmbm/shared";
+import { appSettingUpdateSchema, roleCreateSchema, rolePermissionSchema, roleUpdateSchema } from "@nmbm/shared";
 import * as grid from "./permissions.js";
 import * as settings from "../../lib/settings.js";
 
@@ -91,5 +91,31 @@ export default async function adminRoutes(fastify: FastifyInstance, opts: { db: 
       const { granted } = rolePermissionSchema.parse(request.body);
       return grid.setGrant(db, request.params.role, request.params.permission, granted, request.currentUser!.id);
     },
+  );
+
+  // Roles NMBM add themselves (migration 0016).
+  fastify.post(
+    "/api/admin/roles",
+    { preHandler: authorize("admin.roles.manage") },
+    async (request, reply) => {
+      const input = roleCreateSchema.parse(request.body);
+      reply.code(201);
+      return grid.createRole(db, input, request.currentUser!.id);
+    },
+  );
+
+  fastify.patch<{ Params: { role: string } }>(
+    "/api/admin/roles/:role",
+    { preHandler: authorize("admin.roles.manage") },
+    async (request) => {
+      const input = roleUpdateSchema.parse(request.body);
+      return grid.updateRole(db, request.params.role, input, request.currentUser!.id);
+    },
+  );
+
+  fastify.post<{ Params: { role: string } }>(
+    "/api/admin/roles/:role/retire",
+    { preHandler: authorize("admin.roles.manage") },
+    async (request) => grid.retireRole(db, request.params.role, request.currentUser!.id),
   );
 }

@@ -267,7 +267,40 @@ the Permissions page (`admin.roles.manage`) changes it.
 - A change is refused if it would leave no *active* person holding
   `admin.roles.manage` or `admin.users.manage` (`LOCKOUT_PERMISSIONS`):
   nobody could undo it from the app.
-- Only the nine known roles are managed this way.
+- Only the nine built-in roles are managed this way.
+
+**NMBM add roles of their own** (`roles.builtin = false`).
+
+- A custom role holds exactly what it was given; it has no default, so
+  no stored differences, and the release job never touches it.
+- Its code is generated (`custom_<slug>_<hex>`), never typed, so it
+  can't take a built-in role's code or one the code adds later.
+- Names are unique among active roles, ignoring capitals.
+- Built-in roles can't be renamed or retired: they're named in NMBM's
+  discovery answers and in these docs.
+- A role is **retired**, not deleted, and only once nobody holds it, so
+  retiring is never a way to take access from people. A retired role
+  grants nothing (`getPermissions` joins on `roles.active`), counts for
+  nothing in the lockout check, and can't be given or changed.
+
+**Guardrails on who can do what** (`admin/permissions.ts`).
+
+- The lockout check runs inside the transaction of *every* change that
+  could remove the last holder — a grid change, taking a role from
+  someone, deactivating someone — and counts active people holding an
+  active role. It's by permission, not by role name, because any role
+  can now carry the administrative permissions.
+- **No giving access you don't have.** Giving someone a role, or
+  reactivating someone, is refused if the role carries a permission the
+  actor lacks (`assertActorHoldsRole`). Without it, `admin.users.manage`
+  would be a route to every permission. Holders of `admin.roles.manage`
+  are exempt: they could add the permission to their own role anyway,
+  in the open on the Permissions page.
+- Only permissions the code defines can be granted. A row in
+  `permissions` the code doesn't know is refused: nothing would check it.
+- The page's warnings (`permissionWarnings`, e.g. "Write notes" with no
+  way to see a client) are advice, not rules: the server already
+  refuses each action on its own terms.
 ## Follow-up calls are derived from the closure, and settle once (M12)
 
 - **Nothing about the schedule is stored.** Due dates come from the
