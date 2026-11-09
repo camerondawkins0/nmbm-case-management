@@ -190,6 +190,15 @@ second one — a person cannot be both present and absent for one class.
 Marks are refused for anyone not on that cohort's roster, which would
 otherwise put a class in someone's record they were never enrolled in.
 
+A cohort's status is a decision a person makes, so it's stored:
+planned → running or canceled; running → completed or canceled;
+completed → running (reopened, for a class closed too early). Canceled
+is final — run it again as a new cohort, so the rosters stay apart. The
+server holds the table (`COHORT_STATUS_CHANGES` in `@nmbm/shared`), the
+change is conditional on the status it was read as, and it's audited.
+A completed or canceled cohort takes no new people and no new class
+dates; attendance can still be corrected after the fact.
+
 A completion threshold is optional on a cohort because NMBM hasn't
 given one. Where it exists, the record reports four states rather than
 a pass/fail: a person with perfect attendance in week 7 of 12 has not

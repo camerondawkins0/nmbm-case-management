@@ -29,6 +29,9 @@ export default function ParticipantDetailPage({ me }: { me: Me }) {
   const [loadError, setLoadError] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
+  // The author revising a note a reviewer sent back (U6).
+  const [revising, setRevising] = useState<string | null>(null);
+  const [revision, setRevision] = useState("");
 
   const load = useCallback(() => {
     if (!id) return;
@@ -38,6 +41,13 @@ export default function ParticipantDetailPage({ me }: { me: Me }) {
   }, [id]);
 
   useEffect(load, [load]);
+
+  // Arriving from "Notes returned to you": the note isn't on the page
+  // until the record has loaded, so the browser can't jump to it alone.
+  useEffect(() => {
+    if (!record || !window.location.hash.startsWith("#note-")) return;
+    document.getElementById(window.location.hash.slice(1))?.scrollIntoView({ block: "center" });
+  }, [record]);
 
   if (loadError) return <p className="text-sm text-state-alert">{loadError}</p>;
   if (!record) return <p className="text-sm text-nmbm-ink/50">Loading…</p>;
@@ -53,10 +63,12 @@ export default function ParticipantDetailPage({ me }: { me: Me }) {
       await fn();
       setNotice(success);
       load();
+      return true;
     } catch (e) {
       // The gate messages from the API are the useful part — show them
       // verbatim rather than "something went wrong".
       setActionError(e instanceof ApiError ? e.message : "Action failed");
+      return false;
     }
   }
 
@@ -353,7 +365,7 @@ export default function ParticipantDetailPage({ me }: { me: Me }) {
         </h2>
         <ul className="mt-2 divide-y divide-nmbm-ink/5 rounded border border-nmbm-ink/10">
           {record.notes.map((note) => (
-            <li key={note.id} className="px-4 py-3 text-sm">
+            <li key={note.id} id={`note-${note.id}`} className="scroll-mt-6 px-4 py-3 text-sm">
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <span className="text-nmbm-ink">{note.body}</span>
                 <Pill tone={note.contactResult === "contacted" ? "ok" : "warn"}>
@@ -378,6 +390,48 @@ export default function ParticipantDetailPage({ me }: { me: Me }) {
                 <p className="mt-1 rounded bg-state-warn-bg px-2 py-1 text-xs text-state-warn">
                   Returned: {note.reviewNote}
                 </p>
+              )}
+              {note.status === "needs_revision" && note.authorId === me.id && revising !== note.id && (
+                <button
+                  onClick={() => {
+                    setRevising(note.id);
+                    setRevision(note.body);
+                  }}
+                  className="mt-2 rounded border border-nmbm-ink/30 px-3 py-1 text-xs"
+                >
+                  Revise and resubmit
+                </button>
+              )}
+              {revising === note.id && (
+                <form
+                  className="mt-2 flex flex-col gap-2"
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                    act(
+                      () => api(`/api/notes/${note.id}`, { method: "PATCH", body: JSON.stringify({ body: revision }) }),
+                      "Note revised and sent back for review.",
+                    ).then((ok) => ok && setRevising(null));
+                  }}
+                >
+                  <textarea
+                    aria-label="Revised note"
+                    rows={4}
+                    value={revision}
+                    onChange={(e) => setRevision(e.target.value)}
+                    className="rounded border border-nmbm-ink/20 px-2 py-1.5 text-sm"
+                  />
+                  <div className="flex gap-2">
+                    <button
+                      disabled={!revision.trim() || revision === note.body}
+                      className="rounded bg-nmbm-ink px-3 py-1 text-xs font-medium text-nmbm-paper disabled:opacity-40"
+                    >
+                      Resubmit for review
+                    </button>
+                    <button type="button" onClick={() => setRevising(null)} className="rounded border border-nmbm-ink/30 px-3 py-1 text-xs">
+                      Cancel
+                    </button>
+                  </div>
+                </form>
               )}
             </li>
           ))}

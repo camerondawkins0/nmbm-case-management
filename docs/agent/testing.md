@@ -1,6 +1,6 @@
 # Testing
 
-206 tests in `packages/api/test/`, run by vitest against a real Postgres.
+217 tests in `packages/api/test/`, run by vitest against a real Postgres.
 CI runs them on every push with a Postgres 16 service.
 
 ```bash
@@ -32,7 +32,8 @@ dev-login route, and assert on HTTP responses.
 | `consents-referrals.test.ts` | M16 expiry from enrollment; M17 release gate and its three refusal reasons |
 | `disenrollment.test.ts` | R10: off the caseload on close, closed-record access (intake, last worker, window and its 90-day cap), readmission starting a fresh run |
 | `attendance.test.ts` | M14 whole-roster marking, correction not duplication, off-roster refusal, recorder names, disenrolled people flagged not withdrawn |
-| `sign-off.test.ts` | U6 notes and care plans reviewed by someone other than the author |
+| `sign-off.test.ts` | U6 notes and care plans reviewed by someone other than the author; a returned note listed to its author only, revised back into the queue without the old reason, by its author only, never once approved |
+| `program-setup.test.ts` | Who can set programs up; duplicate program names; dates in order; dates, roster and withdrawal keeping attendance; enrollment scoped to who the enroller can see; the cohort status table, closed cohorts refusing people and dates, reopening, canceled final, audit |
 | `follow-up-schedule.test.ts` | M12 date arithmetic and milestone states, no database |
 | `follow-ups.test.ts` | M12 queue, recording calls, one result per milestone, re-enrollment requests, readmission stopping the schedule |
 | `search.test.ts` | R10 search scoping, wildcard escaping, intake's duplicate refusal and its audited override |
@@ -103,6 +104,8 @@ test.
 | Outcome reported twice | incoming-referrals — only with both guards broken: "is an outcome owed" refuses first, the update's `outcome_reported_at is null` is the race guard |
 | Workers able to export; "other" without words; export unaudited or audited without the purpose; answers as stored codes; export unscoped; notes left out | record-export |
 | Outbound referral outcome not caseload-scoped | consents-referrals — a real gap found while building referrals in; fixed with this test |
+| Any status change allowed; canceled reopenable; running → running; no reopening; dates on a closed cohort; a cohort ending before it starts; status change unaudited; enrollment unscoped; workers setting up programs; withdrawal losing its reason | program-setup |
+| Returned list showing everyone's; revision keeping the old reason or not requeueing; anyone revising; approved notes revisable | sign-off |
 | CSV guard removed; plain numbers guarded; carriage return unquoted; headers unguarded | csv |
 | A route with no gate; a stale `PUBLIC_BY_DESIGN` entry; the bracket matcher stopping early | routes-authorized |
 
@@ -136,7 +139,10 @@ door is open when it isn't.
 ## What isn't covered
 
 - **The web app.** No component or browser tests; the pages have been
-  checked by driving them with Playwright by hand.
+  checked by driving them with Playwright by hand. One thing found that
+  way: participant search left the previous results on screen while a
+  new search ran, so an "Add to roster" button could act on the wrong
+  person. Results now clear as soon as the text changes.
 - **Real Cloud Storage.** Tests use the local stand-in. The signed-URL
   code for GCS is Google's library; the bucket's CORS, retention and
   the service account's lack of delete are set by `deploy/setup-gcp.sh`

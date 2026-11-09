@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
 import { api } from "../lib/api.js";
 import { Link } from "react-router-dom";
-import type { Dashboard, Me, ParticipantRow } from "../lib/types.js";
+import type { Dashboard, Me, ParticipantRow, ReturnedNote } from "../lib/types.js";
+import { can } from "../lib/use-me.js";
 import { CarePlanPills, MolinaLetterPill, NoContactPill, ParticipantLink, Pill } from "../components/flags.js";
 
 // M9's framing, literally: an overdue plan turns up here rather than in
@@ -9,10 +10,18 @@ import { CarePlanPills, MolinaLetterPill, NoContactPill, ParticipantLink, Pill }
 // has to do today.
 export default function DashboardPage({ me }: { me: Me }) {
   const [data, setData] = useState<Dashboard | null>(null);
+  const [returned, setReturned] = useState<ReturnedNote[]>([]);
 
   useEffect(() => {
     api<Dashboard>("/api/dashboard").then(setData).catch(() => setData(null));
   }, []);
+
+  // U6: a note sent back is the author's to fix. Without this list the
+  // only place it showed was the record, which nobody reopens to check.
+  useEffect(() => {
+    if (!can(me, "notes.write")) return;
+    api<ReturnedNote[]>("/api/notes/returned").then(setReturned).catch(() => setReturned([]));
+  }, [me]);
 
   if (!data) return <p className="text-sm text-nmbm-ink/50">Loading…</p>;
 
@@ -24,6 +33,7 @@ export default function DashboardPage({ me }: { me: Me }) {
     data.carePlansReturned.length === 0 &&
     data.referralsAwaitingOutcome.length === 0 &&
     data.awaitingReview.length === 0 &&
+    returned.length === 0 &&
     !(data.followUps && data.followUps.overdue + data.followUps.due > 0) &&
     !data.reEnrollmentRequests;
 
@@ -63,6 +73,30 @@ export default function DashboardPage({ me }: { me: Me }) {
             </Link>
           )}
         </div>
+      )}
+
+      {returned.length > 0 && (
+        <section className="mt-8">
+          <h2 className="text-sm font-semibold uppercase tracking-wide text-nmbm-ink/50">
+            Notes returned to you <span className="text-nmbm-ink/30">({returned.length})</span>
+          </h2>
+          <ul className="mt-2 divide-y divide-nmbm-ink/5 rounded border border-nmbm-ink/10">
+            {returned.map((note) => (
+              <li key={note.id} className="px-4 py-3 text-sm">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <Link to={`/participants/${note.participantId}#note-${note.id}`} className="font-medium text-nmbm-ink hover:underline">
+                    {note.firstName} {note.lastName}
+                  </Link>
+                  <span className="text-xs text-nmbm-ink/50">written {new Date(note.createdAt).toLocaleDateString()}</span>
+                </div>
+                {note.reviewNote && (
+                  <p className="mt-1 rounded bg-state-warn-bg px-2 py-1 text-xs text-state-warn">Returned: {note.reviewNote}</p>
+                )}
+                <p className="mt-1 line-clamp-2 text-xs text-nmbm-ink/60">{note.body}</p>
+              </li>
+            ))}
+          </ul>
+        </section>
       )}
 
       <Section title="Missed contact" rows={data.noContactWarnings} kind="no-contact" />

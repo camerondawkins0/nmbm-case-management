@@ -37,7 +37,7 @@ splits out `audit.ts` for the same reason.
 
 ## API routes
 
-89 routes across 17 modules, plus five on the auth plugin and two on the
+90 routes across 17 modules, plus five on the auth plugin and two on the
 local storage stand-in. Every route outside `PUBLIC_BY_DESIGN` carries
 an `authorize()` or `authorizeAny()` preHandler, and the permission it
 requires is named in the file. `test/routes-authorized.test.ts` reads
@@ -53,7 +53,7 @@ the source and fails on any route that has neither — see testing.md.
 | `care-plans` | `POST /api/care-plans`, `PATCH /api/care-plans/:id`, `POST /api/care-plans/:id/submit`, `GET /api/care-plans/awaiting-review`, `POST /api/care-plans/:id/approve`, `POST /api/care-plans/:id/return` |
 | `consents` | `POST /api/consents`, `POST /api/consents/:id/revoke` |
 | `referrals` | `POST /api/referrals`, `POST /api/referrals/:id/outcome` |
-| `programs` | `GET /api/programs`, `POST /api/programs`, `POST /api/cohorts`, `GET /api/cohorts/:id`, `POST /api/cohorts/:id/sessions`, `POST /api/cohorts/:id/enrollments`, `POST /api/enrollments/:id/withdraw`, `POST /api/sessions/:id/attendance`, `GET /api/enrollments/:id/participation` |
+| `programs` | `GET /api/programs`, `POST /api/programs`, `POST /api/cohorts`, `GET /api/cohorts/:id`, `POST /api/cohorts/:id/status` (start, complete, cancel, reopen), `POST /api/cohorts/:id/sessions`, `POST /api/cohorts/:id/enrollments`, `POST /api/enrollments/:id/withdraw`, `POST /api/sessions/:id/attendance`, `GET /api/enrollments/:id/participation` |
 | `assessments` | Forms: `GET /api/assessment-forms`, `POST /api/assessment-forms`, `GET /api/assessment-forms/:id`, `POST /api/assessment-forms/:id/drafts`, `POST /api/assessment-forms/:id/active`, `GET /api/assessment-versions/:id`, `PUT /api/assessment-versions/:id/questions` (draft only), `POST /api/assessment-versions/:id/publish`. On a record: `GET /api/participants/:id/assessments`, `POST /api/participants/:id/assessments`, `GET /api/assessments/:id`, `PATCH /api/assessments/:id/answers`, `POST /api/assessments/:id/complete`, `POST /api/assessments/:id/void`. The participant's link: `POST /api/participants/:id/assessment-links` (make one), `POST /api/assessments/:id/link` (replace it), `POST /api/assessments/:id/link/revoke`; and, public by design in `self-serve-routes.ts`, `POST /api/self-serve/:token/unlock`, `GET /api/self-serve/:token`, `PATCH /api/self-serve/:token/answers`, `POST /api/self-serve/:token/submit` |
 | `incoming-referrals` | `GET /api/incoming-referrals?view=open\|outcome_owed\|all`, `GET /api/incoming-referrals/counts`, `POST /api/incoming-referrals`, `GET /api/incoming-referrals/:id`, `POST /api/incoming-referrals/:id/notes`, `POST /api/incoming-referrals/:id/close`, `POST /api/incoming-referrals/:id/link` (to an already-active record), `POST /api/incoming-referrals/:id/outcome-reported`. Admitting from one goes through intake or readmission with `incomingReferralId` |
 | `record-export` | `POST /api/participants/:id/record-export` — the whole record, with a purpose; audited |
@@ -116,9 +116,9 @@ first is behind the session check.
 | `/referrals-in/:id` | `incoming-referral-page.tsx` | One referral: notes, matching records, admit / readmit / add to current stay / close, referrer told |
 | `/notes/review` | `note-review-page.tsx` | The U6 queue — approve, or return with a reason |
 | `/care-plans/review` | `care-plan-review-page.tsx` | The same, for care plans |
-| `/programs` | `programs-page.tsx` | Programs and their cohorts |
+| `/programs` | `programs-page.tsx` | Programs and their cohorts; for `programs.manage`, new program and add a cohort |
 | `/follow-ups` | `follow-ups-page.tsx` | M12: QA's call queue, and who asked to come back (intake sees only the latter) |
-| `/cohorts/:id` | `cohort-page.tsx` | The M14 grid — sessions across, people down — and the take-attendance panel; flags anyone whose NMBM services have ended |
+| `/cohorts/:id` | `cohort-page.tsx` | The M14 grid — sessions across, people down — and the take-attendance panel; flags anyone whose NMBM services have ended. For `programs.manage` (`components/cohort-setup.tsx`): start / complete / cancel / reopen, add class dates, enroll by search, withdraw with a reason |
 | `/enrollments/:id/participation` | `participation-record-page.tsx` | The printable proof a probation officer receives |
 | `/admin/users` | `admin/users-page.tsx` | Staff, roles, deactivation |
 | `/admin/settings` | `admin/settings-page.tsx` | Settings NMBM change themselves (the former-worker window) |
@@ -143,7 +143,9 @@ unreachable apart; `lib/api.ts` handles a session ending mid-page;
 `lib/labels.ts` holds display labels shared across pages.
 `components/participant-search.tsx` is the search used on the Clients
 page and the intake form; `components/follow-up-call-form.tsx` records a
-call from the queue or the record.
+call from the queue or the record. Today lists "Notes returned to you"
+for anyone who writes notes, and the record's contact history has
+"Revise and resubmit" on the author's own returned note.
 
 Hiding a nav link is a convenience, never the control. Every page here
 is behind a server-side permission check on the endpoints it calls.

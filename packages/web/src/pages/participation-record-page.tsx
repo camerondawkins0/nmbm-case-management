@@ -54,9 +54,11 @@ export default function ParticipationRecordPage() {
           <BrandMark size={44} />
           <div>
             <p className="font-semibold tracking-wide text-nmbm-ink">NMBM</p>
-            <p className="text-xs uppercase tracking-[0.15em] text-nmbm-gold">
+            {/* The document's title, so it reads as one to a screen reader
+                as well as on paper. */}
+            <h1 className="text-xs font-normal uppercase tracking-[0.15em] text-nmbm-gold">
               Record of participation
-            </p>
+            </h1>
           </div>
         </header>
 

@@ -497,6 +497,17 @@ export type Me = {
   permissions: Permission[];
 };
 
+// A note a reviewer sent back to its author, with why (U6).
+export type ReturnedNote = {
+  id: string;
+  body: string;
+  reviewNote: string | null;
+  createdAt: string;
+  participantId: string;
+  firstName: string;
+  lastName: string;
+};
+
 export type Dashboard = {
   // Present only for the roles that act on them.
   followUps: { overdue: number; due: number } | null;

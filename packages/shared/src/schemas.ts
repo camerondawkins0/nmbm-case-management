@@ -170,6 +170,21 @@ export const cohortCreateSchema = z.object({
 });
 export type CohortCreate = z.infer<typeof cohortCreateSchema>;
 
+// Moving a cohort on. A person decides when a class has finished or
+// won't run, so the status is stored rather than derived from dates.
+export const COHORT_STATUS_CHANGES: Record<string, readonly string[]> = {
+  planned: ["running", "canceled"],
+  running: ["completed", "canceled"],
+  // Reopening covers a class closed too early. A canceled one is final:
+  // run it again as a new cohort, so the two rosters stay apart.
+  completed: ["running"],
+  canceled: [],
+};
+
+export const cohortStatusSchema = z.object({
+  status: z.enum(["running", "completed", "canceled"]),
+});
+
 export const sessionCreateSchema = z.object({
   sessionDate: z.string().date(),
   topic: z.string().min(1).max(200).optional(),

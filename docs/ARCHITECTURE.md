@@ -179,7 +179,7 @@ that is what every page reads.
 ## What is built
 
 Everything below is running code: a migration, a module, and in most
-cases a page reachable after signing in. Current as of migration `0013`.
+cases a page reachable after signing in. Current as of migration `0014`.
 
 | Area | What works | Where |
 |---|---|---|
@@ -189,7 +189,7 @@ cases a page reachable after signing in. Current as of migration `0013`.
 | Caseload (U5) | A front-line worker's list, dashboard and participant record are scoped server-side to their own assignments | `lib/caseload.ts` |
 | Participants and intake (M3/M4/R10) | Admission opens the record, the episode and the assignment in one transaction; reassignment; assignable-worker list. The list is active people only. Closed records: all of them for intake and supervisors, and a worker's own former clients for up to 90 days (adjustable downward) | `modules/participants/`, `lib/caseload.ts` |
 | Episodes (M2/M6/R10) | Close — which ends the assignment — and readmission, which opens a new linked episode with a named worker. The payer-conditional disenrollment-warning letter gate | `modules/episodes/` |
-| Notes and the no-contact ladder (M6/U6) | Write, submit, approve, return for revision, revise and resubmit; three consecutive failed contacts prompt exit documentation and two more are required before disenrollment is allowed | `modules/notes/`, `lib/rules.ts` |
+| Notes and the no-contact ladder (M6/U6) | Write, submit, approve, return for revision, revise and resubmit (a returned note is listed to its author on Today and revised from the record); three consecutive failed contacts prompt exit documentation and two more are required before disenrollment is allowed | `modules/notes/`, `lib/rules.ts` |
 | Care plans (M9/U6) | Authoring, goals, submit, approve, return; the 30-day completion clock and the 2-week review nudge derived side by side | `modules/care-plans/`, `lib/rules.ts` |
 | Consents (M15/M16) | Four form types, expiry derived at read time from the episode start date, revocation | `modules/consents/` |
 | Forms and assessments (M11/M13) | NMBM build their own forms — the registration form, the needs assessment — with sections, choice lists and follow-up questions that appear only when an earlier answer calls for them; preview, then publish. Published versions never change; editing makes a new version and old answers stay with the wording they were given against. Staff fill one in with the participant or from a paper copy, saved as they go, completed once every required question that's shown is answered, then final — corrected by voiding. Printable | `modules/assessments/`, `packages/shared/src/assessments.ts`, `/admin/forms`, `/assessments/:id` |
@@ -198,7 +198,7 @@ cases a page reachable after signing in. Current as of migration `0013`.
 | Whole-record export | The complete record as one document to print, save as PDF or download as data, for a participant's own request, a legal request, a transfer of care or an audit; restricted, purpose required, audited as a disclosure | `modules/record-export/`, `/participants/:id/export` |
 | Documents (M15/M30) | Scans and photos uploaded from the record straight to a private Cloud Storage bucket on a short-lived signed link, shown only once the server has confirmed the file arrived; optionally linked to the consent form it's a scan of; every opening audited; voided rather than deleted, and a voided file can't be opened | `modules/documents/`, `lib/storage.ts`, `components/documents-section.tsx` |
 | Referrals (M17) | Refuses to send without a usable release and distinguishes the three reasons; records the outcome that came back | `modules/referrals/` |
-| Programs and attendance (M14) | Programs, cohorts, class dates, rosters, whole-roster marking in one request, and a printable participation record. Disenrolled participants stay on the roster, flagged | `modules/programs/` |
+| Programs and attendance (M14) | Programs, cohorts, class dates, rosters, whole-roster marking in one request, and a printable participation record, all set up on screen by whoever holds `programs.manage`: new programs and cohorts, class dates, enrolling by search, withdrawing with a reason, and starting, completing, canceling or reopening a cohort. Disenrolled participants stay on the roster, flagged | `modules/programs/` |
 | Follow-up calls (M12) | QA's queue of 3/5/9/12-month calls, derived from each closed episode's end date; every attempt recorded with who made it; "wants services again" puts the person on intake's list until they're readmitted | `modules/follow-ups/`, `lib/follow-ups.ts`, `/follow-ups` |
 | Readmission search (R10) | Find a record by name or date of birth, limited to what the searcher can open; intake checks for a returning client as the form is filled in, and refuses a likely duplicate unless told it's a different person (audited) | `participants/repository.ts`, `components/participant-search.tsx` |
 | Settings (M31) | Values NMBM's administrator changes without a deploy, audited. One so far: the former-worker access window | `lib/settings.ts`, `/admin/settings` |
@@ -207,7 +207,7 @@ cases a page reachable after signing in. Current as of migration `0013`.
 | Audit (M30) | Append-only, written inside the transaction that performs the action, read-only endpoint | `plugins/audit.ts` |
 | Feedback (M31) | In-app issue reporting and a triage queue, because NMBM has no IT staff | `modules/feedback/`, `docs/SUPPORT.md` |
 
-89 API routes across 17 modules, 32 tables and one view, 22 pages plus
+90 API routes across 17 modules, 32 tables and one view, 22 pages plus
 two holding screens (no role yet; server unreachable).
 `docs/agent/map.md` lists them route by route and page by page.
 
@@ -239,7 +239,7 @@ Two different reasons, and they shouldn't be reported as one number.
 
 **Not blocked — ours to do:**
 
-- **Test coverage stops at the API.** 206 tests run through the real
+- **Test coverage stops at the API.** 217 tests run through the real
   server against a real Postgres on every push, covering every rule in
   `docs/agent/invariants.md`, and each has been proved by breaking the
   rule and watching it fail. The web app has no automated tests; its

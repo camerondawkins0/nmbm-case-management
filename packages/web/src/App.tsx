@@ -94,7 +94,7 @@ function StaffApp() {
         <Route path="/referrals-in/:id" element={<IncomingReferralPage />} />
         <Route path="/care-plans/review" element={<CarePlanReviewPage />} />
         <Route path="/notes/review" element={<NoteReviewPage />} />
-        <Route path="/programs" element={<ProgramsPage />} />
+        <Route path="/programs" element={<ProgramsPage me={me} />} />
         <Route path="/cohorts/:id" element={<CohortPage me={me} />} />
         <Route path="/enrollments/:id/participation" element={<ParticipationRecordPage />} />
         <Route path="/admin/users" element={<AdminUsersPage />} />

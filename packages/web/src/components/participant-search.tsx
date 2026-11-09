@@ -26,6 +26,10 @@ export function useParticipantSearch(query: { q?: string; dob?: string } | null)
       return;
     }
     let canceled = false;
+    // Drop the previous answer at once. Left on screen while the new
+    // search runs, its buttons act on whoever matched the last thing
+    // typed — on a roster, that enrolls the wrong person.
+    setResults(null);
     // Wait for a pause in typing rather than querying every keystroke.
     const timer = setTimeout(() => {
       const params = new URLSearchParams();

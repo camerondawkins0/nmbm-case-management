@@ -5,6 +5,7 @@ import { can } from "../lib/use-me.js";
 import type { AttendanceStatus } from "@nmbm/shared";
 import type { CohortDetail, Me } from "../lib/types.js";
 import { Pill } from "../components/flags.js";
+import { AddClassDate, CohortStatusActions, EnrollPanel, WithdrawButton } from "../components/cohort-setup.js";
 
 const MARKS: { value: AttendanceStatus; label: string; short: string }[] = [
   { value: "present", label: "Present", short: "P" },
@@ -43,6 +44,22 @@ export default function CohortPage({ me }: { me: Me }) {
   }, [id]);
 
   useEffect(load, [load]);
+
+  // Setting the class up: dates, roster, and moving it on. One helper so
+  // every action reports back the same way.
+  const act = async (fn: () => Promise<unknown>, message: string) => {
+    setError(null);
+    setNotice(null);
+    try {
+      await fn();
+      setNotice(message);
+      load();
+      return true;
+    } catch (e) {
+      setError(e instanceof ApiError ? e.message : "Could not save");
+      return false;
+    }
+  };
 
   if (error && !data) return <p className="text-sm text-state-alert">{error}</p>;
   if (!data) return <p className="text-sm text-nmbm-ink/50">Loading…</p>;
@@ -87,15 +104,32 @@ export default function CohortPage({ me }: { me: Me }) {
   }
 
   const activeRoster = data.roster.filter((p) => p.status !== "withdrawn");
+  const manage = can(me, "programs.manage");
+  // Completed or canceled: no new dates or people (the server refuses
+  // too). Attendance can still be corrected after the fact.
+  const open = data.cohort.status === "planned" || data.cohort.status === "running";
 
   return (
     <div className="mx-auto max-w-5xl">
-      <h1 className="text-2xl font-semibold text-nmbm-ink">{data.cohort.name}</h1>
-      <p className="mt-1 text-sm text-nmbm-ink/60">
-        {data.cohort.programName} · started {data.cohort.startDate} · {data.sessions.length}{" "}
-        session(s) held
-        {data.cohort.requiredSessions && ` · ${data.cohort.requiredSessions} needed to complete`}
-      </p>
+      <Link to="/programs" className="text-sm text-nmbm-ink/60 underline-offset-2 hover:underline">
+        ← Programs
+      </Link>
+      <div className="mt-2 flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h1 className="text-2xl font-semibold text-nmbm-ink">{data.cohort.name}</h1>
+          <p className="mt-1 text-sm text-nmbm-ink/60">
+            {data.cohort.programName} · {data.cohort.status === "planned" ? "starts" : "started"}{" "}
+            {data.cohort.startDate} · {data.sessions.length} class date(s)
+            {data.cohort.requiredSessions && ` · ${data.cohort.requiredSessions} needed to complete`}
+          </p>
+        </div>
+        <div className="flex flex-wrap items-center gap-2">
+          <Pill tone={data.cohort.status === "running" ? "ok" : data.cohort.status === "planned" ? "warn" : "muted"}>
+            {data.cohort.status}
+          </Pill>
+          {manage && <CohortStatusActions cohort={data.cohort} act={act} />}
+        </div>
+      </div>
 
       {notice && (
         <p className="mt-4 rounded border border-state-ok/20 bg-state-ok-bg px-3 py-2 text-sm text-state-ok">
@@ -132,7 +166,16 @@ export default function CohortPage({ me }: { me: Me }) {
                     {person.firstName} {person.lastName}
                   </Link>
                   {person.status === "withdrawn" && (
-                    <span className="ml-2 text-xs text-nmbm-ink/50">withdrawn</span>
+                    <span className="ml-2 align-middle" title={person.withdrawnReason ? `Withdrawn: ${person.withdrawnReason}` : "Withdrawn"}>
+                      <Pill tone="muted">withdrawn</Pill>
+                    </span>
+                  )}
+                  {manage && person.status !== "withdrawn" && (
+                    <WithdrawButton
+                      enrollmentId={person.enrollmentId}
+                      name={`${person.firstName} ${person.lastName}`}
+                      act={act}
+                    />
                   )}
                   <ServicesEndedFlag on={person.servicesEndedOn} />
                 </td>
@@ -167,6 +210,27 @@ export default function CohortPage({ me }: { me: Me }) {
           </tbody>
         </table>
       </div>
+
+      {data.roster.length === 0 && (
+        <p className="mt-3 text-sm text-nmbm-ink/50">Nobody is on the roster yet.</p>
+      )}
+
+      {manage && open && (
+        <section className="mt-8 grid gap-6 rounded border border-nmbm-ink/10 p-4 sm:grid-cols-2">
+          <div>
+            <h2 className="text-sm font-semibold uppercase tracking-wide text-nmbm-ink/50">Add a class date</h2>
+            <AddClassDate cohortId={data.cohort.id} act={act} />
+          </div>
+          <div>
+            <h2 className="text-sm font-semibold uppercase tracking-wide text-nmbm-ink/50">Add someone to the roster</h2>
+            <EnrollPanel
+              cohortId={data.cohort.id}
+              rosterIds={new Set(data.roster.map((p) => p.participantId))}
+              act={act}
+            />
+          </div>
+        </section>
+      )}
 
       {can(me, "attendance.record") && (
         <section className="mt-8 rounded border border-nmbm-ink/10 p-4">

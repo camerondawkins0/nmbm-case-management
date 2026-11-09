@@ -6,6 +6,7 @@ import {
   sessionCreateSchema,
   cohortEnrollSchema,
   cohortWithdrawSchema,
+  cohortStatusSchema,
   attendanceMarkSchema,
 } from "@nmbm/shared";
 import { authorize, authorizeAny, CAN_READ_PARTICIPANTS } from "../../plugins/authorize.js";
@@ -51,6 +52,15 @@ export default async function programRoutes(fastify: FastifyInstance, opts: { db
     "/api/cohorts/:id",
     { preHandler: authorizeAny(CAN_READ_PARTICIPANTS) },
     async (request) => service.getCohort(db, request.params.id),
+  );
+
+  fastify.post<{ Params: { id: string } }>(
+    "/api/cohorts/:id/status",
+    { preHandler: authorize("programs.manage") },
+    async (request) => {
+      const { status } = cohortStatusSchema.parse(request.body);
+      return service.setCohortStatus(db, request.params.id, status, request.currentUser!.id);
+    },
   );
 
   fastify.post<{ Params: { id: string } }>(

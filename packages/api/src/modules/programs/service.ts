@@ -17,8 +17,8 @@ import type {
   AttendanceMark,
   AttendanceStatus,
 } from "@nmbm/shared";
-import { ATTENDED_STATUSES } from "@nmbm/shared";
-import { notFound, conflict, badRequest } from "../../plugins/errors.js";
+import { ATTENDED_STATUSES, COHORT_STATUS_CHANGES } from "@nmbm/shared";
+import { notFound, conflict, badRequest, unprocessable } from "../../plugins/errors.js";
 import { writeAudit } from "../../plugins/audit.js";
 
 export async function listPrograms(db: Db) {
@@ -99,6 +99,9 @@ export async function createProgram(db: Db, input: ProgramCreate, actorId: strin
 export async function createCohort(db: Db, input: CohortCreate, actorId: string) {
   const [program] = await db.select().from(programs).where(eq(programs.id, input.programId));
   if (!program) throw notFound("Program not found");
+  if (input.endDate && input.endDate < input.startDate) {
+    throw unprocessable("A cohort can't end before it starts");
+  }
 
   const [row] = await db
     .insert(programCohorts)
@@ -125,6 +128,11 @@ export async function createCohort(db: Db, input: CohortCreate, actorId: string)
 
 export async function addSession(db: Db, cohortId: string, input: SessionCreate, actorId: string) {
   const cohort = await loadCohort(db, cohortId);
+  // The same rule enrollment follows: a finished or canceled class takes
+  // no new dates. Reopen it first if a date was missed.
+  if (cohort.status === "completed" || cohort.status === "canceled") {
+    throw conflict("That cohort is closed — reopen it to add a class date");
+  }
   const [row] = await db
     .insert(cohortSessions)
     .values({ cohortId: cohort.id, sessionDate: input.sessionDate, topic: input.topic ?? null })
@@ -135,6 +143,34 @@ export async function addSession(db: Db, cohortId: string, input: SessionCreate,
     entityType: "cohort",
     entityId: cohortId,
     detail: input.sessionDate,
+  });
+  return row;
+}
+
+export async function setCohortStatus(
+  db: Db,
+  cohortId: string,
+  status: "running" | "completed" | "canceled",
+  actorId: string,
+) {
+  const cohort = await loadCohort(db, cohortId);
+  if (!COHORT_STATUS_CHANGES[cohort.status]?.includes(status)) {
+    throw conflict(`A ${cohort.status} cohort can't be marked ${status}`);
+  }
+  // Conditional on the status read above, so two people closing the
+  // same cohort at once can't both succeed from a stale view.
+  const [row] = await db
+    .update(programCohorts)
+    .set({ status })
+    .where(and(eq(programCohorts.id, cohortId), eq(programCohorts.status, cohort.status)))
+    .returning();
+  if (!row) throw conflict("This cohort was changed by somebody else just now");
+  await writeAudit(db, {
+    actorUserId: actorId,
+    action: "cohort.status_changed",
+    entityType: "cohort",
+    entityId: cohortId,
+    detail: `${cohort.status} → ${status}`,
   });
   return row;
 }

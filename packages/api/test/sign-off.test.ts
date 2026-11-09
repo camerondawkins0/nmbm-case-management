@@ -61,3 +61,42 @@ describe("U6: work is signed off by someone other than its author", () => {
     expect((await director.post(`/api/care-plans/${plan.body.id}/approve`)).status).toBe(200);
   });
 });
+
+describe("U6: a returned note goes back to its author, and round again", () => {
+  async function returned() {
+    const n = await chwNote();
+    await manager.post(`/api/notes/${n.noteId}/return`, { reviewNote: "Say where the visit was." });
+    return n;
+  }
+
+  it("lists the author's returned notes, and only theirs", async () => {
+    const mine = await returned();
+    const otherWorker = await staff(db, "community_health_worker");
+    const other = await signIn(app, otherWorker.email);
+
+    const list = (await chw.get("/api/notes/returned")).body as { id: string; reviewNote: string }[];
+    expect(list.find((n) => n.id === mine.noteId)?.reviewNote).toBe("Say where the visit was.");
+    expect(((await other.get("/api/notes/returned")).body as { id: string }[]).map((n) => n.id)).not.toContain(mine.noteId);
+  });
+
+  it("goes back into the review queue once revised, without the old reason", async () => {
+    const { noteId } = await returned();
+    const res = await chw.patch(`/api/notes/${noteId}`, { body: "Home visit at the shelter on 4th St." });
+    expect(res.status).toBe(200);
+    expect(res.body).toMatchObject({ status: "pending_review", reviewNote: null, body: "Home visit at the shelter on 4th St." });
+
+    expect(((await chw.get("/api/notes/returned")).body as { id: string }[]).map((n) => n.id)).not.toContain(noteId);
+    const queue = (await manager.get("/api/notes/awaiting-review")).body as { id: string }[];
+    expect(queue.map((n) => n.id)).toContain(noteId);
+  });
+
+  it("is revised by its author only, and never once approved", async () => {
+    const { noteId } = await returned();
+    const other = await signIn(app, (await staff(db, "community_health_worker")).email);
+    expect((await other.patch(`/api/notes/${noteId}`, { body: "Not mine to change." })).status).toBe(409);
+
+    const approved = await chwNote();
+    await manager.post(`/api/notes/${approved.noteId}/approve`);
+    expect((await chw.patch(`/api/notes/${approved.noteId}`, { body: "Rewriting history." })).status).toBe(409);
+  });
+});
