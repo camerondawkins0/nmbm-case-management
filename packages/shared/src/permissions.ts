@@ -46,6 +46,9 @@ export const PERMISSIONS = [
   "follow_ups.record",
   "admin.users.manage",
   "admin.settings.manage",
+  // Change which permissions each role holds. NMBM decide their own
+  // grid; this is how they change it without a developer.
+  "admin.roles.manage",
   "feedback.submit", // any logged-in user — NMBM has no dedicated IT staff (M31), see docs/SUPPORT.md
   "feedback.manage", // triage/status changes — restricted, see docs/SUPPORT.md
 ] as const;
@@ -132,6 +135,7 @@ export const DEFAULT_ROLE_PERMISSIONS: Record<Role, Permission[]> = {
   ],
   quality_assurance_coordinator: ["records.export", "participants.read.all", "follow_ups.record", "feedback.submit"],
   system_administrator: [
+    "admin.roles.manage",
     "assessments.manage",
     "programs.manage",
     "admin.users.manage",
@@ -142,3 +146,37 @@ export const DEFAULT_ROLE_PERMISSIONS: Record<Role, Permission[]> = {
     "feedback.manage",
   ],
 };
+
+// What each permission lets somebody do, in the words the permissions
+// screen shows. Grouped so the grid reads by area of work.
+export const PERMISSION_INFO: Record<Permission, { group: string; label: string; description: string }> = {
+  "participants.read.own": { group: "Clients", label: "See own caseload", description: "Open the records of clients assigned to them." },
+  "participants.read.all": { group: "Clients", label: "See every client", description: "Open any active or closed record, on anyone's caseload." },
+  "participants.read.closed": { group: "Clients", label: "See closed records", description: "Find and open former clients' records, to readmit them. Not active ones." },
+  "participants.write": { group: "Clients", label: "Admit clients", description: "Complete intake for a new client." },
+  "participants.assign": { group: "Clients", label: "Assign case managers", description: "Hand a client to a different case manager." },
+  "episodes.write": { group: "Clients", label: "Close and readmit", description: "Close an enrollment (disenroll) and readmit a former client." },
+  "records.export": { group: "Clients", label: "Export whole records", description: "Export a client's complete record. Logged with a reason, as a disclosure." },
+  "notes.write": { group: "Notes and care plans", label: "Write notes", description: "Record contact notes on clients they can see." },
+  "notes.approve": { group: "Notes and care plans", label: "Review notes", description: "Approve other people's notes or return them for revision." },
+  "care_plans.write": { group: "Notes and care plans", label: "Write care plans", description: "Write and submit care plans." },
+  "care_plans.approve": { group: "Notes and care plans", label: "Approve care plans", description: "Approve care plans or return them for revision." },
+  "consents.write": { group: "Consents, referrals and documents", label: "Record consents", description: "Record signed consent forms and revoke them." },
+  "referrals.write": { group: "Consents, referrals and documents", label: "Refer out", description: "Refer clients to partner agencies and record what happened." },
+  "incoming_referrals.manage": { group: "Consents, referrals and documents", label: "Work referrals in", description: "Record people referred to NMBM and admit or close them." },
+  "documents.write": { group: "Consents, referrals and documents", label: "Upload documents", description: "Upload scans to a record and void ones filed in error." },
+  "assessments.write": { group: "Forms", label: "Fill in forms", description: "Fill in forms on a record and send forms to participants." },
+  "assessments.manage": { group: "Forms", label: "Build forms", description: "Create, edit and publish NMBM's forms." },
+  "programs.manage": { group: "Programs", label: "Set up programs", description: "Create programs and cohorts, set what completing one takes, add class dates, enroll and withdraw." },
+  "attendance.record": { group: "Programs", label: "Take attendance", description: "Mark attendance for a class." },
+  "follow_ups.record": { group: "Programs", label: "Make follow-up calls", description: "See the 3/5/9/12-month call queue and record calls." },
+  "admin.users.manage": { group: "Administration", label: "Manage staff", description: "Give staff their roles, and deactivate or reactivate accounts." },
+  "admin.roles.manage": { group: "Administration", label: "Change permissions", description: "Change what each role can do, on this screen." },
+  "admin.settings.manage": { group: "Administration", label: "Change settings", description: "Change settings such as the former case manager's access window." },
+  "feedback.submit": { group: "Administration", label: "Report issues", description: "Send feedback or report a problem." },
+  "feedback.manage": { group: "Administration", label: "Triage feedback", description: "Work the feedback queue." },
+};
+
+// The permissions that keep the app administrable. A change that would
+// leave no active person holding one of these is refused.
+export const LOCKOUT_PERMISSIONS: Permission[] = ["admin.roles.manage", "admin.users.manage"];

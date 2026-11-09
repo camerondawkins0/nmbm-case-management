@@ -21,6 +21,7 @@ export function AppShell({ me, children }: { me: Me; children: React.ReactNode }
     ...(can(me, "assessments.manage") ? [{ to: "/admin/forms", label: "Forms" }] : []),
     ...(can(me, "admin.users.manage") ? [{ to: "/admin/users", label: "Staff" }] : []),
     ...(can(me, "feedback.manage") ? [{ to: "/admin/feedback", label: "Feedback" }] : []),
+    ...(can(me, "admin.roles.manage") ? [{ to: "/admin/permissions", label: "Permissions" }] : []),
     ...(can(me, "admin.settings.manage") ? [{ to: "/admin/settings", label: "Settings" }] : []),
   ];
 

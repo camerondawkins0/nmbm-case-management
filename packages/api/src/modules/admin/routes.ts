@@ -4,7 +4,8 @@ import { z } from "zod";
 import { authorize } from "../../plugins/authorize.js";
 import * as service from "./service.js";
 import * as audit from "./audit.js";
-import { appSettingUpdateSchema } from "@nmbm/shared";
+import { appSettingUpdateSchema, rolePermissionSchema } from "@nmbm/shared";
+import * as grid from "./permissions.js";
 import * as settings from "../../lib/settings.js";
 
 const roleSchema = z.object({ roleCode: z.string().min(1) });
@@ -73,6 +74,22 @@ export default async function adminRoutes(fastify: FastifyInstance, opts: { db: 
     async (request) => {
       const { value } = appSettingUpdateSchema.parse(request.body);
       return settings.updateSetting(db, request.params.key, value, request.currentUser!.id);
+    },
+  );
+
+  // NMBM decide their own permission grid (see migration 0015).
+  fastify.get(
+    "/api/admin/permissions",
+    { preHandler: authorize("admin.roles.manage") },
+    async () => grid.getGrid(db),
+  );
+
+  fastify.put<{ Params: { role: string; permission: string } }>(
+    "/api/admin/roles/:role/permissions/:permission",
+    { preHandler: authorize("admin.roles.manage") },
+    async (request) => {
+      const { granted } = rolePermissionSchema.parse(request.body);
+      return grid.setGrant(db, request.params.role, request.params.permission, granted, request.currentUser!.id);
     },
   );
 }

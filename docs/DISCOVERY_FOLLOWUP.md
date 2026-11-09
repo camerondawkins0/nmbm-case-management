@@ -197,25 +197,26 @@ the same thing when M23 work starts.
   keeps appearing until someone records that the service happened. That
   matches M17's "what happened with the client", but it means more
   chasing. Flag set at 14 days, which is a guess.
-- **How many sessions complete a program?** Anger Management and
-  Domestic Violence are typically court-mandated with a set number, and
-  M14 didn't give one. A cohort can carry a threshold and the seed uses
-  12 as a placeholder; without a real number the record reports
-  attendance and leaves the judgment to the reader. Needed per
-  program, and possibly per referral source.
+- **How many sessions complete a program?** NMBM will decide, so it's
+  configurable rather than answered: each program sets a default number
+  of classes for new cohorts, each cohort can change its own, and either
+  can be left blank (the record then reports attendance without a
+  verdict). Set on the Programs and cohort pages by whoever holds "Set
+  up programs". The demo seed uses 12 as a placeholder.
 - **What does a probation officer actually need on the page?** The
   participation record shows dates, topics, attendance and who marked
   each class. If POs or the courts expect a particular wording, a
   signature block, or a letterhead, that's worth seeing an example of
   before anyone relies on this.
-- **Does an excused absence count toward completion?** Currently it
-  doesn't, and it's reported separately from an unexcused one. Court
-  programs often treat these differently and NMBM will know the rule.
-- **Who runs the classes?** `attendance.record` is granted to the
-  Clinical Director, Program Manager, CHWs, interns and the health
-  educator; `programs.manage` only to the Clinical Director, Program
-  Manager and admin. Worth confirming alongside the other who-does-what
-  questions below.
+- **Does an excused absence count toward completion?** NMBM will decide,
+  per program: whether late and excused marks count are switches on the
+  program (late on, excused off to start). The participation record
+  states the rule in words. Changing it recounts past enrollments too,
+  and is logged.
+- **Who runs the classes — and every other who-does-what question
+  below.** NMBM will decide and set it themselves on the Permissions page
+  (System Administrator holds "Change permissions"). The grants in the
+  code are only the starting point; NMBM's changes survive deploys.
 - **Who may admit a participant?** Intake currently needs
   `participants.write`, held by the Intake Specialist and Clinical
   Director — a CHW cannot admit. Consistent with U3, worth confirming

@@ -42,6 +42,8 @@ DATABASE_URL=... npm run -w @nmbm/db release          # migrate + seed:reference
 Reference data is not optional: `authorize()` reads its grants from the
 database, so before `seed:reference` runs every authenticated route
 returns 403 — which presents as a broken login, not as missing data.
+`DEFAULT_ROLE_PERMISSIONS` is only the starting grid: NMBM change it on
+the Permissions page, and the seed keeps their changes.
 
 Tests run through the real server against a real Postgres, on every
 push in CI. What they cover, and what they don't, is in

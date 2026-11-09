@@ -1,5 +1,5 @@
 import { createDb } from "../client.js";
-import { roles, permissions, rolePermissions } from "../schema/index.js";
+import { roles, permissions, rolePermissions, rolePermissionOverrides } from "../schema/index.js";
 import { ROLES, ROLE_LABELS, PERMISSIONS, DEFAULT_ROLE_PERMISSIONS } from "@nmbm/shared";
 import { eq, and } from "drizzle-orm";
 
@@ -17,56 +17,60 @@ export async function seedReference(db: ReturnType<typeof createDb>) {
     .values(ROLES.map((code) => ({ code, label: ROLE_LABELS[code] })))
     .onConflictDoNothing();
 
-  const roleRows = await db.select().from(roles);
-  const permissionRows = await db.select().from(permissions);
-  const roleId = new Map(roleRows.map((r) => [r.code, r.id]));
-  const permissionId = new Map(permissionRows.map((p) => [p.code, p.id]));
-
-  for (const role of ROLES) {
-    const grants = DEFAULT_ROLE_PERMISSIONS[role];
-    if (grants.length === 0) continue;
+  const intended = await intendedGrants(db);
+  for (const [roleId, codes] of intended) {
+    if (codes.size === 0) continue;
     await db
       .insert(rolePermissions)
-      .values(
-        grants.map((code) => ({
-          roleId: roleId.get(role)!,
-          permissionId: permissionId.get(code)!,
-        })),
-      )
+      .values([...codes].map((permissionId) => ({ roleId, permissionId })))
       .onConflictDoNothing();
   }
 
   return { roles: ROLES.length, permissions: PERMISSIONS.length };
 }
 
-// Grants stay in sync with the code: a permission dropped from
-// DEFAULT_ROLE_PERMISSIONS is revoked here too, or the grid in
-// @nmbm/shared stops being the source of truth it claims to be.
-export async function pruneStaleGrants(db: ReturnType<typeof createDb>) {
+// What each of NMBM's roles should hold: the defaults in
+// DEFAULT_ROLE_PERMISSIONS, with any choice NMBM made on the
+// permissions screen laid over them. Their choices win, so a deploy
+// never undoes one; a permission new to the code still reaches the
+// roles it's meant for, because there's no choice about it yet.
+//
+// Only the nine known roles. Anything else in the table isn't the
+// code's to manage (the test suite makes roles of its own).
+export async function intendedGrants(db: ReturnType<typeof createDb>) {
   const roleRows = await db.select().from(roles);
   const permissionRows = await db.select().from(permissions);
-  const codeById = new Map(permissionRows.map((p) => [p.id, p.code]));
+  const permissionId = new Map(permissionRows.map((p) => [p.code, p.id]));
+  const overrides = await db.select().from(rolePermissionOverrides);
 
-  let removed = 0;
+  const intended = new Map<string, Set<string>>();
   for (const role of roleRows) {
-    const intended = new Set<string>(DEFAULT_ROLE_PERMISSIONS[role.code as (typeof ROLES)[number]] ?? []);
-    const current = await db
-      .select()
-      .from(rolePermissions)
-      .where(eq(rolePermissions.roleId, role.id));
+    if (!(ROLES as readonly string[]).includes(role.code)) continue;
+    const grants = new Set(
+      DEFAULT_ROLE_PERMISSIONS[role.code as (typeof ROLES)[number]].map((code) => permissionId.get(code)!),
+    );
+    for (const o of overrides.filter((o) => o.roleId === role.id)) {
+      if (o.granted) grants.add(o.permissionId);
+      else grants.delete(o.permissionId);
+    }
+    intended.set(role.id, grants);
+  }
+  return intended;
+}
+
+// Grants stay in sync with what's intended: a permission dropped from
+// the defaults (and not kept by NMBM) is revoked here too.
+export async function pruneStaleGrants(db: ReturnType<typeof createDb>) {
+  const intended = await intendedGrants(db);
+  let removed = 0;
+  for (const [roleId, keep] of intended) {
+    const current = await db.select().from(rolePermissions).where(eq(rolePermissions.roleId, roleId));
     for (const grant of current) {
-      const code = codeById.get(grant.permissionId);
-      if (code && !intended.has(code)) {
-        await db
-          .delete(rolePermissions)
-          .where(
-            and(
-              eq(rolePermissions.roleId, role.id),
-              eq(rolePermissions.permissionId, grant.permissionId),
-            ),
-          );
-        removed += 1;
-      }
+      if (keep.has(grant.permissionId)) continue;
+      await db
+        .delete(rolePermissions)
+        .where(and(eq(rolePermissions.roleId, roleId), eq(rolePermissions.permissionId, grant.permissionId)));
+      removed += 1;
     }
   }
   return removed;

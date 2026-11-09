@@ -123,3 +123,81 @@ describe("M14: a cohort's life", () => {
     expect(rows.map((r) => r.detail)).toEqual(["running → completed"]);
   });
 });
+
+describe("M14: what completing a program takes is NMBM's to set", () => {
+  // One class held, attended late by one person and excused for another.
+  async function lateAndExcused(programExtra: Record<string, unknown> = {}) {
+    const program = (await manager.post("/api/programs", { name: unique("Rules "), ...programExtra })).body;
+    const c = (await manager.post("/api/cohorts", { programId: program.id, name: unique("C "), startDate: isoDaysAgo(7) })).body;
+    const session = (await manager.post(`/api/cohorts/${c.id}/sessions`, { sessionDate: isoDaysAgo(1) })).body;
+    const people: string[] = [];
+    for (const status of ["late", "excused"]) {
+      const { participantId } = await admit(db, { workerId: chwId, actorId: managerId });
+      const e = (await manager.post(`/api/cohorts/${c.id}/enrollments`, { participantId })).body;
+      await manager.post(`/api/sessions/${session.id}/attendance`, { marks: [{ enrollmentId: e.id, status }] });
+      people.push(e.id as string);
+    }
+    const attended = async () =>
+      ((await manager.get(`/api/cohorts/${c.id}`)).body.roster as { enrollmentId: string; attended: number }[]).map(
+        (r) => [people.indexOf(r.enrollmentId) === 0 ? "late" : "excused", r.attended],
+      );
+    return { program, cohort: c, people, attended };
+  }
+
+  it("counts late but not excused until told otherwise", async () => {
+    const { attended } = await lateAndExcused();
+    expect(Object.fromEntries(await attended())).toEqual({ late: 1, excused: 0 });
+  });
+
+  it("counts what the program says, on the roster and on the participation record", async () => {
+    const { program, people, attended } = await lateAndExcused();
+    const res = await manager.patch(`/api/programs/${program.id}`, { lateCounts: false, excusedCounts: true });
+    expect(res.status).toBe(200);
+    expect(Object.fromEntries(await attended())).toEqual({ late: 0, excused: 1 });
+
+    const record = (await manager.get(`/api/enrollments/${people[1]}/participation`)).body;
+    expect(record).toMatchObject({ attended: 1, countedStatuses: ["present", "excused"] });
+
+    const [entry] = await db
+      .select()
+      .from(auditLog)
+      .where(and(eq(auditLog.entityId, program.id), eq(auditLog.action, "program.updated")));
+    expect(entry.detail).toBe("lateCounts: yes → no; excusedCounts: no → yes");
+  });
+
+  it("gives new cohorts the program's number of sessions, unless the cohort sets its own", async () => {
+    const program = (await manager.post("/api/programs", { name: unique("Twelve "), defaultRequiredSessions: 12 })).body;
+    const make = async (extra: Record<string, unknown> = {}) =>
+      (await manager.post("/api/cohorts", { programId: program.id, name: unique("C "), startDate: isoDaysAgo(0), ...extra })).body;
+    expect((await make()).requiredSessions).toBe(12);
+    expect((await make({ requiredSessions: 8 })).requiredSessions).toBe(8);
+
+    await manager.patch(`/api/programs/${program.id}`, { defaultRequiredSessions: 10 });
+    expect((await make()).requiredSessions).toBe(10);
+  });
+
+  it("edits a cohort after it's made, and keeps its dates in order", async () => {
+    const c = await cohort();
+    const res = await manager.patch(`/api/cohorts/${c.id}`, { requiredSessions: 6, name: "Renamed" });
+    expect(res.body).toMatchObject({ requiredSessions: 6, name: "Renamed" });
+    expect((await manager.patch(`/api/cohorts/${c.id}`, { endDate: isoDaysAgo(30) })).status).toBe(422);
+    // Clearing the number means "no requirement", not zero.
+    expect((await manager.patch(`/api/cohorts/${c.id}`, { requiredSessions: null })).body.requiredSessions).toBeNull();
+  });
+
+  it("retires a program: it takes no new cohorts until reactivated", async () => {
+    const program = (await manager.post("/api/programs", { name: unique("Old ") })).body;
+    await manager.patch(`/api/programs/${program.id}`, { active: false });
+    const attempt = () => manager.post("/api/cohorts", { programId: program.id, name: "Late", startDate: isoDaysAgo(0) });
+    expect((await attempt()).status).toBe(409);
+    await manager.patch(`/api/programs/${program.id}`, { active: true });
+    expect((await attempt()).status).toBe(201);
+  });
+
+  it("is for whoever sets programs up, and won't take a name already in use", async () => {
+    const a = (await manager.post("/api/programs", { name: unique("A ") })).body;
+    const b = (await manager.post("/api/programs", { name: unique("B ") })).body;
+    expect((await chw.patch(`/api/programs/${a.id}`, { excusedCounts: true })).status).toBe(403);
+    expect((await manager.patch(`/api/programs/${b.id}`, { name: a.name })).status).toBe(409);
+  });
+});

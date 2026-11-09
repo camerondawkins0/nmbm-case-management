@@ -199,8 +199,17 @@ change is conditional on the status it was read as, and it's audited.
 A completed or canceled cohort takes no new people and no new class
 dates; attendance can still be corrected after the fact.
 
-A completion threshold is optional on a cohort because NMBM hasn't
-given one. Where it exists, the record reports four states rather than
+What completing a program takes is NMBM's to set, per program:
+present always counts, absent never does, and whether late and excused
+count are switches (`late_counts` on, `excused_counts` off to start;
+`countedStatuses` in `@nmbm/shared` is the one place that decides).
+The program's default number of classes is copied to each new cohort,
+which can change its own. Changing a rule recounts every enrollment
+in the program, past ones included, so the change is audited with
+before and after, and the participation record states the rule in words.
+A retired program keeps its cohorts and records and takes no new cohorts.
+
+A completion threshold is optional because NMBM may leave it blank. Where it exists, the record reports four states rather than
 a pass/fail: a person with perfect attendance in week 7 of 12 has not
 failed anything, and must not be described to a court as though they
 had.
@@ -243,6 +252,22 @@ route does. Two consequences worth keeping:
 - Hiding a nav link or a button is a convenience for the person using
   the app, never the control. The check that matters is on the endpoint.
 
+
+**NMBM own the grid.** `DEFAULT_ROLE_PERMISSIONS` is the starting point;
+the Permissions page (`admin.roles.manage`) changes it.
+
+- A change takes effect on the next request (permissions are read per
+  request) and is audited.
+- It's stored as a difference from the default in
+  `role_permission_overrides`. Setting a box back to its default removes
+  the difference, so later changes to the defaults reach that role again.
+- The release job applies defaults *with* the differences, so a deploy
+  never undoes NMBM's choice, and a permission new to the code still
+  reaches the roles it's meant for.
+- A change is refused if it would leave no *active* person holding
+  `admin.roles.manage` or `admin.users.manage` (`LOCKOUT_PERMISSIONS`):
+  nobody could undo it from the app.
+- Only the nine known roles are managed this way.
 ## Follow-up calls are derived from the closure, and settle once (M12)
 
 - **Nothing about the schedule is stored.** Due dates come from the

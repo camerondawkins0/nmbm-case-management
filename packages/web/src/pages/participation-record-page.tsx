@@ -101,11 +101,19 @@ export default function ParticipationRecordPage() {
         </table>
 
         <p className="mt-4 text-xs text-nmbm-ink/50">
-          Attended {record.attended} · excused {record.excused} · absent {record.absent} · of{" "}
-          {record.sessionsHeld} sessions held. Each mark above was recorded by the named
-          facilitator at the time of the class.
+          Counted as attending {record.attended} · excused {record.excused} · absent {record.absent} ·
+          of {record.sessionsHeld} sessions held. {countingRule(record.countedStatuses)} Each mark
+          above was recorded by the named facilitator at the time of the class.
         </p>
       </article>
     </div>
   );
+}
+
+// The program's own rule, in words, because the reader is outside NMBM
+// and "attended 9" means nothing without knowing what counted.
+function countingRule(counted: ParticipationRecord["countedStatuses"]) {
+  const words = counted.map((s) => (s === "present" ? "present" : s === "late" ? "late" : "excused"));
+  const list = words.length === 1 ? words[0] : `${words.slice(0, -1).join(", ")} and ${words[words.length - 1]}`;
+  return `For this program, ${list} marks count as attending.`;
 }

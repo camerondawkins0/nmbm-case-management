@@ -54,3 +54,17 @@ export const auditLog = pgTable("audit_log", {
   detail: text("detail"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
+
+// NMBM's own decisions about the permission grid, where they differ from
+// the defaults in @nmbm/shared. See migration 0015 and seed/reference.ts.
+export const rolePermissionOverrides = pgTable(
+  "role_permission_overrides",
+  {
+    roleId: uuid("role_id").notNull().references(() => roles.id),
+    permissionId: uuid("permission_id").notNull().references(() => permissions.id),
+    granted: boolean("granted").notNull(),
+    changedById: uuid("changed_by_id").notNull().references(() => users.id),
+    changedAt: timestamp("changed_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => ({ pk: primaryKey({ columns: [t.roleId, t.permissionId] }) }),
+);

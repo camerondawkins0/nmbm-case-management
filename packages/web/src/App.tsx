@@ -24,6 +24,7 @@ import SelfServePage from "./pages/self-serve-page.js";
 import IncomingReferralsPage from "./pages/incoming-referrals-page.js";
 import IncomingReferralPage from "./pages/incoming-referral-page.js";
 import RecordExportPage from "./pages/record-export-page.js";
+import PermissionsPage from "./pages/admin/permissions-page.js";
 
 export default function App() {
   const location = useLocation();
@@ -101,6 +102,7 @@ function StaffApp() {
         <Route path="/feedback" element={<FeedbackPage />} />
         <Route path="/admin/feedback" element={<FeedbackAdminPage />} />
         <Route path="/admin/settings" element={<SettingsPage />} />
+        <Route path="/admin/permissions" element={<PermissionsPage />} />
         <Route path="/follow-ups" element={<FollowUpsPage me={me} />} />
         <Route path="/admin/forms" element={<FormsPage />} />
         <Route path="/admin/forms/:id" element={<FormBuilderPage />} />

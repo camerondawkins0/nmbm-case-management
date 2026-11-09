@@ -1,6 +1,6 @@
 # Map
 
-Where things are. Current as of migration `0014`.
+Where things are. Current as of migration `0015`.
 
 ## Packages
 
@@ -37,7 +37,7 @@ splits out `audit.ts` for the same reason.
 
 ## API routes
 
-90 routes across 17 modules, plus five on the auth plugin and two on the
+94 routes across 17 modules, plus five on the auth plugin and two on the
 local storage stand-in. Every route outside `PUBLIC_BY_DESIGN` carries
 an `authorize()` or `authorizeAny()` preHandler, and the permission it
 requires is named in the file. `test/routes-authorized.test.ts` reads
@@ -53,14 +53,14 @@ the source and fails on any route that has neither — see testing.md.
 | `care-plans` | `POST /api/care-plans`, `PATCH /api/care-plans/:id`, `POST /api/care-plans/:id/submit`, `GET /api/care-plans/awaiting-review`, `POST /api/care-plans/:id/approve`, `POST /api/care-plans/:id/return` |
 | `consents` | `POST /api/consents`, `POST /api/consents/:id/revoke` |
 | `referrals` | `POST /api/referrals`, `POST /api/referrals/:id/outcome` |
-| `programs` | `GET /api/programs`, `POST /api/programs`, `POST /api/cohorts`, `GET /api/cohorts/:id`, `POST /api/cohorts/:id/status` (start, complete, cancel, reopen), `POST /api/cohorts/:id/sessions`, `POST /api/cohorts/:id/enrollments`, `POST /api/enrollments/:id/withdraw`, `POST /api/sessions/:id/attendance`, `GET /api/enrollments/:id/participation` |
+| `programs` | `GET /api/programs`, `POST /api/programs`, `POST /api/cohorts`, `GET /api/cohorts/:id`, `POST /api/cohorts/:id/status` (start, complete, cancel, reopen), `PATCH /api/programs/:id`, `PATCH /api/cohorts/:id`, `POST /api/cohorts/:id/sessions`, `POST /api/cohorts/:id/enrollments`, `POST /api/enrollments/:id/withdraw`, `POST /api/sessions/:id/attendance`, `GET /api/enrollments/:id/participation` |
 | `assessments` | Forms: `GET /api/assessment-forms`, `POST /api/assessment-forms`, `GET /api/assessment-forms/:id`, `POST /api/assessment-forms/:id/drafts`, `POST /api/assessment-forms/:id/active`, `GET /api/assessment-versions/:id`, `PUT /api/assessment-versions/:id/questions` (draft only), `POST /api/assessment-versions/:id/publish`. On a record: `GET /api/participants/:id/assessments`, `POST /api/participants/:id/assessments`, `GET /api/assessments/:id`, `PATCH /api/assessments/:id/answers`, `POST /api/assessments/:id/complete`, `POST /api/assessments/:id/void`. The participant's link: `POST /api/participants/:id/assessment-links` (make one), `POST /api/assessments/:id/link` (replace it), `POST /api/assessments/:id/link/revoke`; and, public by design in `self-serve-routes.ts`, `POST /api/self-serve/:token/unlock`, `GET /api/self-serve/:token`, `PATCH /api/self-serve/:token/answers`, `POST /api/self-serve/:token/submit` |
 | `incoming-referrals` | `GET /api/incoming-referrals?view=open\|outcome_owed\|all`, `GET /api/incoming-referrals/counts`, `POST /api/incoming-referrals`, `GET /api/incoming-referrals/:id`, `POST /api/incoming-referrals/:id/notes`, `POST /api/incoming-referrals/:id/close`, `POST /api/incoming-referrals/:id/link` (to an already-active record), `POST /api/incoming-referrals/:id/outcome-reported`. Admitting from one goes through intake or readmission with `incomingReferralId` |
 | `record-export` | `POST /api/participants/:id/record-export` — the whole record, with a purpose; audited |
 | `documents` | `GET /api/participants/:id/documents`, `POST /api/participants/:id/documents` (returns a signed upload link), `POST /api/documents/:id/confirm`, `GET /api/documents/:id/download-url`, `POST /api/documents/:id/void` |
 | `follow-ups` | `GET /api/follow-ups` (QA's queue), `POST /api/follow-ups` (record a call), `GET /api/follow-ups/re-enrollment-requests` |
 | `dashboard` | `GET /api/dashboard` |
-| `admin` | `GET /api/admin/users`, `GET /api/admin/roles`, `POST /api/admin/users/:id/roles`, `DELETE /api/admin/users/:id/roles/:roleCode`, `POST /api/admin/users/:id/deactivate`, `POST /api/admin/users/:id/reactivate`, `GET /api/admin/audit`, `GET /api/admin/settings`, `PUT /api/admin/settings/:key` |
+| `admin` | `GET /api/admin/users`, `GET /api/admin/roles`, `POST /api/admin/users/:id/roles`, `DELETE /api/admin/users/:id/roles/:roleCode`, `POST /api/admin/users/:id/deactivate`, `POST /api/admin/users/:id/reactivate`, `GET /api/admin/audit`, `GET /api/admin/settings`, `PUT /api/admin/settings/:key`, `GET /api/admin/permissions`, `PUT /api/admin/roles/:role/permissions/:permission` (`admin/permissions.ts`) |
 | `feedback` | `POST /api/feedback`, `GET /api/feedback/mine`, `GET /api/feedback`, `PATCH /api/feedback/:id/status` |
 | `plugins/auth.ts` | `GET /auth/google/login`, `GET /auth/google/callback`, `POST /auth/logout`, and in non-production with `ALLOW_DEV_LOGIN` only: `GET /auth/dev-login`, `GET /auth/dev-login/accounts` |
 | `lib/storage.ts` | `PUT /api/local-storage/*`, `GET /api/local-storage/*` — registered only when there's no `DOCUMENTS_BUCKET` (development and tests); a signed query string is the gate |
@@ -121,6 +121,7 @@ first is behind the session check.
 | `/cohorts/:id` | `cohort-page.tsx` | The M14 grid — sessions across, people down — and the take-attendance panel; flags anyone whose NMBM services have ended. For `programs.manage` (`components/cohort-setup.tsx`): start / complete / cancel / reopen, add class dates, enroll by search, withdraw with a reason |
 | `/enrollments/:id/participation` | `participation-record-page.tsx` | The printable proof a probation officer receives |
 | `/admin/users` | `admin/users-page.tsx` | Staff, roles, deactivation |
+| `/admin/permissions` | `admin/permissions-page.tsx` | The role × permission grid NMBM change themselves; gold dot = differs from the default |
 | `/admin/settings` | `admin/settings-page.tsx` | Settings NMBM change themselves (the former-worker window) |
 | `/feedback` | `feedback-page.tsx` | Report an issue |
 | `/admin/forms` | `admin/forms-page.tsx` | NMBM's forms: which exist, which version is live |
@@ -157,11 +158,11 @@ module layout. `enums.ts` wraps `as const` arrays from `@nmbm/shared` in
 `pgEnum`, so an enum is declared once and used in both places — same
 convention as the WSL system this was adapted from.
 
-32 tables and one view:
+33 tables and one view:
 
 | File | Tables |
 |---|---|
-| `users.ts` | `users`, `roles`, `permissions`, `user_roles`, `role_permissions`, `audit_log` |
+| `users.ts` | `users`, `roles`, `permissions`, `user_roles`, `role_permissions`, `role_permission_overrides`, `audit_log` |
 | `participants.ts` | `participants`, `assignments` |
 | `episodes.ts` | `episodes` |
 | `notes.ts` | `notes` |
@@ -199,6 +200,7 @@ in order in `meta/_journal.json`:
 | `0012_assessment_links` | `assessment_links`, one live link per assessment; `audit_log.actor_user_id` nullable for things a participant did |
 | `0013_incoming_referrals` | The two referral-in tables; checks that admitted has a record and closed has a reason |
 | `0014_cohort_status_canceled` | Renames the cohort status `cancelled` to `canceled` (North American spelling) |
+| `0015_configurable_programs_and_permissions` | Program completion rules (default classes, late/excused count) and `role_permission_overrides` |
 
 ## Seeds
 
@@ -207,8 +209,11 @@ in order in `meta/_journal.json`:
 - `reference.ts` is **required**. It writes the roles, permissions and
   grants that `authorize()` reads, and without it every authenticated
   route returns 403 — which presents as a broken login rather than as
-  missing data. It also revokes grants the code no longer intends, so
-  removing a permission from `DEFAULT_ROLE_PERMISSIONS` actually takes
+  missing data. Each of the nine roles gets the defaults in
+  `DEFAULT_ROLE_PERMISSIONS` with NMBM's own choices
+  (`role_permission_overrides`, made on the Permissions page) laid over
+  them, so a deploy never undoes a choice. It also revokes grants that
+  are neither, so removing a default from the code actually takes
   it away instead of leaving it granted forever.
 - `synthetic.ts` is invented demo data: staff at `@nmbm.example.org`,
   twelve participants whose fixtures each exercise one rule (Irene

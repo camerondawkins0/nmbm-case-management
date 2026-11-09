@@ -179,13 +179,13 @@ that is what every page reads.
 ## What is built
 
 Everything below is running code: a migration, a module, and in most
-cases a page reachable after signing in. Current as of migration `0014`.
+cases a page reachable after signing in. Current as of migration `0015`.
 
 | Area | What works | Where |
 |---|---|---|
 | Deployment | One Docker image for the service and its release job; Cloud Build tests, migrates and deploys; sessions in Postgres so restarts and extra instances don't sign anyone out; the API serves the web build with strict security headers | `Dockerfile`, `cloudbuild.yaml`, `deploy/`, `docs/DEPLOY.md` |
 | Sign-in (M27) | Google OIDC against a named Workspace domain with a one-use `state` token, a fresh session id at sign-in, an idle timeout and a hard ceiling, audited sign-in and sign-out; a login page that says why a sign-in was refused and what to do next; a holding page for accounts with no role; sign-out in the header. Dev login is double-gated behind `NODE_ENV !== "production"` and `ALLOW_DEV_LOGIN` | `plugins/auth.ts`, `pages/login-page.tsx`, `docs/GOOGLE_SETUP.md` |
-| Authorization | Permission codes, never role names, read from the database at request time. A test reads the source and fails on any route with no permission check that isn't listed as public on purpose, with a reason | `plugins/authorize.ts`, `packages/shared/src/permissions.ts`, `test/routes-authorized.test.ts` |
+| Authorization | Permission codes, never role names, read from the database at request time. NMBM change which role holds what on the Permissions page; their choices survive deploys, and a change that would leave nobody able to administer the system is refused. A test reads the source and fails on any route with no permission check that isn't listed as public on purpose, with a reason | `plugins/authorize.ts`, `packages/shared/src/permissions.ts`, `test/routes-authorized.test.ts` |
 | Caseload (U5) | A front-line worker's list, dashboard and participant record are scoped server-side to their own assignments | `lib/caseload.ts` |
 | Participants and intake (M3/M4/R10) | Admission opens the record, the episode and the assignment in one transaction; reassignment; assignable-worker list. The list is active people only. Closed records: all of them for intake and supervisors, and a worker's own former clients for up to 90 days (adjustable downward) | `modules/participants/`, `lib/caseload.ts` |
 | Episodes (M2/M6/R10) | Close — which ends the assignment — and readmission, which opens a new linked episode with a named worker. The payer-conditional disenrollment-warning letter gate | `modules/episodes/` |
@@ -198,7 +198,7 @@ cases a page reachable after signing in. Current as of migration `0014`.
 | Whole-record export | The complete record as one document to print, save as PDF or download as data, for a participant's own request, a legal request, a transfer of care or an audit; restricted, purpose required, audited as a disclosure | `modules/record-export/`, `/participants/:id/export` |
 | Documents (M15/M30) | Scans and photos uploaded from the record straight to a private Cloud Storage bucket on a short-lived signed link, shown only once the server has confirmed the file arrived; optionally linked to the consent form it's a scan of; every opening audited; voided rather than deleted, and a voided file can't be opened | `modules/documents/`, `lib/storage.ts`, `components/documents-section.tsx` |
 | Referrals (M17) | Refuses to send without a usable release and distinguishes the three reasons; records the outcome that came back | `modules/referrals/` |
-| Programs and attendance (M14) | Programs, cohorts, class dates, rosters, whole-roster marking in one request, and a printable participation record, all set up on screen by whoever holds `programs.manage`: new programs and cohorts, class dates, enrolling by search, withdrawing with a reason, and starting, completing, canceling or reopening a cohort. Disenrolled participants stay on the roster, flagged | `modules/programs/` |
+| Programs and attendance (M14) | Programs, cohorts, class dates, rosters, whole-roster marking in one request, and a printable participation record, all set up on screen by whoever holds `programs.manage`, including what completing a program takes (how many classes, and whether late and excused count), which the participation record states: new programs and cohorts, class dates, enrolling by search, withdrawing with a reason, and starting, completing, canceling or reopening a cohort. Disenrolled participants stay on the roster, flagged | `modules/programs/` |
 | Follow-up calls (M12) | QA's queue of 3/5/9/12-month calls, derived from each closed episode's end date; every attempt recorded with who made it; "wants services again" puts the person on intake's list until they're readmitted | `modules/follow-ups/`, `lib/follow-ups.ts`, `/follow-ups` |
 | Readmission search (R10) | Find a record by name or date of birth, limited to what the searcher can open; intake checks for a returning client as the form is filled in, and refuses a likely duplicate unless told it's a different person (audited) | `participants/repository.ts`, `components/participant-search.tsx` |
 | Settings (M31) | Values NMBM's administrator changes without a deploy, audited. One so far: the former-worker access window | `lib/settings.ts`, `/admin/settings` |
@@ -207,7 +207,7 @@ cases a page reachable after signing in. Current as of migration `0014`.
 | Audit (M30) | Append-only, written inside the transaction that performs the action, read-only endpoint | `plugins/audit.ts` |
 | Feedback (M31) | In-app issue reporting and a triage queue, because NMBM has no IT staff | `modules/feedback/`, `docs/SUPPORT.md` |
 
-90 API routes across 17 modules, 32 tables and one view, 22 pages plus
+94 API routes across 17 modules, 33 tables and one view, 23 pages plus
 two holding screens (no role yet; server unreachable).
 `docs/agent/map.md` lists them route by route and page by page.
 
@@ -239,7 +239,7 @@ Two different reasons, and they shouldn't be reported as one number.
 
 **Not blocked — ours to do:**
 
-- **Test coverage stops at the API.** 217 tests run through the real
+- **Test coverage stops at the API.** 230 tests run through the real
   server against a real Postgres on every push, covering every rule in
   `docs/agent/invariants.md`, and each has been proved by breaking the
   rule and watching it fail. The web app has no automated tests; its

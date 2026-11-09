@@ -17,8 +17,7 @@ export default function ProgramsPage({ me }: { me: Me }) {
   const [programs, setPrograms] = useState<ProgramSummary[] | null>(null);
   const [workers, setWorkers] = useState<AssignableWorker[]>([]);
   const [adding, setAdding] = useState(false);
-  const [name, setName] = useState("");
-  const [description, setDescription] = useState("");
+  const [editing, setEditing] = useState<string | null>(null);
   const [cohortFor, setCohortFor] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
@@ -79,40 +78,16 @@ export default function ProgramsPage({ me }: { me: Me }) {
       )}
 
       {adding && (
-        <form
-          className="mt-4 flex flex-col gap-3 rounded border border-nmbm-ink/15 p-4"
-          onSubmit={(e) => {
-            e.preventDefault();
+        <ProgramForm
+          submitLabel="Save"
+          onCancel={() => setAdding(false)}
+          onSave={(body) =>
             run(
-              () =>
-                api("/api/programs", {
-                  method: "POST",
-                  body: JSON.stringify({ name, description: description.trim() || undefined }),
-                }),
-              `${name} added. Add its first cohort below.`,
-            ).then((ok) => {
-              if (!ok) return;
-              setAdding(false);
-              setName("");
-              setDescription("");
-            });
-          }}
-        >
-          <label className="flex flex-col gap-1 text-sm">
-            Name
-            <input required value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. Parenting Skills" className={inputClass} />
-          </label>
-          <label className="flex flex-col gap-1 text-sm">
-            Description (optional)
-            <input value={description} onChange={(e) => setDescription(e.target.value)} className={inputClass} />
-          </label>
-          <div className="flex gap-2">
-            <button className="rounded bg-nmbm-ink px-4 py-1.5 text-sm font-medium text-nmbm-paper">Save</button>
-            <button type="button" onClick={() => setAdding(false)} className="rounded border border-nmbm-ink/30 px-4 py-1.5 text-sm">
-              Cancel
-            </button>
-          </div>
-        </form>
+              () => api("/api/programs", { method: "POST", body: JSON.stringify(body) }),
+              `${body.name} added. Add its first cohort below.`,
+            ).then((ok) => ok && setAdding(false))
+          }
+        />
       )}
 
       {programs.length === 0 && !adding && <p className="mt-6 text-sm text-nmbm-ink/60">No programs yet.</p>}
@@ -122,9 +97,31 @@ export default function ProgramsPage({ me }: { me: Me }) {
           <li key={program.id} className="rounded border border-nmbm-ink/10 p-4">
             <div className="flex flex-wrap items-baseline justify-between gap-2">
               <span className="font-medium text-nmbm-ink">{program.name}</span>
-              {!program.active && <Pill tone="muted">Inactive</Pill>}
+              {!program.active && <Pill tone="muted">Retired</Pill>}
             </div>
             {program.description && <p className="mt-1 text-sm text-nmbm-ink/60">{program.description}</p>}
+            <p className="mt-1 text-xs text-nmbm-ink/60">{ruleSummary(program)}</p>
+            {manage && editing !== program.id && (
+              <button
+                onClick={() => setEditing(program.id)}
+                className="mt-1 text-xs text-nmbm-ink/60 underline underline-offset-2 hover:text-nmbm-ink"
+              >
+                Edit program and completion rules
+              </button>
+            )}
+            {editing === program.id && (
+              <ProgramForm
+                program={program}
+                submitLabel="Save changes"
+                onCancel={() => setEditing(null)}
+                onSave={(body) =>
+                  run(
+                    () => api(`/api/programs/${program.id}`, { method: "PATCH", body: JSON.stringify(body) }),
+                    `${body.name} saved.`,
+                  ).then((ok) => ok && setEditing(null))
+                }
+              />
+            )}
 
             {program.cohorts.length === 0 ? (
               <p className="mt-3 text-sm text-nmbm-ink/50">No cohorts yet.</p>
@@ -156,9 +153,11 @@ export default function ProgramsPage({ me }: { me: Me }) {
             )}
 
             {manage &&
+              program.active &&
               (cohortFor === program.id ? (
                 <CohortForm
                   programId={program.id}
+                  defaultSessions={program.defaultRequiredSessions}
                   workers={workers}
                   onCancel={() => setCohortFor(null)}
                   onSave={(body) =>
@@ -185,11 +184,13 @@ export default function ProgramsPage({ me }: { me: Me }) {
 
 function CohortForm({
   programId,
+  defaultSessions,
   workers,
   onSave,
   onCancel,
 }: {
   programId: string;
+  defaultSessions: number | null;
   workers: AssignableWorker[];
   onSave: (body: Record<string, unknown>) => void;
   onCancel: () => void;
@@ -199,7 +200,7 @@ function CohortForm({
     startDate: new Date().toISOString().slice(0, 10),
     endDate: "",
     facilitatorId: "",
-    requiredSessions: "",
+    requiredSessions: defaultSessions ? String(defaultSessions) : "",
   });
   const set = (key: keyof typeof form) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) =>
     setForm({ ...form, [key]: e.target.value });
@@ -248,6 +249,110 @@ function CohortForm({
       </label>
       <div className="flex gap-2 sm:col-span-2">
         <button className="rounded bg-nmbm-ink px-4 py-1.5 text-sm font-medium text-nmbm-paper">Add cohort</button>
+        <button type="button" onClick={onCancel} className="rounded border border-nmbm-ink/30 px-4 py-1.5 text-sm">
+          Cancel
+        </button>
+      </div>
+    </form>
+  );
+}
+
+type ProgramRow = ProgramSummary;
+
+// The program's completion rule, as a sentence: the thing NMBM decide.
+function ruleSummary(p: Pick<ProgramRow, "defaultRequiredSessions" | "lateCounts" | "excusedCounts">) {
+  const counted = ["present", p.lateCounts && "late", p.excusedCounts && "excused"].filter(Boolean).join(", ");
+  const sessions = p.defaultRequiredSessions
+    ? `New cohorts need ${p.defaultRequiredSessions} classes to complete`
+    : "No set number of classes to complete";
+  return `${sessions} · counted as attending: ${counted}.`;
+}
+
+function ProgramForm({
+  program,
+  submitLabel,
+  onSave,
+  onCancel,
+}: {
+  program?: ProgramRow;
+  submitLabel: string;
+  onSave: (body: {
+    name: string;
+    description?: string | null;
+    defaultRequiredSessions: number | null;
+    lateCounts: boolean;
+    excusedCounts: boolean;
+    active?: boolean;
+  }) => void;
+  onCancel: () => void;
+}) {
+  const [form, setForm] = useState({
+    name: program?.name ?? "",
+    description: program?.description ?? "",
+    defaultRequiredSessions: program?.defaultRequiredSessions ? String(program.defaultRequiredSessions) : "",
+    lateCounts: program?.lateCounts ?? true,
+    excusedCounts: program?.excusedCounts ?? false,
+    active: program?.active ?? true,
+  });
+  return (
+    <form
+      className="mt-3 grid gap-3 rounded border border-nmbm-ink/15 p-3 sm:grid-cols-2"
+      onSubmit={(e) => {
+        e.preventDefault();
+        onSave({
+          name: form.name.trim(),
+          // A new program sends no description rather than an empty one.
+          description: program ? form.description.trim() || null : form.description.trim() || undefined,
+          defaultRequiredSessions: form.defaultRequiredSessions ? Number(form.defaultRequiredSessions) : null,
+          lateCounts: form.lateCounts,
+          excusedCounts: form.excusedCounts,
+          ...(program ? { active: form.active } : {}),
+        });
+      }}
+    >
+      <label className="flex flex-col gap-1 text-sm">
+        Name
+        <input required value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="e.g. Parenting Skills" className={inputClass} />
+      </label>
+      <label className="flex flex-col gap-1 text-sm">
+        Description (optional)
+        <input value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} className={inputClass} />
+      </label>
+      <fieldset className="flex flex-col gap-2 text-sm sm:col-span-2">
+        <legend className="mb-1 font-medium">What completing it takes</legend>
+        <label className="flex flex-wrap items-center gap-2">
+          Classes needed to complete
+          <input
+            type="number"
+            min={1}
+            value={form.defaultRequiredSessions}
+            onChange={(e) => setForm({ ...form, defaultRequiredSessions: e.target.value })}
+            placeholder="none set"
+            className={`${inputClass} w-28`}
+          />
+          <span className="text-xs text-nmbm-ink/50">The starting number for new cohorts; each cohort can change its own.</span>
+        </label>
+        <label className="flex items-center gap-2">
+          <input type="checkbox" checked={form.lateCounts} onChange={(e) => setForm({ ...form, lateCounts: e.target.checked })} />
+          A late arrival counts as attending
+        </label>
+        <label className="flex items-center gap-2">
+          <input type="checkbox" checked={form.excusedCounts} onChange={(e) => setForm({ ...form, excusedCounts: e.target.checked })} />
+          An excused absence counts as attending
+        </label>
+        <p className="text-xs text-nmbm-ink/50">
+          Present always counts and an unexcused absence never does. Changing these recounts every
+          enrollment in the program, past ones included, and the change is logged.
+        </p>
+      </fieldset>
+      {program && (
+        <label className="flex items-center gap-2 text-sm sm:col-span-2">
+          <input type="checkbox" checked={form.active} onChange={(e) => setForm({ ...form, active: e.target.checked })} />
+          Still offered (a retired program keeps its cohorts and records but takes no new cohorts)
+        </label>
+      )}
+      <div className="flex gap-2 sm:col-span-2">
+        <button className="rounded bg-nmbm-ink px-4 py-1.5 text-sm font-medium text-nmbm-paper">{submitLabel}</button>
         <button type="button" onClick={onCancel} className="rounded border border-nmbm-ink/30 px-4 py-1.5 text-sm">
           Cancel
         </button>

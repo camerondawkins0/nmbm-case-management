@@ -44,8 +44,8 @@ from a ticket. Submitters learn something happened when the status
 moves, not because a decision is explained back to them individually.
 
 Whether NMBM's own admin should also see this queue, or whether it
-should be the maintainer's channel alone, is still an open choice — it's
-one line in `DEFAULT_ROLE_PERMISSIONS`.
+should be the maintainer's channel alone, is NMBM's choice — it's the
+"Triage feedback" box on the Permissions page.
 
 ## Why not email or a notification pipeline
 

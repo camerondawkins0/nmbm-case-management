@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { api } from "../lib/api.js";
-import type { CohortDetail } from "../lib/types.js";
+import type { AssignableWorker, CohortDetail } from "../lib/types.js";
 import { useParticipantSearch, parseSearch } from "./participant-search.js";
 
 const inputClass = "rounded border border-nmbm-ink/20 px-2 py-1.5 text-sm";
@@ -167,3 +167,88 @@ export function WithdrawButton({ enrollmentId, name, act }: { enrollmentId: stri
   );
 }
 
+
+// A cohort's own details, after it's made. The number of classes is
+// this cohort's, starting from the program's default; blank means no
+// set requirement, and the record then reports attendance without a
+// verdict.
+export function CohortDetailsForm({
+  cohort,
+  act,
+  onDone,
+}: {
+  cohort: CohortDetail["cohort"];
+  act: Act;
+  onDone: () => void;
+}) {
+  const [workers, setWorkers] = useState<AssignableWorker[]>([]);
+  const [form, setForm] = useState({
+    name: cohort.name,
+    startDate: cohort.startDate,
+    endDate: cohort.endDate ?? "",
+    facilitatorId: cohort.facilitatorId ?? "",
+    requiredSessions: cohort.requiredSessions ? String(cohort.requiredSessions) : "",
+  });
+  useEffect(() => {
+    api<AssignableWorker[]>("/api/participants/assignable-workers").then(setWorkers).catch(() => setWorkers([]));
+  }, []);
+  const set = (key: keyof typeof form) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) =>
+    setForm({ ...form, [key]: e.target.value });
+
+  return (
+    <form
+      className="mt-4 grid gap-3 rounded border border-nmbm-ink/15 p-4 sm:grid-cols-2"
+      onSubmit={(e) => {
+        e.preventDefault();
+        act(
+          () =>
+            api(`/api/cohorts/${cohort.id}`, {
+              method: "PATCH",
+              body: JSON.stringify({
+                name: form.name.trim(),
+                startDate: form.startDate,
+                endDate: form.endDate || null,
+                facilitatorId: form.facilitatorId || null,
+                requiredSessions: form.requiredSessions ? Number(form.requiredSessions) : null,
+              }),
+            }),
+          "Cohort details saved.",
+        ).then((ok) => ok && onDone());
+      }}
+    >
+      <label className="flex flex-col gap-1 text-sm sm:col-span-2">
+        Cohort name
+        <input required value={form.name} onChange={set("name")} className={inputClass} />
+      </label>
+      <label className="flex flex-col gap-1 text-sm">
+        Starts
+        <input type="date" required value={form.startDate} onChange={set("startDate")} className={inputClass} />
+      </label>
+      <label className="flex flex-col gap-1 text-sm">
+        Ends (optional)
+        <input type="date" value={form.endDate} min={form.startDate} onChange={set("endDate")} className={inputClass} />
+      </label>
+      <label className="flex flex-col gap-1 text-sm">
+        Facilitator
+        <select value={form.facilitatorId} onChange={set("facilitatorId")} className={inputClass}>
+          <option value="">Not set</option>
+          {workers.map((w) => (
+            <option key={w.id} value={w.id}>
+              {w.displayName}
+            </option>
+          ))}
+        </select>
+      </label>
+      <label className="flex flex-col gap-1 text-sm">
+        Classes needed to complete
+        <input type="number" min={1} value={form.requiredSessions} onChange={set("requiredSessions")} placeholder="none set" className={inputClass} />
+      </label>
+      <div className="flex gap-2 sm:col-span-2">
+        <button className="rounded bg-nmbm-ink px-4 py-1.5 text-sm font-medium text-nmbm-paper">Save</button>
+        <button type="button" onClick={onDone} className="rounded border border-nmbm-ink/30 px-4 py-1.5 text-sm">
+          Cancel
+        </button>
+      </div>
+    </form>
+  );
+}

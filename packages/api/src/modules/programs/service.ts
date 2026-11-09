@@ -12,12 +12,14 @@ import {
 import { eq, and, desc, asc, inArray, sql } from "drizzle-orm";
 import type {
   ProgramCreate,
+  ProgramUpdate,
+  CohortUpdate,
   CohortCreate,
   SessionCreate,
   AttendanceMark,
   AttendanceStatus,
 } from "@nmbm/shared";
-import { ATTENDED_STATUSES, COHORT_STATUS_CHANGES } from "@nmbm/shared";
+import { COHORT_STATUS_CHANGES, countedStatuses } from "@nmbm/shared";
 import { notFound, conflict, badRequest, unprocessable } from "../../plugins/errors.js";
 import { writeAudit } from "../../plugins/audit.js";
 
@@ -28,6 +30,9 @@ export async function listPrograms(db: Db) {
       name: programs.name,
       description: programs.description,
       active: programs.active,
+      defaultRequiredSessions: programs.defaultRequiredSessions,
+      lateCounts: programs.lateCounts,
+      excusedCounts: programs.excusedCounts,
       cohortId: programCohorts.id,
       cohortName: programCohorts.name,
       cohortStatus: programCohorts.status,
@@ -46,6 +51,9 @@ export async function listPrograms(db: Db) {
     name: string;
     description: string | null;
     active: boolean;
+    defaultRequiredSessions: number | null;
+    lateCounts: boolean;
+    excusedCounts: boolean;
     cohorts: {
       id: string;
       name: string;
@@ -63,6 +71,9 @@ export async function listPrograms(db: Db) {
       name: row.name,
       description: row.description,
       active: row.active,
+      defaultRequiredSessions: row.defaultRequiredSessions,
+      lateCounts: row.lateCounts,
+      excusedCounts: row.excusedCounts,
       cohorts: [],
     };
     if (row.cohortId && row.cohortName && row.startDate) {
@@ -96,9 +107,77 @@ export async function createProgram(db: Db, input: ProgramCreate, actorId: strin
   return row;
 }
 
+// What changed, in words, for the audit line: "late counts: yes → no".
+function describeChanges(before: Record<string, unknown>, after: Record<string, unknown>) {
+  const shown = (v: unknown) => (v === null || v === undefined || v === "" ? "none" : v === true ? "yes" : v === false ? "no" : String(v));
+  return Object.keys(after)
+    .filter((k) => after[k] !== undefined && shown(before[k]) !== shown(after[k]))
+    .map((k) => `${k}: ${shown(before[k])} → ${shown(after[k])}`)
+    .join("; ");
+}
+
+export async function updateProgram(db: Db, id: string, input: ProgramUpdate, actorId: string) {
+  const [program] = await db.select().from(programs).where(eq(programs.id, id));
+  if (!program) throw notFound("Program not found");
+  if (input.name && input.name !== program.name) {
+    const [taken] = await db.select().from(programs).where(eq(programs.name, input.name));
+    if (taken) throw conflict("A program with that name already exists");
+  }
+  const changes = {
+    name: input.name,
+    description: input.description === undefined ? undefined : input.description || null,
+    active: input.active,
+    defaultRequiredSessions: input.defaultRequiredSessions,
+    lateCounts: input.lateCounts,
+    excusedCounts: input.excusedCounts,
+  };
+  const set = Object.fromEntries(Object.entries(changes).filter(([, v]) => v !== undefined));
+  const [row] = await db.update(programs).set(set).where(eq(programs.id, id)).returning();
+  await writeAudit(db, {
+    actorUserId: actorId,
+    action: "program.updated",
+    entityType: "program",
+    entityId: id,
+    // Changing what counts changes every enrollment's count, past ones
+    // included, so who changed it and when has to be answerable.
+    detail: describeChanges(program, set) || "no change",
+  });
+  return row;
+}
+
+export async function updateCohort(db: Db, id: string, input: CohortUpdate, actorId: string) {
+  const cohort = await loadCohort(db, id);
+  const startDate = input.startDate ?? cohort.startDate;
+  const endDate = input.endDate === undefined ? cohort.endDate : input.endDate;
+  if (endDate && endDate < startDate) throw unprocessable("A cohort can't end before it starts");
+  if (input.facilitatorId) {
+    const [person] = await db.select().from(users).where(eq(users.id, input.facilitatorId));
+    if (!person) throw notFound("Facilitator not found");
+  }
+  const set = Object.fromEntries(
+    Object.entries({
+      name: input.name,
+      startDate: input.startDate,
+      endDate: input.endDate === undefined ? undefined : input.endDate ?? null,
+      facilitatorId: input.facilitatorId === undefined ? undefined : input.facilitatorId ?? null,
+      requiredSessions: input.requiredSessions === undefined ? undefined : input.requiredSessions ?? null,
+    }).filter(([, v]) => v !== undefined),
+  );
+  const [row] = await db.update(programCohorts).set(set).where(eq(programCohorts.id, id)).returning();
+  await writeAudit(db, {
+    actorUserId: actorId,
+    action: "cohort.updated",
+    entityType: "cohort",
+    entityId: id,
+    detail: describeChanges(cohort, set) || "no change",
+  });
+  return row;
+}
+
 export async function createCohort(db: Db, input: CohortCreate, actorId: string) {
   const [program] = await db.select().from(programs).where(eq(programs.id, input.programId));
   if (!program) throw notFound("Program not found");
+  if (!program.active) throw conflict("That program has been retired — reactivate it to add a cohort");
   if (input.endDate && input.endDate < input.startDate) {
     throw unprocessable("A cohort can't end before it starts");
   }
@@ -111,7 +190,8 @@ export async function createCohort(db: Db, input: CohortCreate, actorId: string)
       startDate: input.startDate,
       endDate: input.endDate ?? null,
       facilitatorId: input.facilitatorId ?? null,
-      requiredSessions: input.requiredSessions ?? null,
+      // The program's default unless this cohort says otherwise.
+      requiredSessions: input.requiredSessions ?? program.defaultRequiredSessions ?? null,
       status: "running",
     })
     .returning();
@@ -244,6 +324,7 @@ export async function withdraw(db: Db, enrollmentId: string, reason: string, act
 export async function getCohort(db: Db, cohortId: string) {
   const cohort = await loadCohort(db, cohortId);
   const [program] = await db.select().from(programs).where(eq(programs.id, cohort.programId));
+  const counted = countedStatuses(program);
 
   const sessions = await db
     .select()
@@ -292,12 +373,11 @@ export async function getCohort(db: Db, cohortId: string) {
 
   return {
     cohort: { ...cohort, programName: program?.name ?? "" },
+    countedStatuses: counted,
     sessions,
     roster: roster.map((person) => {
       const theirs = marks.filter((m) => m.enrollmentId === person.enrollmentId);
-      const attended = theirs.filter((m) =>
-        ATTENDED_STATUSES.includes(m.status as AttendanceStatus),
-      ).length;
+      const attended = theirs.filter((m) => counted.includes(m.status as AttendanceStatus)).length;
       return {
         ...person,
         attended,
@@ -327,6 +407,8 @@ export async function participationRecord(db: Db, enrollmentId: string) {
       cohortName: programCohorts.name,
       requiredSessions: programCohorts.requiredSessions,
       programName: programs.name,
+      lateCounts: programs.lateCounts,
+      excusedCounts: programs.excusedCounts,
     })
     .from(cohortEnrollments)
     .innerJoin(participants, eq(participants.id, cohortEnrollments.participantId))
@@ -350,9 +432,10 @@ export async function participationRecord(db: Db, enrollmentId: string) {
     .where(eq(sessionAttendance.enrollmentId, enrollmentId))
     .orderBy(asc(cohortSessions.sessionDate));
 
-  const attended = rows.filter((r) =>
-    ATTENDED_STATUSES.includes(r.status as AttendanceStatus),
-  ).length;
+  // What counts is the program's rule, and the record says which rule,
+  // so whoever reads it knows what "attended" means here.
+  const counted = countedStatuses(enrollment);
+  const attended = rows.filter((r) => counted.includes(r.status as AttendanceStatus)).length;
 
   const sessionsHeld = await db
     .select({ id: cohortSessions.id })
@@ -362,6 +445,7 @@ export async function participationRecord(db: Db, enrollmentId: string) {
   return {
     enrollment,
     sessions: rows,
+    countedStatuses: counted,
     attended,
     excused: rows.filter((r) => r.status === "excused").length,
     absent: rows.filter((r) => r.status === "absent").length,

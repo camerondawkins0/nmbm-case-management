@@ -431,6 +431,8 @@ async function main() {
     .values({
       name: "Anger Management",
       description: "Weekly group. Attendance is evidence for probation officers and the courts.",
+      // A placeholder: NMBM set the real number on the Programs page.
+      defaultRequiredSessions: 12,
     })
     .returning();
   const [domesticViolence] = await db

@@ -1,6 +1,6 @@
 # Testing
 
-217 tests in `packages/api/test/`, run by vitest against a real Postgres.
+230 tests in `packages/api/test/`, run by vitest against a real Postgres.
 CI runs them on every push with a Postgres 16 service.
 
 ```bash
@@ -33,6 +33,7 @@ dev-login route, and assert on HTTP responses.
 | `disenrollment.test.ts` | R10: off the caseload on close, closed-record access (intake, last worker, window and its 90-day cap), readmission starting a fresh run |
 | `attendance.test.ts` | M14 whole-roster marking, correction not duplication, off-roster refusal, recorder names, disenrolled people flagged not withdrawn |
 | `sign-off.test.ts` | U6 notes and care plans reviewed by someone other than the author; a returned note listed to its author only, revised back into the queue without the old reason, by its author only, never once approved |
+| `permissions.test.ts` | Who can change the grid; a grant or removal working on the next request; back to default leaving no stored difference; NMBM's choices surviving the real release seed; the lockout guard, and deactivated people not counting toward it; unknown roles and permissions; audit |
 | `program-setup.test.ts` | Who can set programs up; duplicate program names; dates in order; dates, roster and withdrawal keeping attendance; enrollment scoped to who the enroller can see; the cohort status table, closed cohorts refusing people and dates, reopening, canceled final, audit |
 | `follow-up-schedule.test.ts` | M12 date arithmetic and milestone states, no database |
 | `follow-ups.test.ts` | M12 queue, recording calls, one result per milestone, re-enrollment requests, readmission stopping the schedule |
@@ -104,6 +105,8 @@ test.
 | Outcome reported twice | incoming-referrals — only with both guards broken: "is an outcome owed" refuses first, the update's `outcome_reported_at is null` is the race guard |
 | Workers able to export; "other" without words; export unaudited or audited without the purpose; answers as stored codes; export unscoped; notes left out | record-export |
 | Outbound referral outcome not caseload-scoped | consents-referrals — a real gap found while building referrals in; fixed with this test |
+| Lockout guard removed; deactivated people counted; choices not remembered; back-to-default keeping a stale choice; grants or removals waiting for a deploy; unaudited; directors able to change permissions; the release seed ignoring NMBM's choices | permissions |
+| Late always counting; excused never counting; the participation record ignoring the program's rule; cohorts ignoring the program default; retired programs taking cohorts; program changes unexplained in the audit; an edited cohort ending before it starts; renaming onto a taken name | program-setup |
 | Any status change allowed; canceled reopenable; running → running; no reopening; dates on a closed cohort; a cohort ending before it starts; status change unaudited; enrollment unscoped; workers setting up programs; withdrawal losing its reason | program-setup |
 | Returned list showing everyone's; revision keeping the old reason or not requeueing; anyone revising; approved notes revisable | sign-off |
 | CSV guard removed; plain numbers guarded; carriage return unquoted; headers unguarded | csv |

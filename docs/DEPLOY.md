@@ -10,7 +10,7 @@ tests, migrates and deploys — once the trigger below exists.
 | `Dockerfile` | One image for both the service and the release job |
 | `cloudbuild.yaml` | Test → build image → push → migrate and seed grants → deploy |
 | `deploy/setup-gcp.sh` | One-time: registry, Cloud SQL, documents bucket, secrets, service accounts |
-| `packages/db/src/release.ts` | The release job: migrations, then roles and grants |
+| `packages/db/src/release.ts` | The release job: migrations, then roles and grants (defaults plus NMBM's own changes from the Permissions page, which a deploy never undoes) |
 | `packages/db/src/grant-role.ts` | Gives the first administrator their role |
 
 ## What has and hasn't been verified

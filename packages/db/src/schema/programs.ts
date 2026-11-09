@@ -11,6 +11,10 @@ export const programs = pgTable("programs", {
   name: text("name").notNull().unique(),
   description: text("description"),
   active: boolean("active").notNull().default(true),
+  // What completing it takes — NMBM's to set. See migration 0015.
+  defaultRequiredSessions: integer("default_required_sessions"),
+  lateCounts: boolean("late_counts").notNull().default(true),
+  excusedCounts: boolean("excused_counts").notNull().default(false),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 

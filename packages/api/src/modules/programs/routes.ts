@@ -7,6 +7,8 @@ import {
   cohortEnrollSchema,
   cohortWithdrawSchema,
   cohortStatusSchema,
+  programUpdateSchema,
+  cohortUpdateSchema,
   attendanceMarkSchema,
 } from "@nmbm/shared";
 import { authorize, authorizeAny, CAN_READ_PARTICIPANTS } from "../../plugins/authorize.js";
@@ -34,6 +36,25 @@ export default async function programRoutes(fastify: FastifyInstance, opts: { db
       const program = await service.createProgram(db, input, request.currentUser!.id);
       reply.code(201);
       return program;
+    },
+  );
+
+  // What completing it takes, its name, whether it's still offered.
+  fastify.patch<{ Params: { id: string } }>(
+    "/api/programs/:id",
+    { preHandler: authorize("programs.manage") },
+    async (request) => {
+      const input = programUpdateSchema.parse(request.body);
+      return service.updateProgram(db, request.params.id, input, request.currentUser!.id);
+    },
+  );
+
+  fastify.patch<{ Params: { id: string } }>(
+    "/api/cohorts/:id",
+    { preHandler: authorize("programs.manage") },
+    async (request) => {
+      const input = cohortUpdateSchema.parse(request.body);
+      return service.updateCohort(db, request.params.id, input, request.currentUser!.id);
     },
   );
 

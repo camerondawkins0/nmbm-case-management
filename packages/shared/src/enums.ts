@@ -122,9 +122,16 @@ export const ATTENDANCE_STATUSES = ["present", "late", "excused", "absent"] as c
 export type AttendanceStatus = (typeof ATTENDANCE_STATUSES)[number];
 
 // M14: "the PO's or whomever will need proof the person participated."
-// Present and late both count as having attended; excused and absent
-// don't, though excused is reported separately rather than hidden.
-export const ATTENDED_STATUSES: AttendanceStatus[] = ["present", "late"];
+// Which marks count toward completing a program is NMBM's call, set
+// per program: present always counts, absent never does, and late and
+// excused are each a switch (late on, excused off unless changed).
+export function countedStatuses(rules: { lateCounts: boolean; excusedCounts: boolean }): AttendanceStatus[] {
+  return [
+    "present",
+    ...(rules.lateCounts ? (["late"] as const) : []),
+    ...(rules.excusedCounts ? (["excused"] as const) : []),
+  ];
+}
 
 // NMBM has no dedicated IT/dev staff (discovery M31) — every logged-in
 // user can submit a ticket, and it's triaged externally. See

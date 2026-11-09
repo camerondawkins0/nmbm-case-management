@@ -154,6 +154,9 @@ export type ProgramSummary = {
   name: string;
   description: string | null;
   active: boolean;
+  defaultRequiredSessions: number | null;
+  lateCounts: boolean;
+  excusedCounts: boolean;
   cohorts: {
     id: string;
     name: string;
@@ -174,7 +177,9 @@ export type CohortDetail = {
     endDate: string | null;
     status: CohortStatus;
     requiredSessions: number | null;
+    facilitatorId: string | null;
   };
+  countedStatuses: AttendanceStatus[];
   sessions: { id: string; sessionDate: string; topic: string | null }[];
   roster: {
     enrollmentId: string;
@@ -218,6 +223,8 @@ export type ParticipationRecord = {
     recordedAt: string;
     recordedByName: string;
   }[];
+  // Which marks this program counts as attending: NMBM set it per program.
+  countedStatuses: AttendanceStatus[];
   attended: number;
   excused: number;
   absent: number;
@@ -498,6 +505,14 @@ export type Me = {
 };
 
 // A note a reviewer sent back to its author, with why (U6).
+export type PermissionGrid = {
+  roles: { code: string; label: string }[];
+  permissions: { code: Permission; group: string; label: string; description: string }[];
+  grants: Record<string, Permission[]>;
+  defaults: Record<string, Permission[]>;
+  changes: { role: string; permission: Permission; changedAt: string; changedByName: string }[];
+};
+
 export type ReturnedNote = {
   id: string;
   body: string;

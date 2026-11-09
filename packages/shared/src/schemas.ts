@@ -152,10 +152,40 @@ export const referralOutcomeSchema = z.object({
 export type ReferralOutcome = z.infer<typeof referralOutcomeSchema>;
 
 // M14: a program, and one run of it.
+// What completing a program takes is NMBM's to set (M14): how many
+// classes, and whether late and excused marks count toward that.
+const programRules = {
+  defaultRequiredSessions: z.number().int().positive().max(200).nullish(),
+  lateCounts: z.boolean().optional(),
+  excusedCounts: z.boolean().optional(),
+};
+
 export const programCreateSchema = z.object({
   name: z.string().min(1).max(120),
   description: z.string().min(1).optional(),
+  ...programRules,
 });
+
+export const programUpdateSchema = z
+  .object({
+    name: z.string().trim().min(1).max(120).optional(),
+    description: z.string().trim().max(2000).nullish(),
+    active: z.boolean().optional(),
+    ...programRules,
+  })
+  .refine((v) => Object.keys(v).length > 0, { message: "Nothing to change" });
+export type ProgramUpdate = z.infer<typeof programUpdateSchema>;
+
+export const cohortUpdateSchema = z
+  .object({
+    name: z.string().trim().min(1).max(160).optional(),
+    startDate: z.string().date().optional(),
+    endDate: z.string().date().nullish(),
+    facilitatorId: z.string().uuid().nullish(),
+    requiredSessions: z.number().int().positive().max(200).nullish(),
+  })
+  .refine((v) => Object.keys(v).length > 0, { message: "Nothing to change" });
+export type CohortUpdate = z.infer<typeof cohortUpdateSchema>;
 export type ProgramCreate = z.infer<typeof programCreateSchema>;
 
 export const cohortCreateSchema = z.object({
@@ -180,6 +210,8 @@ export const COHORT_STATUS_CHANGES: Record<string, readonly string[]> = {
   completed: ["running"],
   canceled: [],
 };
+
+export const rolePermissionSchema = z.object({ granted: z.boolean() });
 
 export const cohortStatusSchema = z.object({
   status: z.enum(["running", "completed", "canceled"]),

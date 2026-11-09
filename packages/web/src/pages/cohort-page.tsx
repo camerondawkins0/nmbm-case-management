@@ -5,7 +5,7 @@ import { can } from "../lib/use-me.js";
 import type { AttendanceStatus } from "@nmbm/shared";
 import type { CohortDetail, Me } from "../lib/types.js";
 import { Pill } from "../components/flags.js";
-import { AddClassDate, CohortStatusActions, EnrollPanel, WithdrawButton } from "../components/cohort-setup.js";
+import { AddClassDate, CohortDetailsForm, CohortStatusActions, EnrollPanel, WithdrawButton } from "../components/cohort-setup.js";
 
 const MARKS: { value: AttendanceStatus; label: string; short: string }[] = [
   { value: "present", label: "Present", short: "P" },
@@ -35,6 +35,7 @@ export default function CohortPage({ me }: { me: Me }) {
   const [takingFor, setTakingFor] = useState<string | null>(null);
   const [draft, setDraft] = useState<Record<string, AttendanceStatus>>({});
   const [busy, setBusy] = useState(false);
+  const [editingDetails, setEditingDetails] = useState(false);
 
   const load = useCallback(() => {
     if (!id) return;
@@ -122,6 +123,17 @@ export default function CohortPage({ me }: { me: Me }) {
             {data.cohort.startDate} · {data.sessions.length} class date(s)
             {data.cohort.requiredSessions && ` · ${data.cohort.requiredSessions} needed to complete`}
           </p>
+          <p className="text-xs text-nmbm-ink/50">
+            Counted as attending: {data.countedStatuses.join(", ")} (set on the program)
+          </p>
+          {manage && !editingDetails && (
+            <button
+              onClick={() => setEditingDetails(true)}
+              className="mt-1 text-xs text-nmbm-ink/60 underline underline-offset-2 hover:text-nmbm-ink"
+            >
+              Edit details
+            </button>
+          )}
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <Pill tone={data.cohort.status === "running" ? "ok" : data.cohort.status === "planned" ? "warn" : "muted"}>
@@ -130,6 +142,10 @@ export default function CohortPage({ me }: { me: Me }) {
           {manage && <CohortStatusActions cohort={data.cohort} act={act} />}
         </div>
       </div>
+
+      {editingDetails && (
+        <CohortDetailsForm cohort={data.cohort} act={act} onDone={() => setEditingDetails(false)} />
+      )}
 
       {notice && (
         <p className="mt-4 rounded border border-state-ok/20 bg-state-ok-bg px-3 py-2 text-sm text-state-ok">
