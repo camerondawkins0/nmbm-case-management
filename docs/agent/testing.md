@@ -1,6 +1,6 @@
 # Testing
 
-276 tests in `packages/api/test/`, run by vitest against a real Postgres.
+285 tests in `packages/api/test/`, run by vitest against a real Postgres.
 CI runs them on every push with a Postgres 16 service.
 
 ```bash
@@ -30,7 +30,7 @@ dev-login route, and assert on HTTP responses.
 | `authorization.test.ts` | 401/403, read-all vs read-own, U5 caseload scoping, not-found for another worker's id |
 | `no-contact.test.ts` | M6 close gate, Molina letter, the run resetting on contact, other exits unblocked |
 | `consents-referrals.test.ts` | M16 expiry from enrollment; M17 release gate and its three refusal reasons |
-| `disenrollment.test.ts` | R10: off the caseload on close, closed-record access (intake, last worker, window and its 90-day cap), readmission starting a fresh run |
+| `disenrollment.test.ts` | R10: off the caseload on close, closed-record access (intake, last worker, window and its 90-day cap), the window read-only for every kind of write and saying so, readmission starting a fresh run |
 | `attendance.test.ts` | M14 whole-roster marking, correction not duplication, off-roster refusal, recorder names, disenrolled people flagged not withdrawn |
 | `sign-off.test.ts` | U6 notes and care plans reviewed by someone other than the author; a returned note listed to its author only, revised back into the queue without the old reason, by its author only, never once approved; interns' notes to clinical review only, each reviewer's queue only what they can sign, the chain fixed when written, self-approval per chain; one care plan per stay, races included, never on another client's stay |
 | `caseload-workers.test.ts` | Cases only to people who can write notes and see clients, through admission, readmission and reassignment; retired roles don't count; facilitators are everyone active; a malformed id in the address is a 404 |
@@ -49,6 +49,7 @@ dev-login route, and assert on HTTP responses.
 | `record-export.test.ts` | Who can export; purpose required; the audit line with the purpose; the whole record with answers in words; scoping through a role that can export but only sees its own caseload |
 | `documents.test.ts` | Upload, confirm and open through the local storage stand-in; confirm refused until the file arrives; opaque keys; views audited; consent scans same-person only; type and size refused; tampered links refused; other workers' documents 404; void keeps the row and stops it opening |
 | `csv.test.ts` | The formula-injection guard and RFC 4180 quoting, no database |
+| `direct-access.test.ts` | Requests sent straight to the API with another worker's ids: a case manager with the same permissions can't read or write any part of the record, and nothing changes; narrow roles holding a reviewer, reassign, close, withdraw, export or follow-up permission reach only their own records; class rosters whole only for people who run classes; another site's page can't make a change; malformed parameters are a 400 or 404; nothing without a session |
 | `routes-authorized.test.ts` | Reads `packages/api/src` and fails on any route with neither `authorize()` nor a `PUBLIC_BY_DESIGN` entry, and on entries that are no longer open; no database |
 | `sign-in.test.ts` | OAuth state, refusal reasons, session regeneration, idle timeout, form-post sign-out, audit |
 

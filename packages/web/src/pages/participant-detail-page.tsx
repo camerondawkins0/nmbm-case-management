@@ -201,7 +201,7 @@ export default function ParticipantDetailPage({ me }: { me: Me }) {
       <ClientDetailsSection
         participantId={record.id}
         details={record.details}
-        canEdit={can(me, "participants.update")}
+        canEdit={can(me, "participants.update") && record.canWrite}
         onSaved={(message) => {
           setNotice(message);
           load();

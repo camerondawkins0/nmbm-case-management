@@ -1,4 +1,5 @@
 import type { Db } from "@nmbm/db";
+import { keepVisible } from "../../lib/caseload.js";
 import {
   programs,
   programCohorts,
@@ -294,6 +295,12 @@ export async function enroll(db: Db, cohortId: string, participantId: string, ac
   return row;
 }
 
+export async function findEnrollment(db: Db, enrollmentId: string) {
+  const [row] = await db.select().from(cohortEnrollments).where(eq(cohortEnrollments.id, enrollmentId));
+  if (!row) throw notFound("Enrollment not found");
+  return row;
+}
+
 export async function withdraw(db: Db, enrollmentId: string, reason: string, actorId: string) {
   const [enrollment] = await db
     .select()
@@ -321,7 +328,7 @@ export async function withdraw(db: Db, enrollmentId: string, reason: string, act
 
 // The roster with every session and every mark, which is what the grid
 // renders and what the proof-of-participation view counts from.
-export async function getCohort(db: Db, cohortId: string) {
+export async function getCohort(db: Db, cohortId: string, visible: Set<string> | "all" = "all") {
   const cohort = await loadCohort(db, cohortId);
   const [program] = await db.select().from(programs).where(eq(programs.id, cohort.programId));
   const counted = countedStatuses(program);
@@ -353,7 +360,8 @@ export async function getCohort(db: Db, cohortId: string) {
     .from(cohortEnrollments)
     .innerJoin(participants, eq(participants.id, cohortEnrollments.participantId))
     .where(eq(cohortEnrollments.cohortId, cohortId))
-    .orderBy(participants.lastName);
+    .orderBy(participants.lastName)
+    .then((rows) => keepVisible(rows, visible));
 
   const enrollmentIds = roster.map((r) => r.enrollmentId);
   const marks = enrollmentIds.length

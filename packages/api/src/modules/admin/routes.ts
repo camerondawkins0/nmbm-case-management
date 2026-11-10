@@ -58,7 +58,11 @@ export default async function adminRoutes(fastify: FastifyInstance, opts: { db: 
   fastify.get<{ Querystring: { limit?: string } }>(
     "/api/admin/audit",
     { preHandler: authorize("admin.settings.manage") },
-    async (request) => audit.listRecent(db, Number(request.query.limit ?? 100)),
+    async (request) => {
+      // A limit that isn't a whole number used to reach the database as NaN.
+      const { limit } = z.object({ limit: z.coerce.number().int().min(1).max(500).default(100) }).parse(request.query);
+      return audit.listRecent(db, limit);
+    },
   );
 
   // M31: settings NMBM change themselves, without asking for a deploy.

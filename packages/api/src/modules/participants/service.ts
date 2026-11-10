@@ -12,6 +12,7 @@ import { writeAudit } from "../../plugins/audit.js";
 import {
   caseloadParticipantIds,
   canSeeParticipant,
+  canWriteParticipant,
   formerCaseload,
   type CallerScope,
 } from "../../lib/caseload.js";
@@ -65,7 +66,8 @@ export async function getParticipant(db: Db, caller: CallerScope, id: string) {
   }
   const row = await repository.findById(db, id);
   if (!row) throw notFound("Participant not found");
-  const [details, episodes, notes, consents, referrals, programs, followUps, referralsIn] = await Promise.all([
+  const [canWrite, details, episodes, notes, consents, referrals, programs, followUps, referralsIn] = await Promise.all([
+    canWriteParticipant(db, caller, id),
     repository.findDetails(db, id),
     repository.listEpisodes(db, id),
     repository.listNotes(db, id),
@@ -75,7 +77,9 @@ export async function getParticipant(db: Db, caller: CallerScope, id: string) {
     followUpService.scheduleForParticipant(db, id),
     incomingReferralService.listForParticipant(db, id),
   ]);
-  return { ...decorate(row), details, episodes, notes, consents, referrals, programs, followUps, referralsIn };
+  // canWrite tells the page which buttons to show; the server checks
+  // again on every write, so it's a convenience, not the control.
+  return { ...decorate(row), canWrite, details, episodes, notes, consents, referrals, programs, followUps, referralsIn };
 }
 
 export const CIN_IN_USE =
@@ -137,6 +141,15 @@ export async function createParticipant(
 
 export async function assertCanSee(db: Db, caller: CallerScope, participantId: string) {
   if (!(await canSeeParticipant(db, caller, participantId))) {
+    throw forbidden("Not on your caseload");
+  }
+}
+
+// Every write to a record goes through this rather than assertCanSee:
+// seeing a closed record (the former worker's window, intake) doesn't
+// make it yours to change. See canWriteParticipant.
+export async function assertCanWrite(db: Db, caller: CallerScope, participantId: string) {
+  if (!(await canWriteParticipant(db, caller, participantId))) {
     throw forbidden("Not on your caseload");
   }
 }

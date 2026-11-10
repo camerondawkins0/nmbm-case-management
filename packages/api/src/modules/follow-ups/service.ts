@@ -1,4 +1,5 @@
 import type { Db } from "@nmbm/db";
+import { canSeeParticipant, keepVisible, type CallerScope } from "../../lib/caseload.js";
 import { followUpCalls, episodes, participants, users } from "@nmbm/db";
 import { and, eq, desc, inArray, sql } from "drizzle-orm";
 import { FOLLOW_UP_FINAL_LAPSE_MONTHS, type FollowUpCall } from "@nmbm/shared";
@@ -50,7 +51,11 @@ async function callsFor(db: Db, episodeIds: string[]) {
 
 // QA's working list: every call that's due or overdue, and the next
 // month's worth coming up, soonest first.
-export async function listQueue(db: Db) {
+// Scoped like every other list of people: the queue is everyone the
+// caller can see whose case closed (QA and the Clinical Director see
+// everyone, by default). The permission says you may make the calls,
+// not whose records you may read.
+export async function listQueue(db: Db, visible: Set<string> | "all") {
   const today = todayIso();
   // Nothing closed longer ago than the last milestone's lapse can still
   // have a call owed.
@@ -67,7 +72,8 @@ export async function listQueue(db: Db) {
     })
     .from(episodes)
     .innerJoin(participants, eq(participants.id, episodes.participantId))
-    .where(and(isLatestClosedEpisode, sql`${episodes.endDate} >= ${earliest}`));
+    .where(and(isLatestClosedEpisode, sql`${episodes.endDate} >= ${earliest}`))
+    .then((rows) => keepVisible(rows, visible));
 
   const calls = await callsFor(db, closed.map((c) => c.episodeId));
   const horizon = addMonths(today, 1);
@@ -113,12 +119,15 @@ export async function scheduleForParticipant(db: Db, participantId: string) {
   };
 }
 
-export async function recordCall(db: Db, input: FollowUpCall, actorId: string) {
+export async function recordCall(db: Db, input: FollowUpCall, caller: CallerScope) {
+  const actorId = caller.id;
   const [episode] = await db
     .select({ id: episodes.id, participantId: episodes.participantId, endDate: episodes.endDate })
     .from(episodes)
     .where(eq(episodes.id, input.episodeId));
-  if (!episode) throw notFound("Episode not found");
+  // A call is the one write made on a closed record besides readmission,
+  // so it's checked against sight of the record, as the queue is.
+  if (!episode || !(await canSeeParticipant(db, caller, episode.participantId))) throw notFound("Episode not found");
 
   const [latest] = await db
     .select({ id: episodes.id })
@@ -167,7 +176,7 @@ export async function recordCall(db: Db, input: FollowUpCall, actorId: string) {
 // M12: "This may lead to re-enrollment." Everyone who asked to come back
 // and hasn't been readmitted since — which is derived, so readmitting
 // them is what takes them off this list; nobody has to check it off.
-export async function listReEnrollmentRequests(db: Db) {
+export async function listReEnrollmentRequests(db: Db, visible: Set<string> | "all") {
   return db
     .select({
       callId: followUpCalls.id,
@@ -193,5 +202,6 @@ export async function listReEnrollmentRequests(db: Db) {
         )`,
       ),
     )
-    .orderBy(desc(followUpCalls.calledAt));
+    .orderBy(desc(followUpCalls.calledAt))
+    .then((rows) => keepVisible(rows, visible));
 }

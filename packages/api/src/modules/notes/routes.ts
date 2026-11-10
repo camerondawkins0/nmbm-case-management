@@ -3,8 +3,9 @@ import type { Db } from "@nmbm/db";
 import { z } from "zod";
 import { noteCreateSchema, noteReviseSchema } from "@nmbm/shared";
 import { authorize, authorizeAny, getPermissions } from "../../plugins/authorize.js";
-import { resolveScope } from "../../lib/caseload.js";
-import { assertCanSee } from "../participants/service.js";
+import { resolveScope, canSeeParticipant, visibleParticipantIds } from "../../lib/caseload.js";
+import { notFound } from "../../plugins/errors.js";
+import { assertCanWrite } from "../participants/service.js";
 import * as service from "./service.js";
 import * as review from "./review.js";
 
@@ -21,7 +22,7 @@ export default async function noteRoutes(fastify: FastifyInstance, opts: { db: D
       const userId = request.currentUser!.id;
       const caller = await resolveScope(db, userId);
       // notes.write says you may write notes; it doesn't say whose.
-      await assertCanSee(db, caller, input.participantId);
+      await assertCanWrite(db, caller, input.participantId);
       const result = await service.recordNote(db, input, userId, await getPermissions(db, userId));
       reply.code(201);
       return result;
@@ -41,6 +42,10 @@ export default async function noteRoutes(fastify: FastifyInstance, opts: { db: D
     { preHandler: authorize("notes.write") },
     async (request) => {
       const input = noteReviseSchema.parse(request.body);
+      // Authorship isn't enough once the client has moved to somebody
+      // else's caseload.
+      const note = await review.findNote(db, request.params.id);
+      await assertCanWrite(db, await resolveScope(db, request.currentUser!.id), note.participantId);
       return review.reviseAndResubmit(db, request.params.id, request.currentUser!.id, input);
     },
   );
@@ -49,10 +54,21 @@ export default async function noteRoutes(fastify: FastifyInstance, opts: { db: D
   // checked per note (review.ts).
   const REVIEWS_NOTES = ["notes.approve", "notes.approve.clinical"] as const;
 
+  // A note on a record the reviewer can't see answers as not found.
+  async function assertReviewable(userId: string, noteId: string) {
+    const note = await review.findNote(db, noteId);
+    const caller = await resolveScope(db, userId);
+    if (!(await canSeeParticipant(db, caller, note.participantId))) throw notFound("Note not found");
+  }
+
   fastify.get(
     "/api/notes/awaiting-review",
     { preHandler: authorizeAny([...REVIEWS_NOTES]) },
-    async (request) => review.listAwaitingReview(db, await getPermissions(db, request.currentUser!.id)),
+    async (request) => {
+      const userId = request.currentUser!.id;
+      const visible = await visibleParticipantIds(db, await resolveScope(db, userId));
+      return review.listAwaitingReview(db, await getPermissions(db, userId), visible);
+    },
   );
 
   fastify.post<{ Params: { id: string } }>(
@@ -60,6 +76,7 @@ export default async function noteRoutes(fastify: FastifyInstance, opts: { db: D
     { preHandler: authorizeAny([...REVIEWS_NOTES]) },
     async (request) => {
       const userId = request.currentUser!.id;
+      await assertReviewable(userId, request.params.id);
       return review.approve(db, request.params.id, userId, await getPermissions(db, userId));
     },
   );
@@ -70,6 +87,7 @@ export default async function noteRoutes(fastify: FastifyInstance, opts: { db: D
     async (request) => {
       const input = reviewNoteSchema.parse(request.body);
       const userId = request.currentUser!.id;
+      await assertReviewable(userId, request.params.id);
       return review.returnForRevision(db, request.params.id, userId, input.reviewNote, await getPermissions(db, userId));
     },
   );

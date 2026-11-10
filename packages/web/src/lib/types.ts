@@ -496,6 +496,9 @@ export type RecordExport = {
 export type ClientDetails = Record<keyof ParticipantDetails, string | null> & { updatedAt: string | null };
 
 export type ParticipantDetail = ParticipantRow & {
+  // Whether the caller may change this record — false in the former
+  // worker's read-only window, or for intake on a closed record.
+  canWrite: boolean;
   details: ClientDetails;
   episodes: EpisodeSummary[];
   followUps: FollowUpSchedule | null;

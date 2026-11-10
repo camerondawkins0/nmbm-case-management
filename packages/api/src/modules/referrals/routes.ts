@@ -3,7 +3,7 @@ import type { Db } from "@nmbm/db";
 import { referralCreateSchema, referralOutcomeSchema } from "@nmbm/shared";
 import { authorize } from "../../plugins/authorize.js";
 import { resolveScope } from "../../lib/caseload.js";
-import { assertCanSee } from "../participants/service.js";
+import { assertCanWrite } from "../participants/service.js";
 import * as service from "./service.js";
 
 export default async function referralRoutes(fastify: FastifyInstance, opts: { db: Db }) {
@@ -15,7 +15,7 @@ export default async function referralRoutes(fastify: FastifyInstance, opts: { d
     async (request, reply) => {
       const input = referralCreateSchema.parse(request.body);
       const caller = await resolveScope(db, request.currentUser!.id);
-      await assertCanSee(db, caller, input.participantId);
+      await assertCanWrite(db, caller, input.participantId);
       const referral = await service.createReferral(db, input, request.currentUser!.id);
       reply.code(201);
       return referral;
@@ -32,7 +32,7 @@ export default async function referralRoutes(fastify: FastifyInstance, opts: { d
       // client's record.
       const referral = await service.findReferral(db, request.params.id);
       const caller = await resolveScope(db, request.currentUser!.id);
-      await assertCanSee(db, caller, referral.participantId);
+      await assertCanWrite(db, caller, referral.participantId);
       return service.recordOutcome(db, request.params.id, input, request.currentUser!.id);
     },
   );

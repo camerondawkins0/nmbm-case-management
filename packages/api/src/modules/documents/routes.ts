@@ -2,7 +2,7 @@ import type { FastifyInstance } from "fastify";
 import type { Db } from "@nmbm/db";
 import { documentUploadSchema, documentVoidSchema } from "@nmbm/shared";
 import { authorize, authorizeAny, CAN_READ_PARTICIPANTS } from "../../plugins/authorize.js";
-import { resolveScope, canSeeParticipant } from "../../lib/caseload.js";
+import { resolveScope, canSeeParticipant, canWriteParticipant } from "../../lib/caseload.js";
 import { notFound } from "../../plugins/errors.js";
 import type { StorageProvider } from "../../lib/storage.js";
 import * as service from "./service.js";
@@ -16,6 +16,13 @@ export default async function documentRoutes(fastify: FastifyInstance, opts: { d
   async function assertVisible(userId: string, participantId: string) {
     const caller = await resolveScope(db, userId);
     if (!(await canSeeParticipant(db, caller, participantId))) throw notFound("Not found");
+  }
+
+  // Uploading or voiding is a write: only on a record that's the
+  // caller's now (see canWriteParticipant).
+  async function assertWritable(userId: string, participantId: string) {
+    const caller = await resolveScope(db, userId);
+    if (!(await canWriteParticipant(db, caller, participantId))) throw notFound("Not found");
   }
 
   fastify.get<{ Params: { id: string } }>(
@@ -32,7 +39,7 @@ export default async function documentRoutes(fastify: FastifyInstance, opts: { d
     { preHandler: authorize("documents.write") },
     async (request, reply) => {
       const input = documentUploadSchema.parse(request.body);
-      await assertVisible(request.currentUser!.id, request.params.id);
+      await assertWritable(request.currentUser!.id, request.params.id);
       reply.code(201);
       return service.requestUpload(db, storage, request.params.id, input, request.currentUser!.id);
     },
@@ -43,7 +50,7 @@ export default async function documentRoutes(fastify: FastifyInstance, opts: { d
     { preHandler: authorize("documents.write") },
     async (request) => {
       const doc = await service.findDocument(db, request.params.id);
-      await assertVisible(request.currentUser!.id, doc.participantId);
+      await assertWritable(request.currentUser!.id, doc.participantId);
       return service.confirmUpload(db, storage, request.params.id, request.currentUser!.id);
     },
   );
@@ -64,7 +71,7 @@ export default async function documentRoutes(fastify: FastifyInstance, opts: { d
     async (request) => {
       const { reason } = documentVoidSchema.parse(request.body);
       const doc = await service.findDocument(db, request.params.id);
-      await assertVisible(request.currentUser!.id, doc.participantId);
+      await assertWritable(request.currentUser!.id, doc.participantId);
       return service.voidDocument(db, request.params.id, reason, request.currentUser!.id);
     },
   );

@@ -3,8 +3,8 @@ import type { Db } from "@nmbm/db";
 import { z } from "zod";
 import { carePlanCreateSchema, carePlanReviewSchema } from "@nmbm/shared";
 import { authorize } from "../../plugins/authorize.js";
-import { resolveScope } from "../../lib/caseload.js";
-import { assertCanSee } from "../participants/service.js";
+import { resolveScope, keepVisible, visibleParticipantIds } from "../../lib/caseload.js";
+import { assertCanSee, assertCanWrite } from "../participants/service.js";
 import * as service from "./service.js";
 import * as repository from "./repository.js";
 import { notFound } from "../../plugins/errors.js";
@@ -14,11 +14,18 @@ const goalsSchema = z.object({ goals: z.string().min(1) });
 export default async function carePlanRoutes(fastify: FastifyInstance, opts: { db: Db }) {
   const { db } = opts;
 
-  async function assertPlanVisible(userId: string, planId: string) {
+  // Writing a plan needs the record on the caller's caseload now;
+  // reviewing one needs sight of the record (see canWriteParticipant).
+  async function assertPlanWritable(userId: string, planId: string) {
     const plan = await repository.findById(db, planId);
     if (!plan) throw notFound("Care plan not found");
-    const caller = await resolveScope(db, userId);
-    await assertCanSee(db, caller, plan.participantId);
+    await assertCanWrite(db, await resolveScope(db, userId), plan.participantId);
+  }
+
+  async function assertPlanReviewable(userId: string, planId: string) {
+    const plan = await repository.findById(db, planId);
+    if (!plan) throw notFound("Care plan not found");
+    await assertCanSee(db, await resolveScope(db, userId), plan.participantId);
   }
 
   fastify.post(
@@ -27,7 +34,7 @@ export default async function carePlanRoutes(fastify: FastifyInstance, opts: { d
     async (request, reply) => {
       const input = carePlanCreateSchema.parse(request.body);
       const caller = await resolveScope(db, request.currentUser!.id);
-      await assertCanSee(db, caller, input.participantId);
+      await assertCanWrite(db, caller, input.participantId);
       const plan = await service.createCarePlan(db, input);
       reply.code(201);
       return plan;
@@ -39,7 +46,7 @@ export default async function carePlanRoutes(fastify: FastifyInstance, opts: { d
     { preHandler: authorize("care_plans.write") },
     async (request) => {
       const { goals } = goalsSchema.parse(request.body);
-      await assertPlanVisible(request.currentUser!.id, request.params.id);
+      await assertPlanWritable(request.currentUser!.id, request.params.id);
       return service.updateGoals(db, request.params.id, goals);
     },
   );
@@ -48,7 +55,7 @@ export default async function carePlanRoutes(fastify: FastifyInstance, opts: { d
     "/api/care-plans/:id/submit",
     { preHandler: authorize("care_plans.write") },
     async (request) => {
-      await assertPlanVisible(request.currentUser!.id, request.params.id);
+      await assertPlanWritable(request.currentUser!.id, request.params.id);
       return service.submitForReview(db, request.params.id);
     },
   );
@@ -59,13 +66,17 @@ export default async function carePlanRoutes(fastify: FastifyInstance, opts: { d
   fastify.get(
     "/api/care-plans/awaiting-review",
     { preHandler: authorize("care_plans.approve") },
-    async () => service.listAwaitingReview(db),
+    async (request) =>
+      keepVisible(await service.listAwaitingReview(db), await visibleParticipantIds(db, await resolveScope(db, request.currentUser!.id))),
   );
 
   fastify.post<{ Params: { id: string } }>(
     "/api/care-plans/:id/approve",
     { preHandler: authorize("care_plans.approve") },
-    async (request) => service.approve(db, request.params.id, request.currentUser!.id),
+    async (request) => {
+      await assertPlanReviewable(request.currentUser!.id, request.params.id);
+      return service.approve(db, request.params.id, request.currentUser!.id);
+    },
   );
 
   fastify.post<{ Params: { id: string } }>(
@@ -73,6 +84,7 @@ export default async function carePlanRoutes(fastify: FastifyInstance, opts: { d
     { preHandler: authorize("care_plans.approve") },
     async (request) => {
       const input = carePlanReviewSchema.parse(request.body);
+      await assertPlanReviewable(request.currentUser!.id, request.params.id);
       return service.returnForRevision(db, request.params.id, input, request.currentUser!.id);
     },
   );

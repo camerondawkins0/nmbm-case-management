@@ -185,7 +185,7 @@ cases a page reachable after signing in. Current as of migration `0018`.
 |---|---|---|
 | Deployment | One Docker image for the service and its release job; Cloud Build tests, migrates and deploys; sessions in Postgres so restarts and extra instances don't sign anyone out; the API serves the web build with strict security headers | `Dockerfile`, `cloudbuild.yaml`, `deploy/`, `docs/DEPLOY.md` |
 | Sign-in (M27) | Google OIDC against a named Workspace domain with a one-use `state` token, a fresh session id at sign-in, an idle timeout and a hard ceiling, audited sign-in and sign-out; a login page that says why a sign-in was refused and what to do next; a holding page for accounts with no role; sign-out in the header. Dev login is double-gated behind `NODE_ENV !== "production"` and `ALLOW_DEV_LOGIN` | `plugins/auth.ts`, `pages/login-page.tsx`, `docs/GOOGLE_SETUP.md` |
-| Authorization | Permission codes, never role names, read from the database at request time. NMBM change which role holds what on the Permissions page; their choices survive deploys, and add roles of their own. A change that would leave nobody able to administer the system is refused, and nobody who only manages staff can give a role that does more than they can. A test reads the source and fails on any route with no permission check that isn't listed as public on purpose, with a reason | `plugins/authorize.ts`, `packages/shared/src/permissions.ts`, `test/routes-authorized.test.ts` |
+| Authorization | Permission codes, never role names, read from the database at request time. NMBM change which role holds what on the Permissions page; their choices survive deploys, and add roles of their own. A change that would leave nobody able to administer the system is refused, and nobody who only manages staff can give a role that does more than they can. A test reads the source and fails on any route with no permission check that isn't listed as public on purpose, with a reason. Past the permission, every id is checked against whose record it is — reading, writing (current caseload only) and lists — and changes from another site's page are refused | `plugins/authorize.ts`, `lib/caseload.ts`, `plugins/same-origin.ts`, `packages/shared/src/permissions.ts`, `test/routes-authorized.test.ts`, `test/direct-access.test.ts` |
 | Caseload (U5) | A front-line worker's list, dashboard and participant record are scoped server-side to their own assignments | `lib/caseload.ts` |
 | Participants and intake (M3/M4/R10) | Admission opens the record, the episode and the assignment in one transaction; reassignment; assignable-worker list. The list is active people only. Closed records: all of them for intake and supervisors, and a worker's own former clients for up to 90 days (adjustable downward) | `modules/participants/`, `lib/caseload.ts` |
 | Episodes (M2/M6/R10) | Close — which ends the assignment — and readmission, which opens a new linked episode with a named worker. The payer-conditional disenrollment-warning letter gate | `modules/episodes/` |
@@ -239,7 +239,7 @@ Two different reasons, and they shouldn't be reported as one number.
 
 **Not blocked — ours to do:**
 
-- **Test coverage stops at the API.** 276 tests run through the real
+- **Test coverage stops at the API.** 285 tests run through the real
   server against a real Postgres on every push, covering every rule in
   `docs/agent/invariants.md`, and each has been proved by breaking the
   rule and watching it fail. The web app has no automated tests; its

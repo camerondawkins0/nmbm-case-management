@@ -90,6 +90,9 @@ export default async function participantRoutes(fastify: FastifyInstance, opts: 
     { preHandler: authorize("participants.assign") },
     async (request) => {
       const { workerId } = assignmentSchema.parse(request.body);
+      // Reassigning to yourself would otherwise be a way onto a record
+      // you can't see.
+      await service.assertCanWrite(db, await resolveScope(db, request.currentUser!.id), request.params.id);
       return intake.reassign(db, request.params.id, workerId, request.currentUser!.id);
     },
   );
@@ -100,7 +103,7 @@ export default async function participantRoutes(fastify: FastifyInstance, opts: 
     async (request) => {
       const input = participantDetailsUpdateSchema.parse(request.body);
       const caller = await resolveScope(db, request.currentUser!.id);
-      await service.assertCanSee(db, caller, request.params.id);
+      await service.assertCanWrite(db, caller, request.params.id);
       return service.updateDetails(db, request.params.id, input, request.currentUser!.id);
     },
   );

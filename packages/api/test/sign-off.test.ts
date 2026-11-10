@@ -92,8 +92,11 @@ describe("U6: a returned note goes back to its author, and round again", () => {
 
   it("is revised by its author only, and never once approved", async () => {
     const { noteId } = await returned();
+    // Somebody who can see the record but didn't write the note.
+    expect((await director.patch(`/api/notes/${noteId}`, { body: "Not mine to change." })).status).toBe(409);
+    // Somebody who can't see the record doesn't get that far.
     const other = await signIn(app, (await staff(db, "community_health_worker")).email);
-    expect((await other.patch(`/api/notes/${noteId}`, { body: "Not mine to change." })).status).toBe(409);
+    expect((await other.patch(`/api/notes/${noteId}`, { body: "Not mine to change." })).status).toBe(403);
 
     const approved = await chwNote();
     await manager.post(`/api/notes/${approved.noteId}/approve`);
@@ -138,7 +141,7 @@ describe("U6: an intern's notes go to clinical review", () => {
   });
 
   it("keeps a clinical reviewer who only reviews clinical notes off CHW notes", async () => {
-    const clinicalOnly = await signIn(app, (await staffWith(db, ["notes.approve.clinical"])).email);
+    const clinicalOnly = await signIn(app, (await staffWith(db, ["notes.approve.clinical", "participants.read.all"])).email);
     const { noteId } = await chwNote();
     expect((await clinicalOnly.post(`/api/notes/${noteId}/approve`)).status).toBe(403);
     const clinical = await internNote();

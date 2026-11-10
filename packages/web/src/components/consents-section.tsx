@@ -95,7 +95,7 @@ export function ConsentsSection({
             {consent.revokedReason && (
               <p className="mt-1 text-xs text-state-alert">Revoked: {consent.revokedReason}</p>
             )}
-            {writable && consent.status === "active" && (
+            {writable && record.canWrite && consent.status === "active" && (
               <button
                 disabled={busy}
                 onClick={() => {

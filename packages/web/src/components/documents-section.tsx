@@ -197,7 +197,7 @@ export function DocumentsSection({
             {doc.voidReason && (
               <p className="mt-1 text-xs text-state-alert">Voided: {doc.voidReason}</p>
             )}
-            {writable && doc.status === "uploaded" && (
+            {writable && record.canWrite && doc.status === "uploaded" && (
               <button
                 disabled={busy}
                 onClick={() => voidDoc(doc)}

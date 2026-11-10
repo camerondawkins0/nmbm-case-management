@@ -10,7 +10,7 @@ import {
 } from "@nmbm/shared";
 import { z } from "zod";
 import { authorize, authorizeAny, CAN_READ_PARTICIPANTS } from "../../plugins/authorize.js";
-import { resolveScope, canSeeParticipant } from "../../lib/caseload.js";
+import { resolveScope, canSeeParticipant, canWriteParticipant } from "../../lib/caseload.js";
 import { notFound } from "../../plugins/errors.js";
 import * as service from "./service.js";
 import * as links from "./links.js";
@@ -28,6 +28,14 @@ export default async function assessmentRoutes(fastify: FastifyInstance, opts: {
   async function assertVisible(userId: string, participantId: string) {
     const caller = await resolveScope(db, userId);
     if (!(await canSeeParticipant(db, caller, participantId))) throw notFound("Not found");
+  }
+
+  // Starting, answering, completing, voiding or sending a form is a
+  // write: only on a record that's the caller's now (see
+  // canWriteParticipant). Out of reach answers the same as not found.
+  async function assertWritable(userId: string, participantId: string) {
+    const caller = await resolveScope(db, userId);
+    if (!(await canWriteParticipant(db, caller, participantId))) throw notFound("Not found");
   }
 
   fastify.get(
@@ -107,7 +115,7 @@ export default async function assessmentRoutes(fastify: FastifyInstance, opts: {
     { preHandler: authorize("assessments.write") },
     async (request, reply) => {
       const input = startAssessmentSchema.parse(request.body);
-      await assertVisible(request.currentUser!.id, request.params.id);
+      await assertWritable(request.currentUser!.id, request.params.id);
       reply.code(201);
       return service.start(db, request.params.id, input, request.currentUser!.id);
     },
@@ -131,7 +139,7 @@ export default async function assessmentRoutes(fastify: FastifyInstance, opts: {
     async (request) => {
       const { answers } = saveAnswersSchema.parse(request.body);
       const row = await service.find(db, request.params.id);
-      await assertVisible(request.currentUser!.id, row.participantId);
+      await assertWritable(request.currentUser!.id, row.participantId);
       return service.saveAnswers(db, request.params.id, answers, request.currentUser!.id);
     },
   );
@@ -141,7 +149,7 @@ export default async function assessmentRoutes(fastify: FastifyInstance, opts: {
     { preHandler: authorize("assessments.write") },
     async (request) => {
       const row = await service.find(db, request.params.id);
-      await assertVisible(request.currentUser!.id, row.participantId);
+      await assertWritable(request.currentUser!.id, row.participantId);
       return service.complete(db, request.params.id, request.currentUser!.id);
     },
   );
@@ -152,7 +160,7 @@ export default async function assessmentRoutes(fastify: FastifyInstance, opts: {
     async (request) => {
       const { reason } = voidAssessmentSchema.parse(request.body);
       const row = await service.find(db, request.params.id);
-      await assertVisible(request.currentUser!.id, row.participantId);
+      await assertWritable(request.currentUser!.id, row.participantId);
       return service.voidAssessment(db, request.params.id, reason, request.currentUser!.id);
     },
   );
@@ -165,7 +173,7 @@ export default async function assessmentRoutes(fastify: FastifyInstance, opts: {
     { preHandler: authorize("assessments.write") },
     async (request, reply) => {
       const { formId } = sendToParticipantSchema.parse(request.body);
-      await assertVisible(request.currentUser!.id, request.params.id);
+      await assertWritable(request.currentUser!.id, request.params.id);
       reply.code(201);
       return links.sendToParticipant(db, request.params.id, formId, request.currentUser!.id);
     },
@@ -176,7 +184,7 @@ export default async function assessmentRoutes(fastify: FastifyInstance, opts: {
     { preHandler: authorize("assessments.write") },
     async (request, reply) => {
       const row = await service.find(db, request.params.id);
-      await assertVisible(request.currentUser!.id, row.participantId);
+      await assertWritable(request.currentUser!.id, row.participantId);
       reply.code(201);
       return links.reissue(db, request.params.id, request.currentUser!.id);
     },
@@ -187,7 +195,7 @@ export default async function assessmentRoutes(fastify: FastifyInstance, opts: {
     { preHandler: authorize("assessments.write") },
     async (request) => {
       const row = await service.find(db, request.params.id);
-      await assertVisible(request.currentUser!.id, row.participantId);
+      await assertWritable(request.currentUser!.id, row.participantId);
       return links.revoke(db, request.params.id, request.currentUser!.id);
     },
   );

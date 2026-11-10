@@ -105,6 +105,12 @@ export async function recordConsent(db: Db, input: ConsentCreate, recordedById: 
 // Revoked, never deleted (hard rule 1). A revoked release stops
 // authorizing new disclosures; referrals already sent keep pointing at
 // it, because what was authorized at the time is a fact about the past.
+export async function findConsent(db: Db, id: string) {
+  const [row] = await db.select().from(consents).where(eq(consents.id, id));
+  if (!row) throw notFound("Consent not found");
+  return row;
+}
+
 export async function revokeConsent(db: Db, id: string, reason: string, actorId: string) {
   const [row] = await db.select().from(consents).where(eq(consents.id, id));
   if (!row) throw notFound("Consent not found");

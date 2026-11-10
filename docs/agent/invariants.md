@@ -17,6 +17,36 @@ assignments — never a client-side filter on a full list. A front-line CHW
 who can, in principle, fetch another worker's participant by guessing an
 ID is a bug here, not an edge case.
 
+**A permission says what you may do, never whose records.** Every route
+that takes an id — in the path, the query or the body — finds the
+participant that id belongs to and checks the caller against it, after
+the permission check. The three checks, in `lib/caseload.ts`:
+
+- `canSeeParticipant` — reading: read.all, the current caseload,
+  intake's read.closed on closed records, the former worker's window.
+- `canWriteParticipant` (via `assertCanWrite`) — every write to a
+  record: read.all or the current caseload only. The window and
+  read.closed are read-only. The two writes made on closed records,
+  readmission and follow-up calls, check sight instead and say so.
+- `visibleParticipantIds` + `keepVisible` — lists that span records:
+  the note and care plan review queues, the dashboard's approvals, the
+  follow-up queue, come-back requests, class rosters. A reviewer only
+  sees, and can only approve, what's on records they can see.
+
+A class roster is whole for people who run classes (`programs.manage`
+or `attendance.record` — marking attendance needs every name in the
+room) and shows anyone else only their own clients.
+
+The record says `canWrite`, so the page hides buttons that would be
+refused; the server checks again regardless.
+
+**Changes come from this app's own pages.** A POST, PUT, PATCH or DELETE
+carrying an Origin that isn't this site is refused
+(`plugins/same-origin.ts`), on top of the SameSite=Lax session cookie.
+Reads aren't affected, so a link from elsewhere still opens the app.
+`test/direct-access.test.ts` sends each of these requests the way
+curl would.
+
 ## Sign-off chains are real gates, not just visibility (U6)
 
 - Clinical Director reviews/approves care plans for CHWs.

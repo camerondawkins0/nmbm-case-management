@@ -61,6 +61,10 @@ export default async function incomingReferralRoutes(fastify: FastifyInstance, o
     async (request) => {
       const { participantId } = incomingReferralLinkSchema.parse(request.body);
       const caller = await resolveScope(db, request.currentUser!.id);
+      // Sight, not the caseload: this writes to intake's queue, and the
+      // record has to be open to link to, which only its own caseload,
+      // or someone who reads everything, can see anyway. A closed one is
+      // refused below with the way forward — readmit.
       if (!(await canSeeParticipant(db, caller, participantId))) throw notFound("Participant not found");
       return service.linkToParticipant(db, request.params.id, participantId, request.currentUser!.id);
     },

@@ -3,6 +3,7 @@ import { episodes, notes, participants, users } from "@nmbm/db";
 import { eq, desc, and, inArray } from "drizzle-orm";
 import type { NoteRevise, Permission } from "@nmbm/shared";
 import { assertServiceDate } from "./service.js";
+import { keepVisible } from "../../lib/caseload.js";
 import { conflict, badRequest, forbidden, notFound } from "../../plugins/errors.js";
 import { writeAudit } from "../../plugins/audit.js";
 
@@ -30,10 +31,10 @@ function assertMayReview(note: { clinicalReview: boolean }, held: Set<Permission
   );
 }
 
-export async function listAwaitingReview(db: Db, held: Set<Permission>) {
+export async function listAwaitingReview(db: Db, held: Set<Permission>, visible: Set<string> | "all") {
   const kinds = reviewableKinds(held);
   if (kinds.length === 0) return [];
-  return db
+  const rows = await db
     .select({
       id: notes.id,
       clinicalReview: notes.clinicalReview,
@@ -51,6 +52,8 @@ export async function listAwaitingReview(db: Db, held: Set<Permission>) {
     .innerJoin(participants, eq(participants.id, notes.participantId))
     .where(and(eq(notes.status, "pending_review"), inArray(notes.clinicalReview, kinds)))
     .orderBy(desc(notes.serviceDate), desc(notes.createdAt));
+  // Reviewing a note is reading the record it's on.
+  return keepVisible(rows, visible);
 }
 
 // What the author needs to see: their own work that bounced.
@@ -70,6 +73,10 @@ export async function listReturnedToAuthor(db: Db, authorId: string) {
     .innerJoin(participants, eq(participants.id, notes.participantId))
     .where(and(eq(notes.authorId, authorId), eq(notes.status, "needs_revision")))
     .orderBy(desc(notes.createdAt));
+}
+
+export async function findNote(db: Db, id: string) {
+  return load(db, id);
 }
 
 async function load(db: Db, id: string) {

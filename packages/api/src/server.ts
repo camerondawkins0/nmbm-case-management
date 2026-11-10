@@ -2,6 +2,7 @@ import Fastify from "fastify";
 import { createDb, closeDb } from "@nmbm/db";
 import authPlugin from "./plugins/auth.js";
 import { registerErrorHandler } from "./plugins/errors.js";
+import { registerSameOriginCheck } from "./plugins/same-origin.js";
 import healthRoutes from "./modules/health/routes.js";
 import meRoutes from "./modules/me/routes.js";
 import participantRoutes from "./modules/participants/routes.js";
@@ -47,6 +48,7 @@ export async function buildServer(options: { logger?: boolean } = {}) {
   fastify.addHook("onClose", async () => closeDb(db));
   registerErrorHandler(fastify);
   registerSecurityHeaders(fastify, { https: process.env.NODE_ENV === "production" });
+  registerSameOriginCheck(fastify);
 
   await fastify.register(authPlugin, { db });
   await fastify.register(healthRoutes);

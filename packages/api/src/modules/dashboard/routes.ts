@@ -1,7 +1,7 @@
 import type { FastifyInstance } from "fastify";
 import type { Db } from "@nmbm/db";
 import { authorizeAny, getPermissions, CAN_READ_PARTICIPANTS } from "../../plugins/authorize.js";
-import { resolveScope } from "../../lib/caseload.js";
+import { resolveScope, keepVisible, visibleParticipantIds } from "../../lib/caseload.js";
 import * as participantService from "../participants/service.js";
 import * as carePlanRepository from "../care-plans/repository.js";
 import * as referralService from "../referrals/service.js";
@@ -28,10 +28,12 @@ export default async function dashboardRoutes(fastify: FastifyInstance, opts: { 
       const carePlanReviewsDue = participants.filter((p) => p.flags.carePlan.reviewOverdue);
       const carePlansReturned = participants.filter((p) => p.flags.carePlan.needsRevision);
 
-      // The approval queue is only meaningful to whoever can act on it.
+      // The approval queue is only meaningful to whoever can act on it,
+      // and lists only the records they can see.
       const permissions = await getPermissions(db, userId);
+      const visible = await visibleParticipantIds(db, caller);
       const awaitingReview = permissions.has("care_plans.approve")
-        ? await carePlanRepository.listAwaitingReview(db)
+        ? keepVisible(await carePlanRepository.listAwaitingReview(db), visible)
         : [];
 
       // M17: scoped the same way the caseload is — a CHW chases their
@@ -44,13 +46,13 @@ export default async function dashboardRoutes(fastify: FastifyInstance, opts: { 
       // M12: QA's calls, and the people who asked to come back, for the
       // roles that act on them.
       const followUps = permissions.has("follow_ups.record")
-        ? await followUpService.listQueue(db).then((q) => ({ overdue: q.overdue.length, due: q.due.length }))
+        ? await followUpService.listQueue(db, visible).then((q) => ({ overdue: q.overdue.length, due: q.due.length }))
         : null;
       const reEnrollmentRequests =
         permissions.has("follow_ups.record") ||
         permissions.has("participants.read.closed") ||
         permissions.has("participants.read.all")
-          ? (await followUpService.listReEnrollmentRequests(db)).length
+          ? (await followUpService.listReEnrollmentRequests(db, visible)).length
           : null;
 
       return {

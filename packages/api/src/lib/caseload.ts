@@ -105,6 +105,39 @@ export async function canSeeParticipant(
   return (await formerCaseload(db, caller.id)).some((f) => f.participantId === participantId);
 }
 
+// Writing needs more than reading. The former worker's window (R10)
+// and intake's sight of closed records are for looking — "read access
+// only" — so a consent, referral, document, form, care plan or detail
+// change goes only onto a record that's on the caller's caseload now,
+// or to somebody who can see every record. Readmission and follow-up
+// calls are the two writes made on closed records, and they say so
+// where they check.
+export async function canWriteParticipant(db: Db, caller: CallerScope, participantId: string): Promise<boolean> {
+  if (caller.canReadAll) return true;
+  return (await caseloadParticipantIds(db, caller.id)).includes(participantId);
+}
+
+// For lists that span many records — review queues, the follow-up
+// queue — the ids the caller may see, or "all". The same three rules as
+// canSeeParticipant, computed once rather than per row.
+export async function visibleParticipantIds(db: Db, caller: CallerScope): Promise<Set<string> | "all"> {
+  if (caller.canReadAll) return "all";
+  const ids = new Set(await caseloadParticipantIds(db, caller.id));
+  for (const f of await formerCaseload(db, caller.id)) ids.add(f.participantId);
+  if (caller.canReadClosed) {
+    const closed = await db
+      .selectDistinct({ id: episodes.participantId })
+      .from(episodes)
+      .where(sql`not ${hasOpenEpisode(episodes.participantId)}`);
+    for (const c of closed) ids.add(c.id);
+  }
+  return ids;
+}
+
+export function keepVisible<T extends { participantId: string }>(rows: T[], visible: Set<string> | "all") {
+  return visible === "all" ? rows : rows.filter((r) => visible.has(r.participantId));
+}
+
 // Who a case can be handed to: somebody who documents contacts and can
 // see the client once it's theirs. Anyone else — the system
 // administrator, QA, billing — would hold a case nobody works, with its

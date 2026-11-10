@@ -3,7 +3,8 @@ import type { FastifyInstance } from "fastify";
 import type { Db } from "@nmbm/db";
 import { episodes } from "@nmbm/db";
 import { startApp, signIn, type Client } from "./support/app.js";
-import { staff, admit, contacts, isoDaysAgo, backdateAssignmentEnd } from "./support/fixtures.js";
+import { randomUUID } from "node:crypto";
+import { staff, admit, contacts, isoDaysAgo, backdateAssignmentEnd, unique } from "./support/fixtures.js";
 import { reassign } from "../src/modules/participants/intake.js";
 
 let app: FastifyInstance;
@@ -30,6 +31,15 @@ async function closedCase(workerId: string, reason = "completed") {
   return ids;
 }
 const ids = (res: { body: { id: string }[] }) => res.body.map((r) => r.id);
+
+// A real form, so a refusal is about the record, not a missing form.
+async function publishedForm() {
+  const form = await director.post("/api/assessment-forms", { name: unique("Form ") });
+  const questions = [{ stableId: randomUUID(), type: "short_text", prompt: "How are you?", required: false, options: [] }];
+  expect((await director.put(`/api/assessment-versions/${form.body.draftVersionId}/questions`, { questions })).status).toBe(200);
+  expect((await director.post(`/api/assessment-versions/${form.body.draftVersionId}/publish`)).status).toBe(200);
+  return form.body.id as string;
+}
 
 describe("R10: closing takes the person off the active caseload immediately", () => {
   it("removes them from the worker's list and dashboard in the same request", async () => {
@@ -165,7 +175,23 @@ describe("R10: who can still reach a closed record", () => {
     const { participantId, episodeId } = await closedCase(worker.id);
     const as = await signIn(app, worker.email);
     const note = await as.post("/api/notes", { participantId, episodeId, contactResult: "contacted", body: "x" });
-    expect(note.status).toBe(409);
+    // Seeing it in the window doesn't make it theirs to write on.
+    expect(note.status).toBe(403);
+    for (const write of [
+      as.post("/api/consents", { participantId, type: "general_services", formName: "x", signedDate: "2026-01-01" }),
+      as.patch(`/api/participants/${participantId}/details`, { city: "x" }),
+      as.post(`/api/participants/${participantId}/documents`, { filename: "x.pdf", contentType: "application/pdf", sizeBytes: 10, description: "x" }),
+      as.post(`/api/participants/${participantId}/assessments`, { formId: await publishedForm(), mode: "with_staff" }),
+    ]) {
+      const res = await write;
+      expect([403, 404], JSON.stringify(res.body)).toContain(res.status);
+    }
+    // Reading it still works, and the record says it's read-only so the
+    // page doesn't offer buttons that will be refused.
+    const read = await as.get(`/api/participants/${participantId}`);
+    expect(read.status).toBe(200);
+    expect(read.body.canWrite).toBe(false);
+    expect((await director.get(`/api/participants/${participantId}`)).body.canWrite).toBe(true);
   });
 
   it("refuses to reassign a closed record — readmission is the way back", async () => {
