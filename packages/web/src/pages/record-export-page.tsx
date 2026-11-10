@@ -1,6 +1,13 @@
 import { useState } from "react";
 import { Link, useParams } from "react-router-dom";
-import { ATTENDANCE_STATUSES, RECORD_EXPORT_PURPOSES, type RecordExportPurpose } from "@nmbm/shared";
+import {
+  ATTENDANCE_STATUSES,
+  formatPhone,
+  PARTICIPANT_DETAIL_FIELDS,
+  PARTICIPANT_DETAIL_LABELS,
+  RECORD_EXPORT_PURPOSES,
+  type RecordExportPurpose,
+} from "@nmbm/shared";
 import { api, ApiError } from "../lib/api.js";
 import {
   ASSESSMENT_MODE_LABELS,
@@ -139,6 +146,7 @@ export default function RecordExportPage() {
         <p className="text-sm">
           Born {p.dateOfBirth} · payer {payer} · on file since {day(p.recordCreatedAt)}
         </p>
+        <ExportDetails details={p.details} />
         <p className="mt-2 text-xs text-nmbm-ink/60">
           Exported {new Date(doc.generatedAt).toLocaleString()} by {doc.generatedByName} for:{" "}
           {EXPORT_PURPOSE_LABELS[doc.purpose]}
@@ -183,7 +191,7 @@ export default function RecordExportPage() {
           {[...doc.notes].reverse().map((n) => (
             <li key={n.id} className="break-inside-avoid">
               <p className="text-xs text-nmbm-ink/60">
-                {new Date(n.createdAt).toLocaleString()} · {n.authorName} ·{" "}
+                {n.serviceDate} (written {new Date(n.createdAt).toLocaleString()}) · {n.authorName} ·{" "}
                 {n.contactResult === "contacted" ? "reached" : "no contact"} · {words(n.status)}
               </p>
               <p className="whitespace-pre-wrap">{n.body}</p>
@@ -303,5 +311,23 @@ export default function RecordExportPage() {
         </ul>
       </section>
     </div>
+  );
+}
+
+function ExportDetails({ details }: { details: RecordExport["participant"]["details"] }) {
+  const rows = PARTICIPANT_DETAIL_FIELDS.filter((k) => details[k]).map((k) => [
+    PARTICIPANT_DETAIL_LABELS[k],
+    k.toLowerCase().includes("phone") ? formatPhone(details[k]) : details[k],
+  ]);
+  if (rows.length === 0) return <p className="mt-1 text-sm text-nmbm-ink/60">No contact or insurance details recorded.</p>;
+  return (
+    <dl className="mt-2 grid grid-cols-[auto_1fr] gap-x-4 text-sm">
+      {rows.map(([k, v]) => (
+        <div key={k} className="contents">
+          <dt className="text-nmbm-ink/60">{k}</dt>
+          <dd>{v}</dd>
+        </div>
+      ))}
+    </dl>
   );
 }

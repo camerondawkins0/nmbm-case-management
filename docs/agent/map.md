@@ -1,6 +1,6 @@
 # Map
 
-Where things are. Current as of migration `0016`.
+Where things are. Current as of migration `0018`.
 
 ## Packages
 
@@ -37,7 +37,7 @@ splits out `audit.ts` for the same reason.
 
 ## API routes
 
-97 routes across 17 modules, plus five on the auth plugin and two on the
+98 routes across 17 modules, plus five on the auth plugin and two on the
 local storage stand-in. Every route outside `PUBLIC_BY_DESIGN` carries
 an `authorize()` or `authorizeAny()` preHandler, and the permission it
 requires is named in the file. `test/routes-authorized.test.ts` reads
@@ -47,7 +47,7 @@ the source and fails on any route that has neither — see testing.md.
 |---|---|
 | `health` | `GET /api/health` — PUBLIC_BY_DESIGN, Cloud Run health check |
 | `me` | `GET /api/me` — PUBLIC_BY_DESIGN, answers "is anyone signed in?" |
-| `participants` | `GET /api/participants` (`?status=closed` for former participants — R10), `GET /api/participants/search?q=&dob=`, `GET /api/participants/:id`, `GET /api/participants/assignable-workers`, `POST /api/participants`, `POST /api/participants/intake`, `POST /api/participants/:id/assignment` |
+| `participants` | `GET /api/participants` (`?status=closed` for former participants — R10), `GET /api/participants/search?q=&dob=`, `GET /api/participants/:id`, `GET /api/participants/assignable-workers` (caseload workers; `?for=facilitator` for everyone active), `POST /api/participants`, `POST /api/participants/intake`, `POST /api/participants/:id/assignment`, `PATCH /api/participants/:id/details` (contact, address, insurance IDs, emergency contact) |
 | `episodes` | `POST /api/episodes` (readmission — see invariants, R10), `POST /api/episodes/:id/close`, `POST /api/episodes/:id/disenrollment-letter` |
 | `notes` | `POST /api/notes`, `PATCH /api/notes/:id`, `GET /api/notes/awaiting-review`, `GET /api/notes/returned`, `POST /api/notes/:id/approve`, `POST /api/notes/:id/return` |
 | `care-plans` | `POST /api/care-plans`, `PATCH /api/care-plans/:id`, `POST /api/care-plans/:id/submit`, `GET /api/care-plans/awaiting-review`, `POST /api/care-plans/:id/approve`, `POST /api/care-plans/:id/return` |
@@ -108,8 +108,8 @@ first is behind the session check.
 | — | `holding-pages.tsx` | Shown instead of the app: signed in with no role yet, or the server can't be reached |
 | `/` | `dashboard-page.tsx` | What needs attention: care plan clocks, the no-contact ladder, notes awaiting review, referrals with no outcome |
 | `/participants` | `participants-page.tsx` | Caseload list, scoped server-side; a Closed tab (everything, for intake and supervisors) or Recently closed (a worker's own former clients, with the date access ends) |
-| `/participants/new` | `intake-page.tsx` | Admission — record, episode and assignment in one act |
-| `/participants/:id` | `participant-detail-page.tsx` | The record: flags, notes, care plan, consents, forms and assessments, documents, referrals, episode history; on a closed record, readmission |
+| `/participants/new` | `intake-page.tsx` | Admission — record, episode and assignment in one act, with optional contact, address, insurance and emergency contact |
+| `/participants/:id` | `participant-detail-page.tsx` | The record: flags, details (edit with `participants.update`), notes with their date of service, care plan, consents, forms and assessments, documents, referrals, episode history; on a closed record, readmission |
 | `/assessments/:id` | `assessment-page.tsx` | Filling in a form (saves as you go, follow-ups appear as earlier answers are given), or reading and printing a completed one |
 | `/participants/:id/export` | `record-export-page.tsx` | Choose a purpose, then the whole record laid out for print / PDF, plus a data download |
 | `/referrals-in` | `incoming-referrals-page.tsx` | Intake's queue of people referred to NMBM: to deal with, referrer still to be told, all |
@@ -134,7 +134,8 @@ reach), `sign-out-button.tsx`, `brand-mark.tsx`, `flags.tsx` (the attention badg
 `lib/rules.ts`), and the five sections the participant record composes
 — `care-plan-section.tsx`, `consents-section.tsx`,
 `assessments-section.tsx`, `documents-section.tsx`, `referrals-section.tsx`.
-`question-field.tsx` renders one question, the same way for the
+`client-details.tsx` is the details boxes, shared by intake and the
+record's Details section. `question-field.tsx` renders one question, the same way for the
 staff page, the builder's preview and the participant's link.
 `participant-link.tsx` shows a new link and passcode once, and a
 link's state with its replace and withdraw actions.
@@ -202,6 +203,8 @@ in order in `meta/_journal.json`:
 | `0014_cohort_status_canceled` | Renames the cohort status `cancelled` to `canceled` (North American spelling) |
 | `0015_configurable_programs_and_permissions` | Program completion rules (default classes, late/excused count) and `role_permission_overrides` |
 | `0016_custom_roles` | `roles.builtin`, `active`, `description`, `created_by_id`, `created_at`; active role names unique ignoring capitals |
+| `0017_care_plan_per_stay_and_clinical_review` | Unique care plan per episode (fails, deliberately, on a database that already has two); `notes.clinical_review`, backfilled for interns' notes |
+| `0018_service_date_and_contact_details` | `notes.service_date` (backfilled from `created_at` in Pacific time); `v_no_contact_counts` ordered by it; participant contact, address, CIN (unique), plan member ID, emergency contact |
 
 ## Seeds
 

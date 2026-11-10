@@ -9,7 +9,7 @@ import {
   vNoContactCounts,
 } from "@nmbm/db";
 import { eq, and, or, isNull, isNotNull, inArray, desc, sql, type SQL } from "drizzle-orm";
-import type { ParticipantCreate, ParticipantSearch } from "@nmbm/shared";
+import type { ParticipantCreate, ParticipantDetails, ParticipantSearch } from "@nmbm/shared";
 
 // One row per participant with everything the caseload screen shows, so
 // a list of 40 doesn't turn into 120 follow-up queries.
@@ -134,8 +134,10 @@ export async function listNotes(db: Db, participantId: string) {
     .select({
       id: notes.id,
       contactResult: notes.contactResult,
+      serviceDate: notes.serviceDate,
       body: notes.body,
       createdAt: notes.createdAt,
+      clinicalReview: notes.clinicalReview,
       authorName: users.displayName,
       authorId: notes.authorId,
       episodeId: notes.episodeId,
@@ -146,7 +148,39 @@ export async function listNotes(db: Db, participantId: string) {
     .from(notes)
     .innerJoin(users, eq(users.id, notes.authorId))
     .where(eq(notes.participantId, participantId))
-    .orderBy(desc(notes.createdAt));
+    .orderBy(desc(notes.serviceDate), desc(notes.createdAt));
+}
+
+// Contact, address, emergency contact and insurance IDs: on the record,
+// not in the caseload list, which doesn't need them.
+const detailsSelection = {
+  phone: participants.phone,
+  email: participants.email,
+  addressLine1: participants.addressLine1,
+  addressLine2: participants.addressLine2,
+  city: participants.city,
+  state: participants.state,
+  postalCode: participants.postalCode,
+  mediCalCin: participants.mediCalCin,
+  planMemberId: participants.planMemberId,
+  emergencyContactName: participants.emergencyContactName,
+  emergencyContactPhone: participants.emergencyContactPhone,
+  emergencyContactRelationship: participants.emergencyContactRelationship,
+  updatedAt: participants.detailsUpdatedAt,
+};
+
+export async function findDetails(db: Db, participantId: string) {
+  const [row] = await db.select(detailsSelection).from(participants).where(eq(participants.id, participantId));
+  return row;
+}
+
+export async function updateDetails(db: Db, participantId: string, values: Partial<ParticipantDetails>) {
+  const [row] = await db
+    .update(participants)
+    .set({ ...values, detailsUpdatedAt: new Date() })
+    .where(eq(participants.id, participantId))
+    .returning(detailsSelection);
+  return row;
 }
 
 export async function insert(db: Db, input: ParticipantCreate) {

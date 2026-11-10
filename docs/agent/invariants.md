@@ -152,10 +152,52 @@ and they behave the same way on purpose:
   them another round trip.
 - "Returned" is a state, never a deletion. The row keeps its id, its
   author and its history.
-- A note written by someone who holds `notes.approve` is approved on
-  creation rather than queued. There is nobody above them in the chain,
-  so queueing it would park it forever. Whether NMBM wants that is
-  flagged in `docs/DISCOVERY_FOLLOWUP.md`.
+- **Two chains, routed by permission.** A note whose author holds
+  `notes.reviewed_clinically` (interns, by default) goes to clinical
+  review and only a `notes.approve.clinical` holder (the Clinical
+  Director) can approve or return it; any other note needs
+  `notes.approve`. Each reviewer's queue lists only what they can sign.
+  Which chain a note is in is fixed when it's written
+  (`notes.clinical_review`), so changing the author's roles later doesn't
+  move notes already queued.
+- `notes.reviewed_clinically` is a restriction, not access
+  (`RESTRICTION_PERMISSIONS`): not holding it doesn't stop a staff
+  manager giving a role that has it.
+- A note written by someone who could sign off its own chain is approved
+  on creation rather than queued. There is nobody above them, so
+  queueing it would park it forever. Whether NMBM wants that is flagged
+  in `docs/DISCOVERY_FOLLOWUP.md`.
+
+## One care plan per stay, on the client's own stay (M9)
+
+The record, the caseload list and both M9 clocks read "the" plan of an
+episode. A plan can only be added to the participant's open episode, and
+a unique index on `care_plans.episode_id` refuses a second (two arriving
+at once included). Before this, a second plan saved, never showed, and
+listed the client twice. A readmission's new episode takes its own plan.
+
+## A case goes only to somebody who can work it (M4/U5)
+
+Admission, readmission and reassignment refuse a worker who can't both
+write notes and see clients (`notes.write` plus `participants.read.own`
+or `.all`, through an active role — `assertCaseloadWorker`). Otherwise
+a case lands on the system administrator or QA, and its no-contact
+ladder and care plan clocks run on nobody's screen. The picker offers
+the same people (`/api/participants/assignable-workers`);
+`?for=facilitator` is everyone active, because running a class isn't
+holding a caseload.
+
+## A note's date is when the contact happened (M6)
+
+- `notes.service_date` is the day of the contact; `created_at` is when it
+  was written up. Default today, **in Pacific time** (`todayInOrg`) —
+  the server runs on UTC, and a 6pm note is still that day's.
+- Not in the future, not before the stay began. Correctable when the
+  note is returned for revision, within the same limits.
+- M6's run (`v_no_contact_counts`, migration 0018) is in order of
+  service date, then when written: a missed call logged late doesn't
+  count if a contact came after it, and a late-logged earlier contact
+  doesn't reset later misses.
 
 ## Every consequential action leaves a trail (M30)
 
@@ -223,6 +265,15 @@ them, because that state is what a person falls through. The same
 transaction is where the care plan due date is computed, so the clock
 starts from the episode NMBM actually recorded rather than from whenever
 someone next opened the record.
+
+Intake also takes contact details, address, Medi-Cal CIN, plan member ID
+and an emergency contact, all optional while M3 is unanswered. Phones are
+stored as ten digits; the CIN is checked as eight digits and a letter.
+A Medi-Cal CIN is unique across records (partial unique index): the same
+CIN is the same person or a typo, so unlike a name match it can't be
+confirmed past. Details are changed afterward with
+`participants.update`, and the audit line names the fields changed,
+never their values.
 
 ## State a person could be wrong about is derived, not stored
 

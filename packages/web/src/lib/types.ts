@@ -3,6 +3,7 @@ import type {
   IncomingReferralSource,
   IncomingReferralStatus,
   RecordExportPurpose,
+  ParticipantDetails,
   Answers,
   AssessmentMode,
   AssessmentStatus,
@@ -67,8 +68,10 @@ export type ParticipantRow = {
 export type ParticipantNote = {
   id: string;
   contactResult: ContactResult;
+  serviceDate: string;
   body: string;
   createdAt: string;
+  clinicalReview: boolean;
   authorName: string;
   authorId: string;
   episodeId: string;
@@ -103,6 +106,8 @@ export type PendingNote = {
   id: string;
   body: string;
   contactResult: ContactResult;
+  serviceDate: string;
+  clinicalReview: boolean;
   createdAt: string;
   authorName: string;
   participantId: string;
@@ -418,6 +423,7 @@ export type RecordExport = {
     dateOfBirth: string;
     payer: Payer | null;
     recordCreatedAt: string;
+    details: Record<keyof ParticipantDetails, string | null>;
   };
   episodes: {
     id: string;
@@ -432,6 +438,7 @@ export type RecordExport = {
   notes: {
     id: string;
     contactResult: ContactResult;
+    serviceDate: string;
     body: string;
     createdAt: string;
     authorName: string;
@@ -486,7 +493,10 @@ export type RecordExport = {
   omitted: string[];
 };
 
+export type ClientDetails = Record<keyof ParticipantDetails, string | null> & { updatedAt: string | null };
+
 export type ParticipantDetail = ParticipantRow & {
+  details: ClientDetails;
   episodes: EpisodeSummary[];
   followUps: FollowUpSchedule | null;
   notes: ParticipantNote[];
@@ -504,7 +514,6 @@ export type Me = {
   permissions: Permission[];
 };
 
-// A note a reviewer sent back to its author, with why (U6).
 export type GridRole = { code: string; label: string; description: string | null; builtin: boolean; people: number };
 
 export type PermissionGrid = {
@@ -515,9 +524,11 @@ export type PermissionGrid = {
   changes: { role: string; permission: Permission; changedAt: string; changedByName: string }[];
 };
 
+// A note a reviewer sent back to its author, with why (U6).
 export type ReturnedNote = {
   id: string;
   body: string;
+  serviceDate: string;
   reviewNote: string | null;
   createdAt: string;
   participantId: string;

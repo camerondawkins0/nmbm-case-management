@@ -4,9 +4,24 @@ import { notFound, conflict, badRequest } from "../../plugins/errors.js";
 import * as repository from "./repository.js";
 import { writeAudit } from "../../plugins/audit.js";
 
+// One plan per stay, on the client's open stay. The record and the M9
+// clocks read the episode's plan; a second one was saved and never
+// shown, and a plan filed against somebody else's episode would sit on
+// the wrong person's record. The unique index on the episode is what
+// refuses a second plan, including two arriving at once.
 export async function createCarePlan(db: Db, input: CarePlanCreate) {
-  return repository.insert(db, input);
+  const episode = await repository.openEpisodeFor(db, input.participantId);
+  if (!episode) throw conflict("This participant has no open episode — readmit them first");
+  if (episode.id !== input.episodeId) throw conflict("Care plans can only be added to the open episode");
+  try {
+    return await repository.insert(db, input);
+  } catch (e) {
+    if ((e as { code?: string }).code === "23505") throw conflict(ONE_PLAN);
+    throw e;
+  }
 }
+
+const ONE_PLAN = "This stay already has a care plan. Edit that one instead.";
 
 async function load(db: Db, id: string) {
   const plan = await repository.findById(db, id);

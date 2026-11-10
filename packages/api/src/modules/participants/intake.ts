@@ -2,11 +2,13 @@ import type { Db } from "@nmbm/db";
 import { participants, assignments, episodes, users } from "@nmbm/db";
 import { eq, and, isNull } from "drizzle-orm";
 import type { Intake } from "@nmbm/shared";
-import { CARE_PLAN_COMPLETION_DAYS } from "@nmbm/shared";
-import { AppError, conflict, notFound } from "../../plugins/errors.js";
+import { CARE_PLAN_COMPLETION_DAYS, PARTICIPANT_DETAIL_FIELDS } from "@nmbm/shared";
+import { AppError, conflict } from "../../plugins/errors.js";
 import { possibleDuplicates } from "./repository.js";
+import { CIN_IN_USE, isCinConflict } from "./service.js";
 import { writeAudit } from "../../plugins/audit.js";
 import { markAdmitted } from "../incoming-referrals/service.js";
+import { assertCaseloadWorker } from "../../lib/caseload.js";
 
 function isoDate(d: Date) {
   return d.toISOString().slice(0, 10);
@@ -17,9 +19,7 @@ function isoDate(d: Date) {
 // a participant can never exist in the half-state of being enrolled
 // with nobody responsible for them.
 export async function admitParticipant(db: Db, input: Intake, actorId: string) {
-  const [worker] = await db.select().from(users).where(eq(users.id, input.assignedWorkerId));
-  if (!worker) throw notFound("Assigned worker not found");
-  if (!worker.active) throw conflict("That worker's account is deactivated");
+  const worker = await assertCaseloadWorker(db, input.assignedWorkerId);
 
   // R10's returning participant belongs on their existing record, with
   // their history, not on a second one. The refusal doesn't say whose
@@ -37,67 +37,75 @@ export async function admitParticipant(db: Db, input: Intake, actorId: string) {
   const carePlanDue = new Date(input.startDate);
   carePlanDue.setDate(carePlanDue.getDate() + CARE_PLAN_COMPLETION_DAYS);
 
-  return db.transaction(async (tx) => {
-    const [participant] = await tx
-      .insert(participants)
-      .values({
-        firstName: input.firstName,
-        lastName: input.lastName,
-        dateOfBirth: input.dateOfBirth,
-        payer: input.payer,
-      })
-      .returning();
+  const details = Object.fromEntries(PARTICIPANT_DETAIL_FIELDS.map((k) => [k, input[k] ?? null]));
+  try {
+    return await db.transaction(async (tx) => {
+      const [participant] = await tx
+        .insert(participants)
+        .values({
+          firstName: input.firstName,
+          lastName: input.lastName,
+          dateOfBirth: input.dateOfBirth,
+          payer: input.payer,
+          ...details,
+        })
+        .returning();
 
-    const [episode] = await tx
-      .insert(episodes)
-      .values({
+      const [episode] = await tx
+        .insert(episodes)
+        .values({
+          participantId: participant.id,
+          startDate: input.startDate,
+          carePlanDueDate: isoDate(carePlanDue),
+        })
+        .returning();
+
+      await tx.insert(assignments).values({
         participantId: participant.id,
-        startDate: input.startDate,
-        carePlanDueDate: isoDate(carePlanDue),
-      })
-      .returning();
+        workerId: input.assignedWorkerId,
+        assignedById: actorId,
+      });
 
-    await tx.insert(assignments).values({
-      participantId: participant.id,
-      workerId: input.assignedWorkerId,
-      assignedById: actorId,
+      await writeAudit(tx as unknown as Db, {
+        actorUserId: actorId,
+        action: "participant.admitted",
+        entityType: "participant",
+        entityId: participant.id,
+        detail:
+          `episode ${episode.id} opened, assigned to ${worker.displayName}` +
+          (duplicates.length > 0
+            ? `; admitted as a different person despite ${duplicates.length} record(s) with the same date of birth and a matching name`
+            : ""),
+      });
+
+      // Admitted from a referral: the referral closes in the same act, so
+      // there's never a person on the caseload whose referral still sits
+      // in intake's queue as unanswered.
+      if (input.incomingReferralId) {
+        await markAdmitted(
+          tx as unknown as Db,
+          input.incomingReferralId,
+          { participantId: participant.id, episodeId: episode.id },
+          actorId,
+        );
+      }
+
+      return { participant, episode };
     });
-
-    await writeAudit(tx as unknown as Db, {
-      actorUserId: actorId,
-      action: "participant.admitted",
-      entityType: "participant",
-      entityId: participant.id,
-      detail:
-        `episode ${episode.id} opened, assigned to ${worker.displayName}` +
-        (duplicates.length > 0
-          ? `; admitted as a different person despite ${duplicates.length} record(s) with the same date of birth and a matching name`
-          : ""),
-    });
-
-    // Admitted from a referral: the referral closes in the same act, so
-    // there's never a person on the caseload whose referral still sits
-    // in intake's queue as unanswered.
-    if (input.incomingReferralId) {
-      await markAdmitted(
-        tx as unknown as Db,
-        input.incomingReferralId,
-        { participantId: participant.id, episodeId: episode.id },
-        actorId,
-      );
-    }
-
-    return { participant, episode };
-  });
+  } catch (e) {
+    // Stronger than a name match, and not something confirmNotDuplicate
+    // waves through: the same CIN is the same person, or a mistyped
+    // number. The unique index decides.
+    if (isCinConflict(e)) throw new AppError(409, "cin_in_use", CIN_IN_USE);
+    throw e;
+  }
 }
 
 // U9: "caseloads would be reassigned". The prior row is closed rather
 // than overwritten, so who held the case in March is still answerable
 // in October.
 export async function reassign(db: Db, participantId: string, workerId: string, actorId: string) {
-  const [worker] = await db.select().from(users).where(eq(users.id, workerId));
-  if (!worker) throw notFound("Worker not found");
-  if (!worker.active) throw conflict("That worker's account is deactivated");
+  const worker = await assertCaseloadWorker(db, workerId);
 
   // R10: an assignment is responsibility for an active case. Handing a
   // closed record to somebody would put it back on a caseload with no
@@ -141,9 +149,9 @@ export async function reassign(db: Db, participantId: string, workerId: string, 
   });
 }
 
-// Who a supervisor can hand a case to. Deactivated accounts are
-// excluded so a departing worker can't be assigned new work (U9).
-export async function listAssignableWorkers(db: Db) {
+// Everyone active, for choosing a class facilitator: running a class
+// isn't holding a caseload.
+export async function listActiveStaff(db: Db) {
   return db
     .select({ id: users.id, displayName: users.displayName, email: users.email })
     .from(users)

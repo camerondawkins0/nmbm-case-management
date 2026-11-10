@@ -53,6 +53,8 @@ const STAFF: { email: string; name: string; role: Role }[] = [
   { email: "p.nair@nmbm.example.org", name: "Priya Nair", role: "intake_specialist" },
   { email: "d.fowler@nmbm.example.org", name: "Denise Fowler", role: "quality_assurance_coordinator" },
   { email: "admin@nmbm.example.org", name: "Sam Okafor", role: "system_administrator" },
+  // Writes clinical notes, which go to the Clinical Director (U6).
+  { email: "j.reyes@nmbm.example.org", name: "Jordan Reyes", role: "apcc_acsw_intern" },
 ];
 
 function daysAgo(n: number) {
@@ -290,7 +292,7 @@ async function main() {
   const supervisorId = staffByEmail.get("m.bell@nmbm.example.org")!;
   const clinicalDirectorId = staffByEmail.get("r.alvarez@nmbm.example.org")!;
 
-  for (const fixture of FIXTURES) {
+  for (const [i, fixture] of FIXTURES.entries()) {
     const workerId = staffByEmail.get(fixture.worker)!;
 
     const [participant] = await db
@@ -300,6 +302,17 @@ async function main() {
         lastName: fixture.last,
         dateOfBirth: fixture.dob,
         payer: fixture.payer,
+        // Invented: 555-01xx numbers are reserved for fiction, and the
+        // CINs start 9000 so none is a real person's.
+        phone: `562555${String(100 + i).padStart(4, "0")}`,
+        addressLine1: `${120 + i * 14} Example Ave`,
+        city: "Long Beach",
+        state: "CA",
+        postalCode: "90802",
+        mediCalCin: fixture.payer === "medi_cal" ? `9000${String(1000 + i).padStart(4, "0")}A` : null,
+        emergencyContactName: i % 3 === 0 ? null : `Contact ${fixture.last}`,
+        emergencyContactPhone: i % 3 === 0 ? null : `562555${String(150 + i).padStart(4, "0")}`,
+        emergencyContactRelationship: i % 3 === 0 ? null : "Family",
       })
       .returning();
 

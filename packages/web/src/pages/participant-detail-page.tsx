@@ -15,6 +15,8 @@ import { CLOSURE_REASON_LABELS, REFERRAL_SOURCE_LABELS } from "../lib/labels.js"
 import { FOLLOW_UP_OUTCOME_LABELS } from "@nmbm/shared";
 import type { FollowUpSchedule } from "../lib/types.js";
 import { FollowUpCallForm } from "../components/follow-up-call-form.js";
+import { ClientDetailsSection } from "../components/client-details.js";
+import { todayInOrg } from "@nmbm/shared";
 
 export default function ParticipantDetailPage({ me }: { me: Me }) {
   const { id } = useParams<{ id: string }>();
@@ -32,6 +34,7 @@ export default function ParticipantDetailPage({ me }: { me: Me }) {
   // The author revising a note a reviewer sent back (U6).
   const [revising, setRevising] = useState<string | null>(null);
   const [revision, setRevision] = useState("");
+  const [revisionDate, setRevisionDate] = useState("");
 
   const load = useCallback(() => {
     if (!id) return;
@@ -195,10 +198,21 @@ export default function ParticipantDetailPage({ me }: { me: Me }) {
         </div>
       )}
 
+      <ClientDetailsSection
+        participantId={record.id}
+        details={record.details}
+        canEdit={can(me, "participants.update")}
+        onSaved={(message) => {
+          setNotice(message);
+          load();
+        }}
+      />
+
       {can(me, "notes.write") && record.episodeStatus === "open" && record.episodeId && (
         <NoteForm
           participantId={record.id}
           episodeId={record.episodeId}
+          stayStarted={record.startDate}
           onSaved={(message) => {
             setNotice(message);
             load();
@@ -381,7 +395,10 @@ export default function ParticipantDetailPage({ me }: { me: Me }) {
                     Earlier episode
                   </span>
                 )}
-                {note.authorName} · {new Date(note.createdAt).toLocaleDateString()}
+                <span className="font-medium text-nmbm-ink/70">{day(note.serviceDate)}</span> · {note.authorName}
+                {/* Written up on a later day: both dates, so the gap is visible. */}
+                {localDay(note.createdAt) !== note.serviceDate && ` · written ${new Date(note.createdAt).toLocaleDateString()}`}
+                {note.clinicalReview && " · clinical"}
                 {note.status === "approved" && " · approved"}
                 {note.status === "pending_review" && " · awaiting review"}
               </p>
@@ -396,6 +413,7 @@ export default function ParticipantDetailPage({ me }: { me: Me }) {
                   onClick={() => {
                     setRevising(note.id);
                     setRevision(note.body);
+                    setRevisionDate(note.serviceDate);
                   }}
                   className="mt-2 rounded border border-nmbm-ink/30 px-3 py-1 text-xs"
                 >
@@ -408,7 +426,11 @@ export default function ParticipantDetailPage({ me }: { me: Me }) {
                   onSubmit={(e) => {
                     e.preventDefault();
                     act(
-                      () => api(`/api/notes/${note.id}`, { method: "PATCH", body: JSON.stringify({ body: revision }) }),
+                      () =>
+                        api(`/api/notes/${note.id}`, {
+                          method: "PATCH",
+                          body: JSON.stringify({ body: revision, serviceDate: revisionDate }),
+                        }),
                       "Note revised and sent back for review.",
                     ).then((ok) => ok && setRevising(null));
                   }}
@@ -420,9 +442,20 @@ export default function ParticipantDetailPage({ me }: { me: Me }) {
                     onChange={(e) => setRevision(e.target.value)}
                     className="rounded border border-nmbm-ink/20 px-2 py-1.5 text-sm"
                   />
+                  <label className="flex items-center gap-2 text-xs text-nmbm-ink/70">
+                    Date of service
+                    <input
+                      type="date"
+                      required
+                      value={revisionDate}
+                      max={todayInOrg()}
+                      onChange={(e) => setRevisionDate(e.target.value)}
+                      className="rounded border border-nmbm-ink/20 px-2 py-1 text-sm"
+                    />
+                  </label>
                   <div className="flex gap-2">
                     <button
-                      disabled={!revision.trim() || revision === note.body}
+                      disabled={!revision.trim() || (revision === note.body && revisionDate === note.serviceDate)}
                       className="rounded bg-nmbm-ink px-3 py-1 text-xs font-medium text-nmbm-paper disabled:opacity-40"
                     >
                       Resubmit for review
@@ -444,31 +477,49 @@ export default function ParticipantDetailPage({ me }: { me: Me }) {
   );
 }
 
+// "2026-11-09" as the person reads dates, without the browser shifting
+// a date-only value back a day into UTC.
+function day(iso: string) {
+  const [y, m, d] = iso.split("-").map(Number);
+  return new Date(y, m - 1, d).toLocaleDateString();
+}
+
+// The Long Beach day a timestamp fell on, to compare with a date of service.
+function localDay(timestamp: string) {
+  return todayInOrg(new Date(timestamp));
+}
+
 function NoteForm({
   participantId,
   episodeId,
+  stayStarted,
   onSaved,
 }: {
   participantId: string;
   episodeId: string;
+  stayStarted: string | null;
   onSaved: (message: string) => void;
 }) {
   const [contactResult, setContactResult] = useState<ContactResult>("contacted");
   const [body, setBody] = useState("");
+  const [serviceDate, setServiceDate] = useState(todayInOrg);
   const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     setSaving(true);
+    setError(null);
     try {
       const result = await api<{ noContact: { count: number; attemptsUntilDisenrollment: number } }>(
         "/api/notes",
         {
           method: "POST",
-          body: JSON.stringify({ participantId, episodeId, contactResult, body }),
+          body: JSON.stringify({ participantId, episodeId, contactResult, body, serviceDate }),
         },
       );
       setBody("");
+      setServiceDate(todayInOrg());
       // Telling the worker where the ladder now stands is the whole
       // point of returning the count from the write.
       onSaved(
@@ -476,6 +527,10 @@ function NoteForm({
           ? `Logged. ${result.noContact.count} consecutive missed attempts.`
           : "Contact logged.",
       );
+    } catch (err) {
+      // Kept on screen with what was typed: a visit note is hard to
+      // write twice.
+      setError(err instanceof ApiError ? err.message : "Could not save the note");
     } finally {
       setSaving(false);
     }
@@ -497,6 +552,18 @@ function NoteForm({
             {value === "contacted" ? "Reached them" : "Could not reach"}
           </label>
         ))}
+        <label className="ml-auto flex items-center gap-2 text-nmbm-ink/70">
+          Date of service
+          <input
+            type="date"
+            required
+            value={serviceDate}
+            min={stayStarted ?? undefined}
+            max={todayInOrg()}
+            onChange={(e) => setServiceDate(e.target.value)}
+            className="rounded border border-nmbm-ink/20 px-2 py-1 text-sm text-nmbm-ink"
+          />
+        </label>
       </div>
       <textarea
         value={body}
@@ -506,6 +573,7 @@ function NoteForm({
         placeholder="What happened?"
         className="mt-3 w-full rounded border border-nmbm-ink/20 px-3 py-2 text-sm"
       />
+      {error && <p className="mt-1 text-sm text-state-alert">{error}</p>}
       <button
         type="submit"
         disabled={saving}

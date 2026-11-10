@@ -5,9 +5,9 @@ import type { NoteCreate } from "@nmbm/shared";
 
 export async function insert(
   db: Db,
-  input: NoteCreate,
+  input: NoteCreate & { serviceDate: string },
   authorId: string,
-  authorIsReviewer: boolean,
+  { clinicalReview, selfApproved }: { clinicalReview: boolean; selfApproved: boolean },
 ) {
   const [row] = await db
     .insert(notes)
@@ -17,9 +17,11 @@ export async function insert(
       authorId,
       contactResult: input.contactResult,
       body: input.body,
-      status: authorIsReviewer ? "approved" : "pending_review",
-      approvedById: authorIsReviewer ? authorId : null,
-      approvedAt: authorIsReviewer ? new Date() : null,
+      serviceDate: input.serviceDate,
+      clinicalReview,
+      status: selfApproved ? "approved" : "pending_review",
+      approvedById: selfApproved ? authorId : null,
+      approvedAt: selfApproved ? new Date() : null,
     })
     .returning();
   return row;

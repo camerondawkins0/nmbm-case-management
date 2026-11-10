@@ -1,6 +1,8 @@
 import type { Db } from "@nmbm/db";
-import { assignments, episodes } from "@nmbm/db";
-import { eq, and, isNull, isNotNull, gte, desc, sql } from "drizzle-orm";
+import { assignments, episodes, permissions, rolePermissions, roles, userRoles, users } from "@nmbm/db";
+import { eq, and, isNull, isNotNull, gte, desc, sql, inArray } from "drizzle-orm";
+import type { Permission } from "@nmbm/shared";
+import { conflict, notFound } from "../plugins/errors.js";
 import { getPermissions } from "../plugins/authorize.js";
 import { getSetting } from "./settings.js";
 
@@ -101,4 +103,51 @@ export async function canSeeParticipant(
   if ((await caseloadParticipantIds(db, caller.id)).includes(participantId)) return true;
   if (caller.canReadClosed && (await isClosedRecord(db, participantId))) return true;
   return (await formerCaseload(db, caller.id)).some((f) => f.participantId === participantId);
+}
+
+// Who a case can be handed to: somebody who documents contacts and can
+// see the client once it's theirs. Anyone else — the system
+// administrator, QA, billing — would hold a case nobody works, with its
+// no-contact ladder and care plan clocks running on nobody's screen.
+// By permission, so a role NMBM add for case work qualifies the moment
+// it can do both.
+function holdsAny(codes: Permission[]) {
+  return sql`exists (
+    select 1 from ${userRoles}
+    join ${roles} on ${roles.id} = ${userRoles.roleId} and ${roles.active}
+    join ${rolePermissions} on ${rolePermissions.roleId} = ${userRoles.roleId}
+    join ${permissions} on ${permissions.id} = ${rolePermissions.permissionId}
+    where ${userRoles.userId} = ${users.id} and ${inArray(permissions.code, codes)}
+  )`;
+}
+
+export async function listCaseloadWorkers(db: Db, onlyId?: string) {
+  return db
+    .select({ id: users.id, displayName: users.displayName, email: users.email })
+    .from(users)
+    .where(
+      and(
+        eq(users.active, true),
+        holdsAny(["notes.write"]),
+        holdsAny(["participants.read.own", "participants.read.all"]),
+        onlyId ? eq(users.id, onlyId) : undefined,
+      ),
+    )
+    .orderBy(users.displayName);
+}
+
+// Checked wherever a case is given to somebody: admission, readmission,
+// reassignment. The picker only offers these people, but the picker
+// isn't the control.
+export async function assertCaseloadWorker(db: Db, workerId: string) {
+  const [worker] = await db.select().from(users).where(eq(users.id, workerId));
+  if (!worker) throw notFound("Assigned worker not found");
+  if (!worker.active) throw conflict("That worker's account is deactivated");
+  const [ok] = await listCaseloadWorkers(db, workerId);
+  if (!ok) {
+    throw conflict(
+      `${worker.displayName} can't take a caseload: their roles don't let them both write notes and see clients.`,
+    );
+  }
+  return worker;
 }

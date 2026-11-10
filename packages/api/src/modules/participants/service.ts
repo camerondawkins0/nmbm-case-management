@@ -1,7 +1,14 @@
 import type { Db } from "@nmbm/db";
 import { assignments } from "@nmbm/db";
-import type { ParticipantCreate, ParticipantListQuery, ParticipantSearch } from "@nmbm/shared";
-import { notFound, forbidden } from "../../plugins/errors.js";
+import {
+  PARTICIPANT_DETAIL_LABELS,
+  type ParticipantCreate,
+  type ParticipantDetails,
+  type ParticipantListQuery,
+  type ParticipantSearch,
+} from "@nmbm/shared";
+import { notFound, forbidden, conflict } from "../../plugins/errors.js";
+import { writeAudit } from "../../plugins/audit.js";
 import {
   caseloadParticipantIds,
   canSeeParticipant,
@@ -58,7 +65,8 @@ export async function getParticipant(db: Db, caller: CallerScope, id: string) {
   }
   const row = await repository.findById(db, id);
   if (!row) throw notFound("Participant not found");
-  const [episodes, notes, consents, referrals, programs, followUps, referralsIn] = await Promise.all([
+  const [details, episodes, notes, consents, referrals, programs, followUps, referralsIn] = await Promise.all([
+    repository.findDetails(db, id),
     repository.listEpisodes(db, id),
     repository.listNotes(db, id),
     consentService.listForParticipant(db, id),
@@ -67,7 +75,47 @@ export async function getParticipant(db: Db, caller: CallerScope, id: string) {
     followUpService.scheduleForParticipant(db, id),
     incomingReferralService.listForParticipant(db, id),
   ]);
-  return { ...decorate(row), episodes, notes, consents, referrals, programs, followUps, referralsIn };
+  return { ...decorate(row), details, episodes, notes, consents, referrals, programs, followUps, referralsIn };
+}
+
+export const CIN_IN_USE =
+  "A record with this Medi-Cal CIN already exists. If this is a returning client, find them and readmit them; otherwise check the number.";
+
+// A CIN names one person, so a second record with it is refused. The
+// unique index decides; this turns its refusal into something to act on.
+export function isCinConflict(e: unknown) {
+  return (e as { code?: string; constraint_name?: string }).code === "23505" &&
+    (e as { constraint_name?: string }).constraint_name === "participants_medi_cal_cin";
+}
+
+// Phones change and people move. Only what's sent changes, and the
+// audit line names the fields, never their values: those are PHI.
+export async function updateDetails(db: Db, id: string, input: Partial<ParticipantDetails>, actorId: string) {
+  const current = await repository.findDetails(db, id);
+  if (!current) throw notFound("Participant not found");
+  const changed = (Object.keys(input) as (keyof ParticipantDetails)[]).filter(
+    (k) => (input[k] ?? null) !== (current[k] ?? null),
+  );
+  if (changed.length === 0) return current;
+  const values = Object.fromEntries(changed.map((k) => [k, input[k] ?? null])) as Partial<ParticipantDetails>;
+  return db.transaction(async (raw) => {
+    const tx = raw as unknown as Db;
+    let row;
+    try {
+      row = await repository.updateDetails(tx, id, values);
+    } catch (e) {
+      if (isCinConflict(e)) throw conflict(CIN_IN_USE);
+      throw e;
+    }
+    await writeAudit(tx, {
+      actorUserId: actorId,
+      action: "participant.details_updated",
+      entityType: "participant",
+      entityId: id,
+      detail: `Changed: ${changed.map((k) => PARTICIPANT_DETAIL_LABELS[k]).join(", ")}`,
+    });
+    return row;
+  });
 }
 
 export async function createParticipant(

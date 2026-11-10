@@ -14,12 +14,22 @@ export const PERMISSIONS = [
   // active caseload.
   "participants.read.closed",
   "participants.write",
+  // Contact details, address, emergency contact and insurance IDs
+  // change after intake; whoever works the case keeps them current.
+  "participants.update",
   // U3/M4: "Supervisors can assign a client to a CHW. Clinical Director
   // can assign a mental health client to an MSW intern, APCC, or ACSW."
   "participants.assign",
   "episodes.write",
   "notes.write",
   "notes.approve", // CHW supervisor / Program Manager (U6)
+  // U6: "Clinical Director reviews notes and treatment plans for
+  // APCC/ACSW interns." Routing is by permission rather than by role
+  // name, so a role NMBM add for a new kind of clinician routes the
+  // same way. The first marks whose notes go to clinical review; the
+  // second is who reviews them.
+  "notes.reviewed_clinically",
+  "notes.approve.clinical",
   "care_plans.write",
   "care_plans.approve", // Clinical Director (U6)
   "consents.write", // record and revoke consent forms (M15/M16)
@@ -81,8 +91,10 @@ export const DEFAULT_ROLE_PERMISSIONS: Record<Role, Permission[]> = {
     "episodes.write",
     "notes.write",
     "notes.approve",
+    "notes.approve.clinical",
     "care_plans.write",
     "care_plans.approve",
+    "participants.update",
     "feedback.submit",
   ],
   billing_coordinator: ["participants.read.all", "feedback.submit"],
@@ -95,6 +107,7 @@ export const DEFAULT_ROLE_PERMISSIONS: Record<Role, Permission[]> = {
     "referrals.write",
     "participants.read.own",
     "participants.write",
+    "participants.update",
     "episodes.write",
     "feedback.submit",
   ],
@@ -111,6 +124,7 @@ export const DEFAULT_ROLE_PERMISSIONS: Record<Role, Permission[]> = {
     "consents.write",
     "referrals.write",
     "participants.read.own",
+    "participants.update",
     "notes.write",
     "care_plans.write",
     "feedback.submit",
@@ -130,7 +144,9 @@ export const DEFAULT_ROLE_PERMISSIONS: Record<Role, Permission[]> = {
     "assessments.write",
     "attendance.record",
     "participants.read.own",
+    "participants.update",
     "notes.write",
+    "notes.reviewed_clinically",
     "referrals.write",
     "feedback.submit",
   ],
@@ -155,11 +171,14 @@ export const PERMISSION_INFO: Record<Permission, { group: string; label: string;
   "participants.read.all": { group: "Clients", label: "See every client", description: "Open any active or closed record, on anyone's caseload." },
   "participants.read.closed": { group: "Clients", label: "See closed records", description: "Find and open former clients' records, to readmit them. Not active ones." },
   "participants.write": { group: "Clients", label: "Admit clients", description: "Complete intake for a new client." },
+  "participants.update": { group: "Clients", label: "Update client details", description: "Change a client's phone, address, emergency contact and insurance IDs." },
   "participants.assign": { group: "Clients", label: "Assign case managers", description: "Hand a client to a different case manager." },
   "episodes.write": { group: "Clients", label: "Close and readmit", description: "Close an enrollment (disenroll) and readmit a former client." },
   "records.export": { group: "Clients", label: "Export whole records", description: "Export a client's complete record. Logged with a reason, as a disclosure." },
   "notes.write": { group: "Notes and care plans", label: "Write notes", description: "Record contact notes on clients they can see." },
   "notes.approve": { group: "Notes and care plans", label: "Review notes", description: "Approve other people's notes or return them for revision." },
+  "notes.reviewed_clinically": { group: "Notes and care plans", label: "Notes go to clinical review", description: "Their notes are signed off by a clinical reviewer, not a CHW supervisor. For interns and associates." },
+  "notes.approve.clinical": { group: "Notes and care plans", label: "Review clinical notes", description: "Approve or return notes from people whose notes go to clinical review." },
   "care_plans.write": { group: "Notes and care plans", label: "Write care plans", description: "Write and submit care plans." },
   "care_plans.approve": { group: "Notes and care plans", label: "Approve care plans", description: "Approve care plans or return them for revision." },
   "consents.write": { group: "Consents, referrals and documents", label: "Record consents", description: "Record signed consent forms and revoke them." },
@@ -181,6 +200,12 @@ export const PERMISSION_INFO: Record<Permission, { group: string; label: string;
 // The permissions that keep the app administrable. A change that would
 // leave no active person holding one of these is refused.
 export const LOCKOUT_PERMISSIONS: Permission[] = ["admin.roles.manage", "admin.users.manage"];
+
+// Permissions that add a check on somebody rather than letting them do
+// anything. Not holding one yourself is no reason you can't give a role
+// that has it — a staff manager who isn't an intern can still give
+// somebody the intern role.
+export const RESTRICTION_PERMISSIONS: Permission[] = ["notes.reviewed_clinically"];
 
 // Custom roles: a name NMBM choose for a set of the permissions above.
 export const roleCreateSchema = z.object({
@@ -212,6 +237,8 @@ export const PERMISSION_NEEDS: Partial<Record<Permission, { anyOf: Permission[];
   "assessments.write": { anyOf: SEES_CLIENTS, why: "forms are filled in on a client's record" },
   "episodes.write": { anyOf: [...SEES_CLIENTS, "participants.read.closed"], why: "closing and readmitting happen on a client's record" },
   "records.export": { anyOf: SEES_CLIENTS, why: "only records they can see can be exported" },
+  "participants.update": { anyOf: SEES_CLIENTS, why: "details are changed on a client's record" },
+  "notes.reviewed_clinically": { anyOf: ["notes.write"], why: "it only decides who reviews the notes they write" },
   "participants.assign": { anyOf: ["participants.read.all"], why: "reassigning needs sight of other caseloads" },
 };
 

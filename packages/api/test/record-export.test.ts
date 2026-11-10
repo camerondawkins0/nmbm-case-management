@@ -104,8 +104,9 @@ describe("exporting a whole record", () => {
 
   it("follows the record's scoping: an export permission doesn't widen what you can see", async () => {
     // Both default holders read everything, so a role made for the test
-    // pairs the export with an ordinary caseload.
-    const exporter = await staffWith(db, ["records.export", "participants.read.own"]);
+    // pairs the export with an ordinary caseload (and the note-writing
+    // that lets somebody hold one).
+    const exporter = await staffWith(db, ["records.export", "participants.read.own", "notes.write"]);
     const asExporter = await signIn(app, exporter.email);
     const theirs = await admit(db, { workerId: exporter.id, actorId: directorId });
     const someoneElses = await admit(db, { workerId: chwId, actorId: directorId });

@@ -1,6 +1,6 @@
 # Testing
 
-230 tests in `packages/api/test/`, run by vitest against a real Postgres.
+276 tests in `packages/api/test/`, run by vitest against a real Postgres.
 CI runs them on every push with a Postgres 16 service.
 
 ```bash
@@ -32,7 +32,10 @@ dev-login route, and assert on HTTP responses.
 | `consents-referrals.test.ts` | M16 expiry from enrollment; M17 release gate and its three refusal reasons |
 | `disenrollment.test.ts` | R10: off the caseload on close, closed-record access (intake, last worker, window and its 90-day cap), readmission starting a fresh run |
 | `attendance.test.ts` | M14 whole-roster marking, correction not duplication, off-roster refusal, recorder names, disenrolled people flagged not withdrawn |
-| `sign-off.test.ts` | U6 notes and care plans reviewed by someone other than the author; a returned note listed to its author only, revised back into the queue without the old reason, by its author only, never once approved |
+| `sign-off.test.ts` | U6 notes and care plans reviewed by someone other than the author; a returned note listed to its author only, revised back into the queue without the old reason, by its author only, never once approved; interns' notes to clinical review only, each reviewer's queue only what they can sign, the chain fixed when written, self-approval per chain; one care plan per stay, races included, never on another client's stay |
+| `caseload-workers.test.ts` | Cases only to people who can write notes and see clients, through admission, readmission and reassignment; retired roles don't count; facilitators are everyone active; a malformed id in the address is a 404 |
+| `client-details.test.ts` | Intake details tidied and stored, all optional, refused with a reason when malformed; a CIN unique even past "this is somebody else"; changed on the record by who can see the client, audited by field name only, no-op writes nothing; in the export |
+| `service-date.test.ts` | Today in Pacific time; earlier days within the stay; never future or before the stay; corrected on revision; M6 counted in order of service date, ties by when written |
 | `roles.test.ts` | Custom roles: who can make them, copying, case-insensitive names, working on the next request, built-in roles neither renamed nor retired, retiring only when unheld, a retired role granting and counting for nothing, a deploy leaving them alone; nobody giving a role (or reactivating someone) with more than they have; lockout by permission whichever role carries it, through revoking, deactivating and the grid |
 | `permissions.test.ts` | Who can change the grid; a grant or removal working on the next request; back to default leaving no stored difference; NMBM's choices surviving the real release seed; the lockout guard, and deactivated people not counting toward it; unknown roles and permissions; audit |
 | `program-setup.test.ts` | Who can set programs up; duplicate program names; dates in order; dates, roster and withdrawal keeping attendance; enrollment scoped to who the enroller can see; the cohort status table, closed cohorts refusing people and dates, reopening, canceled final, audit |

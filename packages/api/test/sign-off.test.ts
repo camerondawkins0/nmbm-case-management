@@ -2,7 +2,7 @@ import { describe, it, expect, beforeAll, afterAll } from "vitest";
 import type { FastifyInstance } from "fastify";
 import type { Db } from "@nmbm/db";
 import { startApp, signIn, type Client } from "./support/app.js";
-import { staff, admit } from "./support/fixtures.js";
+import { staff, staffWith, admit } from "./support/fixtures.js";
 
 let app: FastifyInstance;
 let db: Db;
@@ -98,5 +98,99 @@ describe("U6: a returned note goes back to its author, and round again", () => {
     const approved = await chwNote();
     await manager.post(`/api/notes/${approved.noteId}/approve`);
     expect((await chw.patch(`/api/notes/${approved.noteId}`, { body: "Rewriting history." })).status).toBe(409);
+  });
+});
+
+describe("U6: an intern's notes go to clinical review", () => {
+  let intern: Client;
+  let internId: string;
+  beforeAll(async () => {
+    const user = await staff(db, "apcc_acsw_intern");
+    internId = user.id;
+    intern = await signIn(app, user.email);
+  });
+
+  async function internNote() {
+    const ids = await admit(db, { workerId: internId, actorId: internId });
+    const res = await intern.post("/api/notes", { ...ids, contactResult: "contacted", body: "Session 1." });
+    expect(res.status).toBe(201);
+    return res.body.note as { id: string; status: string; clinicalReview: boolean };
+  }
+
+  it("is signed off by the Clinical Director, not a CHW supervisor", async () => {
+    const note = await internNote();
+    expect(note).toMatchObject({ status: "pending_review", clinicalReview: true });
+    const refused = await manager.post(`/api/notes/${note.id}/approve`);
+    expect(refused.status).toBe(403);
+    expect(refused.body.message).toMatch(/clinical review/);
+    expect((await manager.post(`/api/notes/${note.id}/return`, { reviewNote: "x" })).status).toBe(403);
+    expect((await director.post(`/api/notes/${note.id}/approve`)).status).toBe(200);
+  });
+
+  it("shows each reviewer only the notes they can sign", async () => {
+    const clinical = await internNote();
+    const { noteId: chwNoteId } = await chwNote();
+    const managerQueue = ((await manager.get("/api/notes/awaiting-review")).body as { id: string }[]).map((n) => n.id);
+    expect(managerQueue).toContain(chwNoteId);
+    expect(managerQueue).not.toContain(clinical.id);
+    const directorQueue = ((await director.get("/api/notes/awaiting-review")).body as { id: string }[]).map((n) => n.id);
+    expect(directorQueue).toEqual(expect.arrayContaining([chwNoteId, clinical.id]));
+  });
+
+  it("keeps a clinical reviewer who only reviews clinical notes off CHW notes", async () => {
+    const clinicalOnly = await signIn(app, (await staffWith(db, ["notes.approve.clinical"])).email);
+    const { noteId } = await chwNote();
+    expect((await clinicalOnly.post(`/api/notes/${noteId}/approve`)).status).toBe(403);
+    const clinical = await internNote();
+    expect((await clinicalOnly.post(`/api/notes/${clinical.id}/approve`)).status).toBe(200);
+  });
+
+  it("stays in clinical review once written, whatever later happens to the author's roles", async () => {
+    const user = await staff(db, "apcc_acsw_intern");
+    const asIntern = await signIn(app, user.email);
+    const ids = await admit(db, { workerId: user.id, actorId: user.id });
+    const note = (await asIntern.post("/api/notes", { ...ids, contactResult: "contacted", body: "Session." })).body.note;
+    // Now a CHW instead.
+    const admin = await signIn(app, (await staff(db, "system_administrator")).email);
+    expect((await admin.post(`/api/admin/users/${user.id}/roles`, { roleCode: "community_health_worker" })).status).toBe(200);
+    expect((await admin.del(`/api/admin/users/${user.id}/roles/apcc_acsw_intern`)).status).toBe(200);
+    expect((await manager.post(`/api/notes/${note.id}/approve`)).status).toBe(403);
+  });
+
+  it("is still approved on the spot when its author can sign off clinical notes themselves", async () => {
+    const supervisor = await staffWith(db, ["notes.write", "notes.reviewed_clinically", "notes.approve.clinical", "participants.read.all"]);
+    const asSupervisor = await signIn(app, supervisor.email);
+    const ids = await admit(db, { workerId: chwId, actorId: chwId });
+    const res = await asSupervisor.post("/api/notes", { ...ids, contactResult: "contacted", body: "Supervision." });
+    expect(res.body.note).toMatchObject({ status: "approved", clinicalReview: true });
+    // Holding only the CHW supervisor's review isn't enough for their own clinical note.
+    const crossed = await staffWith(db, ["notes.write", "notes.reviewed_clinically", "notes.approve", "participants.read.all"]);
+    const own = await (await signIn(app, crossed.email)).post("/api/notes", { ...ids, contactResult: "contacted", body: "x" });
+    expect(own.body.note.status).toBe("pending_review");
+  });
+});
+
+describe("one care plan per stay, on the client's own stay", () => {
+  it("refuses a second plan for the same stay", async () => {
+    const ids = await admit(db, { workerId: chwId, actorId: chwId });
+    expect((await chw.post("/api/care-plans", { ...ids, goals: "First." })).status).toBe(201);
+    const second = await chw.post("/api/care-plans", { ...ids, goals: "Second." });
+    expect(second.status).toBe(409);
+    expect(second.body.message).toMatch(/already has a care plan/);
+    // Two arriving at once: the database refuses the second, and it's still a 409.
+    const other = await admit(db, { workerId: chwId, actorId: chwId });
+    const both = await Promise.all([1, 2].map((i) => chw.post("/api/care-plans", { ...other, goals: `Race ${i}` })));
+    expect(both.map((r) => r.status).sort()).toEqual([201, 409]);
+    // So the client is listed once.
+    const list = (await chw.get("/api/participants")).body as { id: string }[];
+    expect(list.filter((p) => p.id === other.participantId)).toHaveLength(1);
+  });
+
+  it("refuses a plan filed against another client's stay, or a closed one", async () => {
+    const a = await admit(db, { workerId: chwId, actorId: chwId });
+    const b = await admit(db, { workerId: chwId, actorId: chwId });
+    const crossed = await chw.post("/api/care-plans", { participantId: a.participantId, episodeId: b.episodeId, goals: "Wrong person." });
+    expect(crossed.status).toBe(409);
+    expect(crossed.body.message).toMatch(/open episode/);
   });
 });

@@ -24,6 +24,14 @@ export async function insert(db: Db, input: CarePlanCreate) {
   return row;
 }
 
+export async function openEpisodeFor(db: Db, participantId: string) {
+  const [row] = await db
+    .select({ id: episodes.id })
+    .from(episodes)
+    .where(and(eq(episodes.participantId, participantId), eq(episodes.status, "open")));
+  return row;
+}
+
 export async function findById(db: Db, id: string) {
   const [row] = await db.select().from(carePlans).where(eq(carePlans.id, id));
   return row;

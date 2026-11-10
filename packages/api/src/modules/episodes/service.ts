@@ -1,5 +1,5 @@
 import type { Db } from "@nmbm/db";
-import { episodes, assignments, users } from "@nmbm/db";
+import { episodes, assignments } from "@nmbm/db";
 import { eq, and, isNull, desc } from "drizzle-orm";
 import type { EpisodeCreate, EpisodeClose } from "@nmbm/shared";
 import { NO_CONTACT_DISENROLLMENT_THRESHOLD } from "@nmbm/shared";
@@ -9,15 +9,14 @@ import * as repository from "./repository.js";
 import * as notesRepository from "../notes/repository.js";
 import { writeAudit } from "../../plugins/audit.js";
 import { markAdmitted } from "../incoming-referrals/service.js";
+import { assertCaseloadWorker } from "../../lib/caseload.js";
 
 // Readmission (M2): a new episode, linked to the one it follows, with a
 // named worker — the same one act as intake, for somebody already on
 // file. The new episode starts its own M6 run and M9 clock; nothing
 // from the previous stay carries over except the history.
 export async function openEpisode(db: Db, input: EpisodeCreate, actorId: string) {
-  const [worker] = await db.select().from(users).where(eq(users.id, input.assignedWorkerId));
-  if (!worker) throw notFound("Assigned worker not found");
-  if (!worker.active) throw conflict("That worker's account is deactivated");
+  const worker = await assertCaseloadWorker(db, input.assignedWorkerId);
 
   const history = await db
     .select()

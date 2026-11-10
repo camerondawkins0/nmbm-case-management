@@ -120,6 +120,20 @@
       "when": 1762819200000,
       "tag": "0016_custom_roles",
       "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "7",
+      "when": 1762905600000,
+      "tag": "0017_care_plan_per_stay_and_clinical_review",
+      "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "7",
+      "when": 1762992000000,
+      "tag": "0018_service_date_and_contact_details",
+      "breakpoints": true
     }
   ]
 }

@@ -62,7 +62,8 @@ export default function NoteReviewPage() {
                 <Pill tone={note.contactResult === "contacted" ? "ok" : "warn"}>
                   {note.contactResult === "contacted" ? "Reached" : "No contact"}
                 </Pill>
-                {note.authorName} · {new Date(note.createdAt).toLocaleDateString()}
+                {note.clinicalReview && <Pill tone="muted">Clinical</Pill>}
+                {note.authorName} · {note.contactResult === "contacted" ? "contact" : "attempt"} on {note.serviceDate}
               </span>
             </div>
             <p className="mt-2 whitespace-pre-wrap text-sm text-nmbm-ink/80">{note.body}</p>

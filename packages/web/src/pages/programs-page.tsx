@@ -29,7 +29,7 @@ export default function ProgramsPage({ me }: { me: Me }) {
 
   useEffect(() => {
     if (!manage) return;
-    api<AssignableWorker[]>("/api/participants/assignable-workers")
+    api<AssignableWorker[]>("/api/participants/assignable-workers?for=facilitator")
       .then(setWorkers)
       .catch(() => setWorkers([]));
   }, [manage]);

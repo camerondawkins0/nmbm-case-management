@@ -1,17 +1,43 @@
 import type { Db } from "@nmbm/db";
-import { notes, participants, users } from "@nmbm/db";
-import { eq, desc, and, ne } from "drizzle-orm";
-import { conflict, badRequest, notFound } from "../../plugins/errors.js";
+import { episodes, notes, participants, users } from "@nmbm/db";
+import { eq, desc, and, inArray } from "drizzle-orm";
+import type { NoteRevise, Permission } from "@nmbm/shared";
+import { assertServiceDate } from "./service.js";
+import { conflict, badRequest, forbidden, notFound } from "../../plugins/errors.js";
 import { writeAudit } from "../../plugins/audit.js";
 
 // U6's other half. Approval columns existed from the first migration,
 // but nothing could reach them — notes.approve was granted to the
 // Program Manager and Clinical Director and then never checked.
 
-export async function listAwaitingReview(db: Db) {
+// U6 has two chains: a CHW supervisor signs off CHW notes, the Clinical
+// Director signs off interns'. Which one a note is in was fixed when it
+// was written (notes.clinical_review); which ones a reviewer may sign is
+// what they hold. Each sees only the queue they can act on.
+export function reviewableKinds(held: Set<Permission>) {
+  const kinds: boolean[] = [];
+  if (held.has("notes.approve")) kinds.push(false);
+  if (held.has("notes.approve.clinical")) kinds.push(true);
+  return kinds;
+}
+
+function assertMayReview(note: { clinicalReview: boolean }, held: Set<Permission>) {
+  if (reviewableKinds(held).includes(note.clinicalReview)) return;
+  throw forbidden(
+    note.clinicalReview
+      ? "This note goes to clinical review. Someone who can review clinical notes signs it off."
+      : "This note is signed off by a CHW supervisor, not by clinical review.",
+  );
+}
+
+export async function listAwaitingReview(db: Db, held: Set<Permission>) {
+  const kinds = reviewableKinds(held);
+  if (kinds.length === 0) return [];
   return db
     .select({
       id: notes.id,
+      clinicalReview: notes.clinicalReview,
+      serviceDate: notes.serviceDate,
       body: notes.body,
       contactResult: notes.contactResult,
       createdAt: notes.createdAt,
@@ -23,8 +49,8 @@ export async function listAwaitingReview(db: Db) {
     .from(notes)
     .innerJoin(users, eq(users.id, notes.authorId))
     .innerJoin(participants, eq(participants.id, notes.participantId))
-    .where(eq(notes.status, "pending_review"))
-    .orderBy(desc(notes.createdAt));
+    .where(and(eq(notes.status, "pending_review"), inArray(notes.clinicalReview, kinds)))
+    .orderBy(desc(notes.serviceDate), desc(notes.createdAt));
 }
 
 // What the author needs to see: their own work that bounced.
@@ -33,6 +59,7 @@ export async function listReturnedToAuthor(db: Db, authorId: string) {
     .select({
       id: notes.id,
       body: notes.body,
+      serviceDate: notes.serviceDate,
       reviewNote: notes.reviewNote,
       createdAt: notes.createdAt,
       participantId: participants.id,
@@ -51,8 +78,9 @@ async function load(db: Db, id: string) {
   return note;
 }
 
-export async function approve(db: Db, id: string, reviewerId: string) {
+export async function approve(db: Db, id: string, reviewerId: string, held: Set<Permission>) {
   const note = await load(db, id);
+  assertMayReview(note, held);
   if (note.status === "approved") throw conflict("Already approved");
   // A reviewer signing off their own note defeats the point of the
   // chain — U6 describes a supervisor reviewing someone else's work.
@@ -80,8 +108,10 @@ export async function returnForRevision(
   id: string,
   reviewerId: string,
   reviewNote: string | undefined,
+  held: Set<Permission>,
 ) {
   const note = await load(db, id);
+  assertMayReview(note, held);
   if (note.status === "needs_revision") throw conflict("Already returned");
   if (!reviewNote) throw badRequest("Say why the note is being returned");
 
@@ -103,14 +133,18 @@ export async function returnForRevision(
 
 // Editing a returned note resubmits it — the author shouldn't have to
 // find a separate "submit" button after fixing what was asked for.
-export async function reviseAndResubmit(db: Db, id: string, authorId: string, body: string) {
+export async function reviseAndResubmit(db: Db, id: string, authorId: string, input: NoteRevise) {
   const note = await load(db, id);
   if (note.authorId !== authorId) throw conflict("Only the author can revise this note");
   if (note.status === "approved") throw conflict("An approved note can't be edited");
+  if (input.serviceDate) {
+    const [episode] = await db.select({ startDate: episodes.startDate }).from(episodes).where(eq(episodes.id, note.episodeId));
+    assertServiceDate(input.serviceDate, episode.startDate);
+  }
 
   const [row] = await db
     .update(notes)
-    .set({ body, status: "pending_review", reviewNote: null })
+    .set({ body: input.body, ...(input.serviceDate ? { serviceDate: input.serviceDate } : {}), status: "pending_review", reviewNote: null })
     .where(eq(notes.id, id))
     .returning();
 
@@ -121,13 +155,4 @@ export async function reviseAndResubmit(db: Db, id: string, authorId: string, bo
     entityId: id,
   });
   return row;
-}
-
-// Counts the reviewer's queue without pulling every row.
-export async function pendingCount(db: Db, excludeAuthorId: string) {
-  const rows = await db
-    .select({ id: notes.id })
-    .from(notes)
-    .where(and(eq(notes.status, "pending_review"), ne(notes.authorId, excludeAuthorId)));
-  return rows.length;
 }

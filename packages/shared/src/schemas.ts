@@ -10,6 +10,7 @@ import {
   FEEDBACK_CATEGORIES,
   FEEDBACK_STATUSES,
 } from "./enums.js";
+import { participantDetailsSchema } from "./participant-details.js";
 
 export const participantCreateSchema = z.object({
   firstName: z.string().min(1),
@@ -24,7 +25,7 @@ export type ParticipantCreate = z.infer<typeof participantCreateSchema>;
 // one act, because that is how it happens in the room — M3 (what a
 // funder additionally requires at intake) is still unanswered, so this
 // is the minimum the discovery answers already support.
-export const intakeSchema = z.object({
+export const intakeSchema = participantDetailsSchema.extend({
   firstName: z.string().min(1),
   lastName: z.string().min(1),
   dateOfBirth: z.string().date(),
@@ -97,8 +98,19 @@ export const noteCreateSchema = z.object({
   episodeId: z.string().uuid(),
   contactResult: z.enum(CONTACT_RESULTS),
   body: z.string().min(1),
+  // The day the contact happened. Left out, it's today (Pacific time).
+  // Not in the future, and not before the stay began.
+  serviceDate: z.string().date().optional(),
 });
 export type NoteCreate = z.infer<typeof noteCreateSchema>;
+
+// Revising a returned note: the text, and the date if that was what the
+// reviewer asked to have corrected.
+export const noteReviseSchema = z.object({
+  body: z.string().min(1),
+  serviceDate: z.string().date().optional(),
+});
+export type NoteRevise = z.infer<typeof noteReviseSchema>;
 
 export const carePlanUpdateSchema = z.object({
   status: z.enum(CARE_PLAN_STATUSES),

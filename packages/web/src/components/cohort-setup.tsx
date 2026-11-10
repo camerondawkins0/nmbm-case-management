@@ -190,7 +190,7 @@ export function CohortDetailsForm({
     requiredSessions: cohort.requiredSessions ? String(cohort.requiredSessions) : "",
   });
   useEffect(() => {
-    api<AssignableWorker[]>("/api/participants/assignable-workers").then(setWorkers).catch(() => setWorkers([]));
+    api<AssignableWorker[]>("/api/participants/assignable-workers?for=facilitator").then(setWorkers).catch(() => setWorkers([]));
   }, []);
   const set = (key: keyof typeof form) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) =>
     setForm({ ...form, [key]: e.target.value });

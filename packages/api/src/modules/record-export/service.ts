@@ -15,7 +15,13 @@ import {
 } from "@nmbm/db";
 import { alias } from "drizzle-orm/pg-core";
 import { asc, desc, eq, inArray } from "drizzle-orm";
-import { answerText, isAnswered, visibleQuestionIds, type RecordExportPurpose } from "@nmbm/shared";
+import {
+  answerText,
+  isAnswered,
+  PARTICIPANT_DETAIL_FIELDS,
+  visibleQuestionIds,
+  type RecordExportPurpose,
+} from "@nmbm/shared";
 import { notFound } from "../../plugins/errors.js";
 import { writeAudit } from "../../plugins/audit.js";
 import * as participantRepo from "../participants/repository.js";
@@ -175,6 +181,10 @@ export async function buildExport(
       dateOfBirth: person.dateOfBirth,
       payer: person.payer,
       recordCreatedAt: person.createdAt,
+      details: Object.fromEntries(PARTICIPANT_DETAIL_FIELDS.map((k) => [k, person[k]])) as Record<
+        (typeof PARTICIPANT_DETAIL_FIELDS)[number],
+        string | null
+      >,
     },
     episodes,
     caseManagers,

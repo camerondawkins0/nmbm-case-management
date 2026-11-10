@@ -7,6 +7,7 @@ import {
   LOCKOUT_PERMISSIONS,
   PERMISSION_INFO,
   PERMISSIONS,
+  RESTRICTION_PERMISSIONS,
   type Permission,
   type Role,
 } from "@nmbm/shared";
@@ -67,7 +68,9 @@ async function permissionsOfRole(db: Db, roleId: string) {
 export async function assertActorHoldsRole(db: Db, actorId: string, roleId: string, roleLabel: string) {
   const held = await getPermissions(db, actorId);
   if (held.has("admin.roles.manage")) return;
-  const missing = (await permissionsOfRole(db, roleId)).filter((p) => !held.has(p));
+  const missing = (await permissionsOfRole(db, roleId)).filter(
+    (p) => !held.has(p) && !RESTRICTION_PERMISSIONS.includes(p),
+  );
   if (missing.length > 0) {
     throw forbidden(
       `${roleLabel} can do things you can't (${missing.map((p) => PERMISSION_INFO[p].label).join(", ")}), so you can't give it to anyone. Ask someone who can.`,

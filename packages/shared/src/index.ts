@@ -10,3 +10,4 @@ export * from "./documents.js";
 export * from "./assessments.js";
 export * from "./incoming-referrals.js";
 export * from "./record-export.js";
+export * from "./participant-details.js";

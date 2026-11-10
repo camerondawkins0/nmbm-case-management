@@ -179,7 +179,7 @@ that is what every page reads.
 ## What is built
 
 Everything below is running code: a migration, a module, and in most
-cases a page reachable after signing in. Current as of migration `0016`.
+cases a page reachable after signing in. Current as of migration `0018`.
 
 | Area | What works | Where |
 |---|---|---|
@@ -207,7 +207,7 @@ cases a page reachable after signing in. Current as of migration `0016`.
 | Audit (M30) | Append-only, written inside the transaction that performs the action, read-only endpoint | `plugins/audit.ts` |
 | Feedback (M31) | In-app issue reporting and a triage queue, because NMBM has no IT staff | `modules/feedback/`, `docs/SUPPORT.md` |
 
-97 API routes across 17 modules, 33 tables and one view, 23 pages plus
+98 API routes across 17 modules, 33 tables and one view, 23 pages plus
 two holding screens (no role yet; server unreachable).
 `docs/agent/map.md` lists them route by route and page by page.
 
@@ -239,7 +239,7 @@ Two different reasons, and they shouldn't be reported as one number.
 
 **Not blocked — ours to do:**
 
-- **Test coverage stops at the API.** 230 tests run through the real
+- **Test coverage stops at the API.** 276 tests run through the real
   server against a real Postgres on every push, covering every rule in
   `docs/agent/invariants.md`, and each has been proved by breaking the
   rule and watching it fail. The web app has no automated tests; its

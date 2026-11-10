@@ -6,12 +6,14 @@ import {
   assignmentSchema,
   participantListQuerySchema,
   participantSearchSchema,
+  participantDetailsUpdateSchema,
 } from "@nmbm/shared";
 import { authorize, authorizeAny, CAN_READ_PARTICIPANTS, getPermissions } from "../../plugins/authorize.js";
 import { forbidden } from "../../plugins/errors.js";
 import { resolveScope } from "../../lib/caseload.js";
 import * as service from "./service.js";
 import * as intake from "./intake.js";
+import { listCaseloadWorkers } from "../../lib/caseload.js";
 
 // routes.ts: parse with Zod, authorize(), delegate. Never touches
 // Drizzle directly — see docs/agent/map.md.
@@ -58,10 +60,13 @@ export default async function participantRoutes(fastify: FastifyInstance, opts: 
   // so it hangs off permissions rather than a participant id — and
   // anyone who opens an episode names its worker, so intake and
   // readmission can read it as well as reassignment. Staff names only.
-  fastify.get(
+  // ?for=facilitator is everyone active, for the Programs pages: running
+  // a class isn't holding a caseload.
+  fastify.get<{ Querystring: { for?: string } }>(
     "/api/participants/assignable-workers",
-    { preHandler: authorizeAny(["participants.assign", "participants.write", "episodes.write"]) },
-    async () => intake.listAssignableWorkers(db),
+    { preHandler: authorizeAny(["participants.assign", "participants.write", "episodes.write", "programs.manage"]) },
+    async (request) =>
+      request.query.for === "facilitator" ? intake.listActiveStaff(db) : listCaseloadWorkers(db),
   );
 
   fastify.post(
@@ -86,6 +91,17 @@ export default async function participantRoutes(fastify: FastifyInstance, opts: 
     async (request) => {
       const { workerId } = assignmentSchema.parse(request.body);
       return intake.reassign(db, request.params.id, workerId, request.currentUser!.id);
+    },
+  );
+
+  fastify.patch<{ Params: { id: string } }>(
+    "/api/participants/:id/details",
+    { preHandler: authorize("participants.update") },
+    async (request) => {
+      const input = participantDetailsUpdateSchema.parse(request.body);
+      const caller = await resolveScope(db, request.currentUser!.id);
+      await service.assertCanSee(db, caller, request.params.id);
+      return service.updateDetails(db, request.params.id, input, request.currentUser!.id);
     },
   );
 

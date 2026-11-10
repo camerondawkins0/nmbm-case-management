@@ -12,6 +12,20 @@ export const participants = pgTable("participants", {
   dateOfBirth: date("date_of_birth").notNull(),
   // M6: the Molina branch of the no-contact rule keys off this.
   payer: payerEnum("payer"),
+  // Collected at intake and kept current on the record (migration 0018).
+  phone: text("phone"),
+  email: text("email"),
+  addressLine1: text("address_line1"),
+  addressLine2: text("address_line2"),
+  city: text("city"),
+  state: text("state"),
+  postalCode: text("postal_code"),
+  mediCalCin: text("medi_cal_cin"),
+  planMemberId: text("plan_member_id"),
+  emergencyContactName: text("emergency_contact_name"),
+  emergencyContactPhone: text("emergency_contact_phone"),
+  emergencyContactRelationship: text("emergency_contact_relationship"),
+  detailsUpdatedAt: timestamp("details_updated_at", { withTimezone: true }),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 

@@ -156,8 +156,10 @@ the same thing when M23 work starts.
 - **Does every note need review, and whose?** U6 says a supervisor
   approves CHW notes and the Clinical Director reviews APCC/ACSW notes.
   Built as: every note starts awaiting review, except one written by
-  somebody who can approve — theirs is approved on the spot, since
-  nobody is above them in the chain. Two things to confirm: whether
+  somebody who can approve it — theirs is approved on the spot, since
+  nobody is above them in the chain. Interns' notes go only to the
+  Clinical Director; any role NMBM mark "Notes go to clinical review" on
+  the Permissions page does the same. Two things to confirm: whether
   every routine contact note really needs a signature (it's currently
   ~20 queued items from eight participants' seed history, which hints
   at the real volume), and whether the Clinical Director's own notes
@@ -239,7 +241,13 @@ the same thing when M23 work starts.
 - **M1** — "Clients" vs. "cases" as the record name — still needs one
   answer.
 - **M3** — What has to be known before intake can proceed, and which of
-  those a funder specifically requires — never answered.
+  those a funder specifically requires — never answered. Intake now asks
+  for phone, email, address, Medi-Cal CIN, plan member ID and an
+  emergency contact, all optional; once M3 is answered, the ones a funder
+  requires can be made required.
+- **Who can be assigned a case?** Built as anyone who can both write
+  notes and see clients, so not the system administrator, QA, billing
+  or intake. A role NMBM add qualifies once it has both.
 - **M12** — 3/5/9/12-month follow-up cadence — still marked "are we all
   in agreement," not confirmed. Built with those four; changing them
   is one constant (`FOLLOW_UP_MONTHS`).

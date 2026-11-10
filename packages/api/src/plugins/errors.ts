@@ -29,6 +29,12 @@ export function registerErrorHandler(fastify: FastifyInstance) {
     if (error instanceof ZodError) {
       return reply.code(400).send({ error: "bad_request", issues: error.issues });
     }
+    // Bodies are checked by Zod, so Postgres refusing a value as a uuid
+    // means an id in the address that can't name anything: not found,
+    // not a server fault.
+    if ((error as { code?: string }).code === "22P02" && /type uuid/.test(error.message)) {
+      return reply.code(404).send({ error: "not_found", message: "Not found" });
+    }
     request.log.error(error);
     return reply.code(error.statusCode ?? 500).send({ error: "internal_error" });
   });

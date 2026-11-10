@@ -2,17 +2,18 @@ import { useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { api, ApiError } from "../lib/api.js";
 import type { AssignableWorker, IncomingReferralDetail } from "../lib/types.js";
-import { PARTICIPANT_LABEL } from "@nmbm/shared";
+import { PARTICIPANT_LABEL, todayInOrg } from "@nmbm/shared";
 import type { Payer } from "@nmbm/shared";
 import { SearchResults, useParticipantSearch } from "../components/participant-search.js";
 import { PAYER_OPTIONS } from "../lib/labels.js";
+import { DetailsFields, detailsPayload, emptyDetails } from "../components/client-details.js";
 
 const PAYERS = PAYER_OPTIONS;
 
 // Intake in one screen: the record, the episode that starts the 30-day
 // care plan clock, and the named worker. M3 — what a funder
-// additionally requires at intake — is still unanswered, so this asks
-// only for what the discovery answers already justify.
+// additionally requires at intake — is still unanswered, so contact,
+// address, insurance and emergency contact are asked for but optional.
 export default function IntakePage() {
   const navigate = useNavigate();
   // Admitting somebody from the referrals queue. The id travels in the
@@ -35,8 +36,9 @@ export default function IntakePage() {
     dateOfBirth: "",
     payer: "" as Payer | "",
     assignedWorkerId: "",
-    startDate: new Date().toISOString().slice(0, 10),
+    startDate: todayInOrg(),
   });
+  const [details, setDetails] = useState(emptyDetails);
 
   // R10: a returning client belongs on their existing record. Look as
   // soon as there's a birthday or a last name to go on, before anyone has
@@ -84,6 +86,7 @@ export default function IntakePage() {
         method: "POST",
         body: JSON.stringify({
           ...form,
+          ...detailsPayload(details),
           payer: form.payer === "" ? undefined : form.payer,
           confirmNotDuplicate: confirmedDifferent || undefined,
           incomingReferralId: referral?.id,
@@ -198,6 +201,10 @@ export default function IntakePage() {
             </span>
           )}
         </label>
+
+        <div className="border-t border-nmbm-ink/10 pt-4">
+          <DetailsFields value={details} onChange={setDetails} />
+        </div>
 
         <label className={label}>
           Assigned worker

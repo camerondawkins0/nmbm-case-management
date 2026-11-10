@@ -160,6 +160,14 @@ describe("nobody gives access they don't have", () => {
     expect((await giveRole(person.id, narrow.code, as)).status).toBe(200);
   });
 
+  it("can give a role whose only extra is a check on its holder", async () => {
+    const { as } = await staffManager();
+    const role = (await newRole({ label: unique("Associate ") })).body;
+    await grant(role.code, "participants.read.all", true);
+    await grant(role.code, "notes.reviewed_clinically", true);
+    expect((await giveRole((await staff(db, null)).id, role.code, as)).status).toBe(200);
+  });
+
   it("can't promote themselves", async () => {
     const { user, as } = await staffManager();
     expect((await giveRole(user.id, "clinical_director", as)).status).toBe(403);
