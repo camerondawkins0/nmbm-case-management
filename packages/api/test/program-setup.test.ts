@@ -86,7 +86,7 @@ describe("M14: setting a program up", () => {
     const narrow = await signIn(app, (await staffWith(db, ["programs.manage", "participants.read.own"])).email);
     const c = await cohort();
     const { participantId } = await admit(db, { workerId: chwId, actorId: managerId });
-    expect((await narrow.post(`/api/cohorts/${c.id}/enrollments`, { participantId })).status).toBe(403);
+    expect((await narrow.post(`/api/cohorts/${c.id}/enrollments`, { participantId })).status).toBe(404);
   });
 });
 

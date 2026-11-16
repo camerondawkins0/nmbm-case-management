@@ -124,7 +124,7 @@ export default async function programRoutes(fastify: FastifyInstance, opts: { db
       const { reason } = cohortWithdrawSchema.parse(request.body);
       // The same rule as enrolling them.
       const enrollment = await service.findEnrollment(db, request.params.id);
-      await assertCanWrite(db, await resolveScope(db, request.currentUser!.id), enrollment.participantId);
+      await assertCanWrite(db, await resolveScope(db, request.currentUser!.id), enrollment.participantId, "Enrollment");
       return service.withdraw(db, request.params.id, reason, request.currentUser!.id);
     },
   );
@@ -149,7 +149,7 @@ export default async function programRoutes(fastify: FastifyInstance, opts: { db
     async (request) => {
       const record = await service.participationRecord(db, request.params.id);
       const caller = await resolveScope(db, request.currentUser!.id);
-      await assertCanSee(db, caller, record.enrollment.participantId);
+      await assertCanSee(db, caller, record.enrollment.participantId, "Enrollment");
       return record;
     },
   );

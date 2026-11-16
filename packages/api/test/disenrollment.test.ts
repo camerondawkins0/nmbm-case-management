@@ -176,7 +176,7 @@ describe("R10: who can still reach a closed record", () => {
     const as = await signIn(app, worker.email);
     const note = await as.post("/api/notes", { participantId, episodeId, contactResult: "contacted", body: "x" });
     // Seeing it in the window doesn't make it theirs to write on.
-    expect(note.status).toBe(403);
+    expect(note.status).toBe(404);
     for (const write of [
       as.post("/api/consents", { participantId, type: "general_services", formName: "x", signedDate: "2026-01-01" }),
       as.patch(`/api/participants/${participantId}/details`, { city: "x" }),

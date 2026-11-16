@@ -3,6 +3,7 @@ import type { FastifyInstance } from "fastify";
 import type { Db } from "@nmbm/db";
 import { consents } from "@nmbm/db";
 import { eq } from "drizzle-orm";
+import { randomUUID } from "node:crypto";
 import { startApp, signIn, client, type Client } from "./support/app.js";
 import { staff, staffWith, admit, unique, isoDaysAgo, backdateEpisodeEnd } from "./support/fixtures.js";
 
@@ -28,6 +29,9 @@ const x = {} as {
   referralId: string;
   cohortId: string;
   enrollmentId: string;
+  formId: string;
+  assessmentId: string;
+  documentId: string;
 };
 
 beforeAll(async () => {
@@ -52,11 +56,21 @@ beforeAll(async () => {
   const program = await director.post("/api/programs", { name: unique("Program ") });
   x.cohortId = (await director.post("/api/cohorts", { programId: program.body.id, name: unique("Cohort "), startDate: isoDaysAgo(3) })).body.id;
   x.enrollmentId = (await director.post(`/api/cohorts/${x.cohortId}/enrollments`, { participantId: x.participantId })).body.id;
+  const form = await director.post("/api/assessment-forms", { name: unique("Form ") });
+  const questions = [{ stableId: randomUUID(), type: "short_text", prompt: "How are you?", required: false, options: [] }];
+  await director.put(`/api/assessment-versions/${form.body.draftVersionId}/questions`, { questions });
+  await director.post(`/api/assessment-versions/${form.body.draftVersionId}/publish`);
+  x.formId = form.body.id;
+  x.assessmentId = (await owner.post(`/api/participants/${x.participantId}/assessments`, { formId: x.formId, mode: "with_staff" })).body.id;
+  x.documentId = (
+    await owner.post(`/api/participants/${x.participantId}/documents`, { filename: "id.pdf", contentType: "application/pdf", sizeBytes: 10, description: "ID" })
+  ).body.documentId;
   for (const id of Object.values(x)) expect(id).toBeTruthy();
 });
 afterAll(async () => app?.close());
 
-const refused = (status: number) => expect([403, 404]).toContain(status);
+// Out of reach is answered as missing: always a 404.
+const refused = (status: number) => expect(status).toBe(404);
 
 describe("another case manager, holding the same permissions", () => {
   it("can't read the record or anything on it", async () => {
@@ -208,5 +222,112 @@ describe("requests that don't come from the app", () => {
       expect((await anon.get(url)).status).toBe(401);
     }
     expect((await anon.post(`/api/consents/${x.consentId}/revoke`, { reason: "x" })).status).toBe(401);
+  });
+});
+
+describe("an id out of reach answers exactly as an id that doesn't exist", () => {
+  // Each request is sent twice by somebody holding the permission it
+  // needs: once with the real id of a record that isn't theirs, once with
+  // an id that names nothing. If the two answers differed in any way —
+  // status, words — the difference would say the record exists.
+  type Probe = { as: () => Promise<Client>; method: "get" | "post" | "patch"; url: (id: string) => string; body?: (id: string) => unknown };
+  const asOutsider = async () => outsider;
+  const narrow = (codes: Parameters<typeof staffWith>[1]) => async () =>
+    signIn(app, (await staffWith(db, [...codes, "participants.read.own"])).email);
+
+  const probes: Record<string, Probe & { id: () => string }> = {
+    "open a record": { as: asOutsider, method: "get", id: () => x.participantId, url: (id) => `/api/participants/${id}` },
+    "list its documents": { as: asOutsider, method: "get", id: () => x.participantId, url: (id) => `/api/participants/${id}/documents` },
+    "list its forms": { as: asOutsider, method: "get", id: () => x.participantId, url: (id) => `/api/participants/${id}/assessments` },
+    "change its details": { as: asOutsider, method: "patch", id: () => x.participantId, url: (id) => `/api/participants/${id}/details`, body: () => ({ city: "x" }) },
+    "upload to it": {
+      as: asOutsider, method: "post", id: () => x.participantId, url: (id) => `/api/participants/${id}/documents`,
+      body: () => ({ filename: "x.pdf", contentType: "application/pdf", sizeBytes: 10, description: "x" }),
+    },
+    "start a form on it": {
+      as: asOutsider, method: "post", id: () => x.participantId, url: (id) => `/api/participants/${id}/assessments`,
+      body: () => ({ formId: x.formId, mode: "with_staff" }),
+    },
+    "send it a form": { as: asOutsider, method: "post", id: () => x.participantId, url: (id) => `/api/participants/${id}/assessment-links`, body: () => ({ formId: x.formId }) },
+    "write a note": {
+      as: asOutsider, method: "post", id: () => x.participantId, url: () => "/api/notes",
+      body: (id) => ({ participantId: id, episodeId: x.episodeId, contactResult: "contacted", body: "x" }),
+    },
+    "write a care plan": { as: asOutsider, method: "post", id: () => x.participantId, url: () => "/api/care-plans", body: (id) => ({ participantId: id, episodeId: x.episodeId, goals: "x" }) },
+    "record a consent": {
+      as: asOutsider, method: "post", id: () => x.participantId, url: () => "/api/consents",
+      body: (id) => ({ participantId: id, type: "general_services", formName: "x", signedDate: isoDaysAgo(1) }),
+    },
+    "refer out": { as: asOutsider, method: "post", id: () => x.participantId, url: () => "/api/referrals", body: (id) => ({ participantId: id, partnerName: "x", serviceType: "x" }) },
+    "revise a note": { as: asOutsider, method: "patch", id: () => x.noteId, url: (id) => `/api/notes/${id}`, body: () => ({ body: "x" }) },
+    "edit a care plan": { as: asOutsider, method: "patch", id: () => x.carePlanId, url: (id) => `/api/care-plans/${id}`, body: () => ({ goals: "x" }) },
+    "submit a care plan": { as: asOutsider, method: "post", id: () => x.carePlanId, url: (id) => `/api/care-plans/${id}/submit` },
+    "revoke a consent": { as: asOutsider, method: "post", id: () => x.consentId, url: (id) => `/api/consents/${id}/revoke`, body: () => ({ reason: "x" }) },
+    "record a referral outcome": { as: asOutsider, method: "post", id: () => x.referralId, url: (id) => `/api/referrals/${id}/outcome`, body: () => ({ status: "declined" }) },
+    "read a participation record": { as: asOutsider, method: "get", id: () => x.enrollmentId, url: (id) => `/api/enrollments/${id}/participation` },
+    "open a form": { as: asOutsider, method: "get", id: () => x.assessmentId, url: (id) => `/api/assessments/${id}` },
+    "answer a form": { as: asOutsider, method: "patch", id: () => x.assessmentId, url: (id) => `/api/assessments/${id}/answers`, body: () => ({ answers: {} }) },
+    "complete a form": { as: asOutsider, method: "post", id: () => x.assessmentId, url: (id) => `/api/assessments/${id}/complete` },
+    "void a form": { as: asOutsider, method: "post", id: () => x.assessmentId, url: (id) => `/api/assessments/${id}/void`, body: () => ({ reason: "x" }) },
+    "replace a form's link": { as: asOutsider, method: "post", id: () => x.assessmentId, url: (id) => `/api/assessments/${id}/link` },
+    "withdraw a form's link": { as: asOutsider, method: "post", id: () => x.assessmentId, url: (id) => `/api/assessments/${id}/link/revoke` },
+    "confirm an upload": { as: asOutsider, method: "post", id: () => x.documentId, url: (id) => `/api/documents/${id}/confirm` },
+    "download a document": { as: asOutsider, method: "get", id: () => x.documentId, url: (id) => `/api/documents/${id}/download-url` },
+    "void a document": { as: asOutsider, method: "post", id: () => x.documentId, url: (id) => `/api/documents/${id}/void`, body: () => ({ reason: "x" }) },
+    "approve a note": { as: narrow(["notes.approve"]), method: "post", id: () => x.noteId, url: (id) => `/api/notes/${id}/approve` },
+    "return a note": { as: narrow(["notes.approve"]), method: "post", id: () => x.noteId, url: (id) => `/api/notes/${id}/return`, body: () => ({ reviewNote: "x" }) },
+    "approve a care plan": { as: narrow(["care_plans.approve"]), method: "post", id: () => x.carePlanId, url: (id) => `/api/care-plans/${id}/approve` },
+    "return a care plan": {
+      as: narrow(["care_plans.approve"]), method: "post", id: () => x.carePlanId, url: (id) => `/api/care-plans/${id}/return`, body: () => ({ reviewNote: "x" }),
+    },
+    "reassign a client": {
+      as: narrow(["participants.assign", "notes.write"]), method: "post", id: () => x.participantId,
+      url: (id) => `/api/participants/${id}/assignment`, body: () => ({ workerId: ownerId }),
+    },
+    "close a stay": { as: narrow(["episodes.write"]), method: "post", id: () => x.episodeId, url: (id) => `/api/episodes/${id}/close`, body: () => ({ closureReason: "completed" }) },
+    "record a Molina letter": { as: narrow(["episodes.write"]), method: "post", id: () => x.episodeId, url: (id) => `/api/episodes/${id}/disenrollment-letter` },
+    "readmit": {
+      as: narrow(["episodes.write", "notes.write"]), method: "post", id: () => x.participantId, url: () => "/api/episodes",
+      body: (id) => ({ participantId: id, startDate: isoDaysAgo(0), assignedWorkerId: ownerId }),
+    },
+    "enroll in a class": {
+      as: narrow(["programs.manage"]), method: "post", id: () => x.participantId, url: () => `/api/cohorts/${x.cohortId}/enrollments`,
+      body: (id) => ({ participantId: id }),
+    },
+    "withdraw from a class": { as: narrow(["programs.manage"]), method: "post", id: () => x.enrollmentId, url: (id) => `/api/enrollments/${id}/withdraw`, body: () => ({ reason: "x" }) },
+    "export a record": {
+      as: narrow(["records.export"]), method: "post", id: () => x.participantId, url: (id) => `/api/participants/${id}/record-export`,
+      body: () => ({ purpose: "participant_request" }),
+    },
+    "record a follow-up call": {
+      as: narrow(["follow_ups.record"]), method: "post", id: () => x.episodeId, url: () => "/api/follow-ups",
+      body: (id) => ({ episodeId: id, milestoneMonths: 3, outcome: "no_answer" }),
+    },
+    "link a referral in": {
+      as: narrow(["incoming_referrals.manage"]), method: "post", id: () => x.participantId, url: () => `/api/incoming-referrals/${randomUUID()}/link`,
+      body: (id) => ({ participantId: id }),
+    },
+  };
+
+  for (const [name, probe] of Object.entries(probes)) {
+    it(`for "${name}"`, async () => {
+      const as = await probe.as();
+      const send = (id: string) =>
+        probe.method === "get" ? as.get(probe.url(id)) : as[probe.method](probe.url(id), probe.body?.(id) ?? {});
+      const theirs = await send(probe.id());
+      const nothing = await send(randomUUID());
+      expect(theirs.status).toBe(404);
+      expect({ status: theirs.status, body: theirs.body }).toEqual({ status: nothing.status, body: nothing.body });
+    });
+  }
+
+  it("left everything as it was", async () => {
+    const record = (await owner.get(`/api/participants/${x.participantId}`)).body;
+    expect(record.episodeStatus).toBe("open");
+    expect(record.workerName).toBeTruthy();
+    expect(record.notes).toHaveLength(1);
+    expect(record.carePlanStatus).toBe("pending_review");
+    const [consent] = await db.select().from(consents).where(eq(consents.id, x.consentId));
+    expect(consent.revokedAt).toBeNull();
   });
 });

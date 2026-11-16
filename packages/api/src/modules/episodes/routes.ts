@@ -14,7 +14,7 @@ export default async function episodeRoutes(fastify: FastifyInstance, opts: { db
   async function assertEpisodeWritable(userId: string, episodeId: string) {
     const episode = await repository.findById(db, episodeId);
     if (!episode) throw notFound("Episode not found");
-    await assertCanWrite(db, await resolveScope(db, userId), episode.participantId);
+    await assertCanWrite(db, await resolveScope(db, userId), episode.participantId, "Episode");
     return episode;
   }
 

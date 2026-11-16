@@ -96,7 +96,7 @@ describe("U6: a returned note goes back to its author, and round again", () => {
     expect((await director.patch(`/api/notes/${noteId}`, { body: "Not mine to change." })).status).toBe(409);
     // Somebody who can't see the record doesn't get that far.
     const other = await signIn(app, (await staff(db, "community_health_worker")).email);
-    expect((await other.patch(`/api/notes/${noteId}`, { body: "Not mine to change." })).status).toBe(403);
+    expect((await other.patch(`/api/notes/${noteId}`, { body: "Not mine to change." })).status).toBe(404);
 
     const approved = await chwNote();
     await manager.post(`/api/notes/${approved.noteId}/approve`);

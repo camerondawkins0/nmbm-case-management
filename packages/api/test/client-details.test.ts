@@ -127,7 +127,8 @@ describe("details are kept current on the record", () => {
   it("is for people who can update details and see the client", async () => {
     const { participantId } = await admit(db, { workerId: chwId, actorId: chwId });
     const otherChw = await signIn(app, (await staff(db, "community_health_worker")).email);
-    expect((await otherChw.patch(`/api/participants/${participantId}/details`, { city: "x" })).status).toBe(403);
+    expect((await otherChw.patch(`/api/participants/${participantId}/details`, { city: "x" })).status).toBe(404);
+    // No permission at all is refused at the door, whoever's record it is.
     const qa = await signIn(app, (await staff(db, "quality_assurance_coordinator")).email);
     expect((await qa.patch(`/api/participants/${participantId}/details`, { city: "x" })).status).toBe(403);
   });

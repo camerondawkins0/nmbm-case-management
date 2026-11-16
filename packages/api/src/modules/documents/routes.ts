@@ -13,16 +13,16 @@ export default async function documentRoutes(fastify: FastifyInstance, opts: { d
   // Every document route is scoped to the participant it belongs to, by
   // the same rules as the record itself. Out of scope answers as not
   // found, so a guessed id doesn't confirm a document exists.
-  async function assertVisible(userId: string, participantId: string) {
+  async function assertVisible(userId: string, participantId: string, what = "Participant") {
     const caller = await resolveScope(db, userId);
-    if (!(await canSeeParticipant(db, caller, participantId))) throw notFound("Not found");
+    if (!(await canSeeParticipant(db, caller, participantId))) throw notFound(`${what} not found`);
   }
 
   // Uploading or voiding is a write: only on a record that's the
   // caller's now (see canWriteParticipant).
-  async function assertWritable(userId: string, participantId: string) {
+  async function assertWritable(userId: string, participantId: string, what = "Participant") {
     const caller = await resolveScope(db, userId);
-    if (!(await canWriteParticipant(db, caller, participantId))) throw notFound("Not found");
+    if (!(await canWriteParticipant(db, caller, participantId))) throw notFound(`${what} not found`);
   }
 
   fastify.get<{ Params: { id: string } }>(
@@ -50,7 +50,7 @@ export default async function documentRoutes(fastify: FastifyInstance, opts: { d
     { preHandler: authorize("documents.write") },
     async (request) => {
       const doc = await service.findDocument(db, request.params.id);
-      await assertWritable(request.currentUser!.id, doc.participantId);
+      await assertWritable(request.currentUser!.id, doc.participantId, "Document");
       return service.confirmUpload(db, storage, request.params.id, request.currentUser!.id);
     },
   );
@@ -60,7 +60,7 @@ export default async function documentRoutes(fastify: FastifyInstance, opts: { d
     { preHandler: authorizeAny([...CAN_READ_PARTICIPANTS, "participants.read.closed"]) },
     async (request) => {
       const doc = await service.findDocument(db, request.params.id);
-      await assertVisible(request.currentUser!.id, doc.participantId);
+      await assertVisible(request.currentUser!.id, doc.participantId, "Document");
       return service.downloadUrl(db, storage, request.params.id, request.currentUser!.id);
     },
   );
@@ -71,7 +71,7 @@ export default async function documentRoutes(fastify: FastifyInstance, opts: { d
     async (request) => {
       const { reason } = documentVoidSchema.parse(request.body);
       const doc = await service.findDocument(db, request.params.id);
-      await assertWritable(request.currentUser!.id, doc.participantId);
+      await assertWritable(request.currentUser!.id, doc.participantId, "Document");
       return service.voidDocument(db, request.params.id, reason, request.currentUser!.id);
     },
   );

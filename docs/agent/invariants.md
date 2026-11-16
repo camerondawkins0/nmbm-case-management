@@ -40,6 +40,16 @@ room) and shows anyone else only their own clients.
 The record says `canWrite`, so the page hides buttons that would be
 refused; the server checks again regardless.
 
+**Out of reach answers exactly as missing.** A record that isn't the
+caller's gets the same 404, with the same words, as an id that names
+nothing — never a 403 — so no request can be used to learn that a
+record exists on someone else's caseload. `assertCanSee` and
+`assertCanWrite` take the noun the request's id names ("Consent",
+"Note", "Care plan"…) so the refusal matches that thing's own "not
+found". A 403 means only that the caller lacks the permission for the
+route at all, or (U6) the record is visible but the note is in the
+other review chain.
+
 **Changes come from this app's own pages.** A POST, PUT, PATCH or DELETE
 carrying an Origin that isn't this site is refused
 (`plugins/same-origin.ts`), on top of the SameSite=Lax session cookie.

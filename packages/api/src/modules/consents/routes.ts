@@ -30,7 +30,7 @@ export default async function consentRoutes(fastify: FastifyInstance, opts: { db
       // A consent id alone used to be enough to revoke a form on anybody's
       // record, which then blocks that client's referrals (M15/M17).
       const consent = await service.findConsent(db, request.params.id);
-      await assertCanWrite(db, await resolveScope(db, request.currentUser!.id), consent.participantId);
+      await assertCanWrite(db, await resolveScope(db, request.currentUser!.id), consent.participantId, "Consent");
       return service.revokeConsent(db, request.params.id, reason, request.currentUser!.id);
     },
   );

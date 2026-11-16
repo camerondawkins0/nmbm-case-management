@@ -32,7 +32,7 @@ export default async function referralRoutes(fastify: FastifyInstance, opts: { d
       // client's record.
       const referral = await service.findReferral(db, request.params.id);
       const caller = await resolveScope(db, request.currentUser!.id);
-      await assertCanWrite(db, caller, referral.participantId);
+      await assertCanWrite(db, caller, referral.participantId, "Referral");
       return service.recordOutcome(db, request.params.id, input, request.currentUser!.id);
     },
   );

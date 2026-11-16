@@ -7,7 +7,7 @@ import {
   type ParticipantListQuery,
   type ParticipantSearch,
 } from "@nmbm/shared";
-import { notFound, forbidden, conflict } from "../../plugins/errors.js";
+import { notFound, conflict } from "../../plugins/errors.js";
 import { writeAudit } from "../../plugins/audit.js";
 import {
   caseloadParticipantIds,
@@ -139,18 +139,23 @@ export async function createParticipant(
   return participant;
 }
 
-export async function assertCanSee(db: Db, caller: CallerScope, participantId: string) {
+// Out of reach answers exactly as missing does — same status, same
+// words — so a request can't be used to learn that an id exists on
+// somebody else's caseload. `what` is the thing the id in the request
+// names (a note, a consent), so the refusal matches that thing's own
+// "not found".
+export async function assertCanSee(db: Db, caller: CallerScope, participantId: string, what = "Participant") {
   if (!(await canSeeParticipant(db, caller, participantId))) {
-    throw forbidden("Not on your caseload");
+    throw notFound(`${what} not found`);
   }
 }
 
 // Every write to a record goes through this rather than assertCanSee:
 // seeing a closed record (the former worker's window, intake) doesn't
 // make it yours to change. See canWriteParticipant.
-export async function assertCanWrite(db: Db, caller: CallerScope, participantId: string) {
+export async function assertCanWrite(db: Db, caller: CallerScope, participantId: string, what = "Participant") {
   if (!(await canWriteParticipant(db, caller, participantId))) {
-    throw forbidden("Not on your caseload");
+    throw notFound(`${what} not found`);
   }
 }
 

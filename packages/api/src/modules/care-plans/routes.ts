@@ -19,13 +19,13 @@ export default async function carePlanRoutes(fastify: FastifyInstance, opts: { d
   async function assertPlanWritable(userId: string, planId: string) {
     const plan = await repository.findById(db, planId);
     if (!plan) throw notFound("Care plan not found");
-    await assertCanWrite(db, await resolveScope(db, userId), plan.participantId);
+    await assertCanWrite(db, await resolveScope(db, userId), plan.participantId, "Care plan");
   }
 
   async function assertPlanReviewable(userId: string, planId: string) {
     const plan = await repository.findById(db, planId);
     if (!plan) throw notFound("Care plan not found");
-    await assertCanSee(db, await resolveScope(db, userId), plan.participantId);
+    await assertCanSee(db, await resolveScope(db, userId), plan.participantId, "Care plan");
   }
 
   fastify.post(

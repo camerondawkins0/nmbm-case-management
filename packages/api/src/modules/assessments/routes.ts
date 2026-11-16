@@ -25,17 +25,17 @@ export default async function assessmentRoutes(fastify: FastifyInstance, opts: {
 
   // An assessment is part of the participant's record and is scoped
   // exactly as the record is; out of scope answers as not found.
-  async function assertVisible(userId: string, participantId: string) {
+  async function assertVisible(userId: string, participantId: string, what = "Participant") {
     const caller = await resolveScope(db, userId);
-    if (!(await canSeeParticipant(db, caller, participantId))) throw notFound("Not found");
+    if (!(await canSeeParticipant(db, caller, participantId))) throw notFound(`${what} not found`);
   }
 
   // Starting, answering, completing, voiding or sending a form is a
   // write: only on a record that's the caller's now (see
   // canWriteParticipant). Out of reach answers the same as not found.
-  async function assertWritable(userId: string, participantId: string) {
+  async function assertWritable(userId: string, participantId: string, what = "Participant") {
     const caller = await resolveScope(db, userId);
-    if (!(await canWriteParticipant(db, caller, participantId))) throw notFound("Not found");
+    if (!(await canWriteParticipant(db, caller, participantId))) throw notFound(`${what} not found`);
   }
 
   fastify.get(
@@ -126,7 +126,7 @@ export default async function assessmentRoutes(fastify: FastifyInstance, opts: {
     { preHandler: authorizeAny([...RECORD_READERS]) },
     async (request) => {
       const row = await service.find(db, request.params.id);
-      await assertVisible(request.currentUser!.id, row.participantId);
+      await assertVisible(request.currentUser!.id, row.participantId, "Assessment");
       const detail = await service.get(db, request.params.id);
       const states = await links.linkStates(db, row.mode === "self" ? [row.id] : []);
       return { ...detail, link: states.get(row.id) ?? null };
@@ -139,7 +139,7 @@ export default async function assessmentRoutes(fastify: FastifyInstance, opts: {
     async (request) => {
       const { answers } = saveAnswersSchema.parse(request.body);
       const row = await service.find(db, request.params.id);
-      await assertWritable(request.currentUser!.id, row.participantId);
+      await assertWritable(request.currentUser!.id, row.participantId, "Assessment");
       return service.saveAnswers(db, request.params.id, answers, request.currentUser!.id);
     },
   );
@@ -149,7 +149,7 @@ export default async function assessmentRoutes(fastify: FastifyInstance, opts: {
     { preHandler: authorize("assessments.write") },
     async (request) => {
       const row = await service.find(db, request.params.id);
-      await assertWritable(request.currentUser!.id, row.participantId);
+      await assertWritable(request.currentUser!.id, row.participantId, "Assessment");
       return service.complete(db, request.params.id, request.currentUser!.id);
     },
   );
@@ -160,7 +160,7 @@ export default async function assessmentRoutes(fastify: FastifyInstance, opts: {
     async (request) => {
       const { reason } = voidAssessmentSchema.parse(request.body);
       const row = await service.find(db, request.params.id);
-      await assertWritable(request.currentUser!.id, row.participantId);
+      await assertWritable(request.currentUser!.id, row.participantId, "Assessment");
       return service.voidAssessment(db, request.params.id, reason, request.currentUser!.id);
     },
   );
@@ -184,7 +184,7 @@ export default async function assessmentRoutes(fastify: FastifyInstance, opts: {
     { preHandler: authorize("assessments.write") },
     async (request, reply) => {
       const row = await service.find(db, request.params.id);
-      await assertWritable(request.currentUser!.id, row.participantId);
+      await assertWritable(request.currentUser!.id, row.participantId, "Assessment");
       reply.code(201);
       return links.reissue(db, request.params.id, request.currentUser!.id);
     },
@@ -195,7 +195,7 @@ export default async function assessmentRoutes(fastify: FastifyInstance, opts: {
     { preHandler: authorize("assessments.write") },
     async (request) => {
       const row = await service.find(db, request.params.id);
-      await assertWritable(request.currentUser!.id, row.participantId);
+      await assertWritable(request.currentUser!.id, row.participantId, "Assessment");
       return links.revoke(db, request.params.id, request.currentUser!.id);
     },
   );

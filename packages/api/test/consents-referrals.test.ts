@@ -96,7 +96,7 @@ describe("M17: recording what came back", () => {
 
     const other = await signIn(app, (await staff(db, "community_health_worker")).email);
     const outcome = { status: "accepted", outcomeNote: "Seen on Tuesday" };
-    expect((await other.post(`/api/referrals/${referral.id}/outcome`, outcome)).status).toBe(403);
+    expect((await other.post(`/api/referrals/${referral.id}/outcome`, outcome)).status).toBe(404);
     expect((await chw.post(`/api/referrals/${referral.id}/outcome`, outcome)).status).toBe(200);
   });
 });

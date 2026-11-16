@@ -45,7 +45,7 @@ export default async function noteRoutes(fastify: FastifyInstance, opts: { db: D
       // Authorship isn't enough once the client has moved to somebody
       // else's caseload.
       const note = await review.findNote(db, request.params.id);
-      await assertCanWrite(db, await resolveScope(db, request.currentUser!.id), note.participantId);
+      await assertCanWrite(db, await resolveScope(db, request.currentUser!.id), note.participantId, "Note");
       return review.reviseAndResubmit(db, request.params.id, request.currentUser!.id, input);
     },
   );

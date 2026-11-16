@@ -74,6 +74,7 @@ describe("U5: a front-line worker sees their own caseload only", () => {
     const theirs = await admit(db, { workerId: luis.id, actorId: luis.id });
     const as = await signIn(app, tasha.email);
     const res = await as.post("/api/notes", { ...theirs, contactResult: "contacted", body: "x" });
-    expect(res.status).toBe(403);
+    // Answered as though the record didn't exist.
+    expect(res.status).toBe(404);
   });
 });

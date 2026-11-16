@@ -1,6 +1,6 @@
 # Testing
 
-285 tests in `packages/api/test/`, run by vitest against a real Postgres.
+325 tests in `packages/api/test/`, run by vitest against a real Postgres.
 CI runs them on every push with a Postgres 16 service.
 
 ```bash
@@ -49,7 +49,7 @@ dev-login route, and assert on HTTP responses.
 | `record-export.test.ts` | Who can export; purpose required; the audit line with the purpose; the whole record with answers in words; scoping through a role that can export but only sees its own caseload |
 | `documents.test.ts` | Upload, confirm and open through the local storage stand-in; confirm refused until the file arrives; opaque keys; views audited; consent scans same-person only; type and size refused; tampered links refused; other workers' documents 404; void keeps the row and stops it opening |
 | `csv.test.ts` | The formula-injection guard and RFC 4180 quoting, no database |
-| `direct-access.test.ts` | Requests sent straight to the API with another worker's ids: a case manager with the same permissions can't read or write any part of the record, and nothing changes; narrow roles holding a reviewer, reassign, close, withdraw, export or follow-up permission reach only their own records; class rosters whole only for people who run classes; another site's page can't make a change; malformed parameters are a 400 or 404; nothing without a session |
+| `direct-access.test.ts` | Requests sent straight to the API with another worker's ids: a case manager with the same permissions can't read or write any part of the record, and nothing changes; narrow roles holding a reviewer, reassign, close, withdraw, export or follow-up permission reach only their own records; class rosters whole only for people who run classes; another site's page can't make a change; malformed parameters are a 400 or 404; nothing without a session; for each of 39 id-taking requests, someone else's id and an id that doesn't exist get identical answers (status and body) |
 | `routes-authorized.test.ts` | Reads `packages/api/src` and fails on any route with neither `authorize()` nor a `PUBLIC_BY_DESIGN` entry, and on entries that are no longer open; no database |
 | `sign-in.test.ts` | OAuth state, refusal reasons, session regeneration, idle timeout, form-post sign-out, audit |
 
