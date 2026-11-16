@@ -4,6 +4,15 @@ import type {
   IncomingReferralStatus,
   RecordExportPurpose,
   ParticipantDetails,
+  HousingSituation,
+  CsService,
+  CsAuthorizationState,
+  CsUnitType,
+  HousingActivity,
+  ServiceContactMethod,
+  SubsidyType,
+  DepositPurpose,
+  DepositStatus,
   Answers,
   AssessmentMode,
   AssessmentStatus,
@@ -425,6 +434,7 @@ export type RecordExport = {
     recordCreatedAt: string;
     details: Record<keyof ParticipantDetails, string | null>;
   };
+  housing: HousingRecord;
   episodes: {
     id: string;
     status: string;
@@ -657,4 +667,103 @@ export type AssessmentDetail = {
   voidReason: string | null;
   form: FormVersion;
   link: AssessmentLinkState | null;
+};
+
+// Housing Community Supports (M24).
+type Voidable = { voidedAt: string | null; voidReason: string | null };
+export type HousingStatusRow = Voidable & {
+  id: string;
+  situation: HousingSituation;
+  effectiveDate: string;
+  note: string | null;
+  recordedByName: string | null;
+};
+export type CsAuthorizationRow = Voidable & {
+  id: string;
+  service: CsService;
+  status: "requested" | "approved" | "denied";
+  state: CsAuthorizationState | "void";
+  plan: Payer | null;
+  authorizationNumber: string | null;
+  requestedDate: string;
+  decisionDate: string | null;
+  startDate: string | null;
+  endDate: string | null;
+  lastCoveredDay: string | null;
+  endedDate: string | null;
+  endedReason: string | null;
+  unitType: CsUnitType | null;
+  unitsAuthorized: number | null;
+  amountAuthorized: string | null;
+  note: string | null;
+  minutesLogged: number;
+  unitsUsed: number | null;
+  overAuthorized: boolean;
+  amountCommitted: string;
+  amountPaid: string;
+  recordedByName: string | null;
+  decidedByName: string | null;
+};
+export type HousingServiceRow = Voidable & {
+  id: string;
+  authorizationId: string;
+  serviceDate: string;
+  minutes: number;
+  activity: HousingActivity;
+  contactMethod: ServiceContactMethod;
+  note: string;
+  authorName: string | null;
+};
+export type TenancyRow = Voidable & {
+  id: string;
+  moveInDate: string;
+  addressLine1: string;
+  addressLine2: string | null;
+  city: string;
+  state: string;
+  postalCode: string;
+  landlordName: string | null;
+  landlordPhone: string | null;
+  subsidy: SubsidyType;
+  monthlyRent: string | null;
+  tenantPortion: string | null;
+  leaseStart: string | null;
+  leaseEnd: string | null;
+  moveOutDate: string | null;
+  moveOutReason: string | null;
+};
+export type DepositRow = Voidable & {
+  id: string;
+  authorizationId: string;
+  purpose: DepositPurpose;
+  payee: string;
+  amount: string;
+  status: DepositStatus;
+  note: string | null;
+  requestedById: string;
+  requestedByName: string | null;
+  requestedAt: string;
+  decidedByName: string | null;
+  decisionNote: string | null;
+  paidDate: string | null;
+  paymentReference: string | null;
+};
+export type HousingRecord = {
+  current: HousingStatusRow | null;
+  statuses: HousingStatusRow[];
+  authorizations: CsAuthorizationRow[];
+  services: HousingServiceRow[];
+  tenancies: TenancyRow[];
+  deposits: DepositRow[];
+};
+type Who = { participantId: string; firstName: string; lastName: string };
+export type HousingOverview = {
+  awaitingDecision: (Who & { id: string; service: CsService; requestedDate: string })[];
+  expiring: (Who & { id: string; service: CsService; lastCoveredDay: string | null; authorizationNumber: string | null })[];
+  active: (Who & { id: string; service: CsService })[];
+  depositsAwaitingDecision: (Who & { id: string; amount: string; payee: string; requestedById: string })[];
+  depositsAwaitingPayment: (Who & { id: string; amount: string; payee: string })[];
+  noSituation: Who[];
+  movedIn: (Who & { id: string; moveInDate: string })[];
+  warningDays: number;
 };

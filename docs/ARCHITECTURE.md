@@ -154,10 +154,16 @@ notes; Program Manager or CHW supervisor approves CHW notes), but there's
 no multi-department scale problem to design around. Build the same
 role/permission engine as WSL, seeded with NMBM's roles instead of WSL's.
 
-**No housing module (yet).** M24 is "not yet, future." No tables, no
-module — build when it's actually asked for, not preemptively (WSL's own
-hard rule 001 applies here too: don't build for hypothetical
-requirements).
+**Housing Community Supports.** M24 was "not yet, future" in discovery;
+NMBM then named it a go-live need ("we are maintaining our Community
+Supports for Independent Living Systems"). Built around the plan's
+authorization: the three housing services DHCS defines, work logged in
+minutes against an authorization that covers it, deposits as money
+against theirs with a separate approver, tenancies and the housing
+situation over time, and a service-log CSV for reporting. What ILS
+requires in that report, and which services NMBM are contracted for,
+are still to confirm (`docs/DISCOVERY_FOLLOWUP.md`); billing waits on
+M23 with everything else. `modules/housing/`, `docs/agent/invariants.md`.
 
 **Kiosk / self-serve intake matches WSL directly, but isn't built.** M13
 — NMBM already
@@ -207,7 +213,7 @@ cases a page reachable after signing in. Current as of migration `0018`.
 | Audit (M30) | Append-only, written inside the transaction that performs the action, read-only endpoint | `plugins/audit.ts` |
 | Feedback (M31) | In-app issue reporting and a triage queue, because NMBM has no IT staff | `modules/feedback/`, `docs/SUPPORT.md` |
 
-98 API routes across 17 modules, 33 tables and one view, 23 pages plus
+117 API routes across 18 modules, 38 tables and one view, 23 pages plus
 two holding screens (no role yet; server unreachable).
 `docs/agent/map.md` lists them route by route and page by page.
 
@@ -235,11 +241,10 @@ Two different reasons, and they shouldn't be reported as one number.
   needs its own consent and re-disclosure rules rather than a flag on
   the existing ones, and its timing depends on the LA County DV
   approval.
-- **Housing (M24).** "Not yet, future."
 
 **Not blocked — ours to do:**
 
-- **Test coverage stops at the API.** 325 tests run through the real
+- **Test coverage stops at the API.** 363 tests run through the real
   server against a real Postgres on every push, covering every rule in
   `docs/agent/invariants.md`, and each has been proved by breaking the
   rule and watching it fail. The web app has no automated tests; its

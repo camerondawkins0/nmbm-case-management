@@ -18,15 +18,8 @@ export const CLOSURE_REASON_LABELS: Record<EpisodeClosureReason, string> = {
   other: "Other",
 };
 
-export const PAYER_LABELS: Record<string, string> = {
-  medicare: "Medicare",
-  medi_cal: "Medi-Cal",
-  molina: "Molina",
-  kaiser: "Kaiser",
-  blue_shield: "Blue Shield",
-  la_health_net: "LA Health Net",
-  self_pay: "Self-pay",
-};
+// One list, shared with the server's exports.
+export { PAYER_LABELS } from "@nmbm/shared";
 
 export const QUESTION_TYPE_LABELS: Record<QuestionType, string> = {
   short_text: "Short answer",

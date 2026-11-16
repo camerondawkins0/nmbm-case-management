@@ -28,6 +28,7 @@ import * as participantRepo from "../participants/repository.js";
 import * as consentService from "../consents/service.js";
 import * as referralService from "../referrals/service.js";
 import * as incomingReferralService from "../incoming-referrals/service.js";
+import * as housingService from "../housing/service.js";
 import * as programService from "../programs/service.js";
 import * as documentService from "../documents/service.js";
 
@@ -199,6 +200,9 @@ export async function buildExport(
     })),
     assessments: assessmentRows,
     followUpCalls: calls,
+    // Housing Community Supports, including voided rows: the export is
+    // everything held, and a void says when and why.
+    housing: await housingService.housingFor(db, participantId),
     documents: documents.map(({ id: _id, ...d }) => d),
     omitted: [
       "The files of uploaded documents. They are listed here; each is opened from the record, and every opening is logged.",

@@ -11,3 +11,4 @@ export * from "./assessments.js";
 export * from "./incoming-referrals.js";
 export * from "./record-export.js";
 export * from "./participant-details.js";
+export * from "./housing.js";

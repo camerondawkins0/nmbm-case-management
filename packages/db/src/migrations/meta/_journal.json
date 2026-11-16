@@ -134,6 +134,13 @@
       "when": 1762992000000,
       "tag": "0018_service_date_and_contact_details",
       "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "7",
+      "when": 1763251200000,
+      "tag": "0019_housing_community_supports",
+      "breakpoints": true
     }
   ]
 }

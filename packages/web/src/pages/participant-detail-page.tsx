@@ -16,6 +16,7 @@ import { FOLLOW_UP_OUTCOME_LABELS } from "@nmbm/shared";
 import type { FollowUpSchedule } from "../lib/types.js";
 import { FollowUpCallForm } from "../components/follow-up-call-form.js";
 import { ClientDetailsSection } from "../components/client-details.js";
+import { HousingSection } from "../components/housing-section.js";
 import { todayInOrg } from "@nmbm/shared";
 
 export default function ParticipantDetailPage({ me }: { me: Me }) {
@@ -254,6 +255,8 @@ export default function ParticipantDetailPage({ me }: { me: Me }) {
           load();
         }}
       />
+
+      <HousingSection record={record} me={me} onChanged={setNotice} onError={setActionError} />
 
       <ConsentsSection
         record={record}

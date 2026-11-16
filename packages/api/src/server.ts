@@ -20,6 +20,7 @@ import { registerWebApp, registerSecurityHeaders } from "./plugins/web-app.js";
 import documentRoutes from "./modules/documents/routes.js";
 import incomingReferralRoutes from "./modules/incoming-referrals/routes.js";
 import recordExportRoutes from "./modules/record-export/routes.js";
+import housingRoutes from "./modules/housing/routes.js";
 import assessmentRoutes from "./modules/assessments/routes.js";
 import selfServeRoutes from "./modules/assessments/self-serve-routes.js";
 import { createStorageProvider, registerLocalStorageRoutes, LocalStorageProvider } from "./lib/storage.js";
@@ -69,6 +70,7 @@ export async function buildServer(options: { logger?: boolean } = {}) {
   await fastify.register(incomingReferralRoutes, { db });
   await fastify.register(recordExportRoutes, { db });
   await fastify.register(assessmentRoutes, { db });
+  await fastify.register(housingRoutes, { db });
   await fastify.register(selfServeRoutes, { db });
   // Only the development stand-in has routes of its own; production
   // signs URLs straight to Cloud Storage.

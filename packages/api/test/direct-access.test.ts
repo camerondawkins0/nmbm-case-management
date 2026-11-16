@@ -32,6 +32,12 @@ const x = {} as {
   formId: string;
   assessmentId: string;
   documentId: string;
+  authorizationId: string;
+  depositAuthorizationId: string;
+  housingStatusId: string;
+  housingServiceId: string;
+  tenancyId: string;
+  depositId: string;
 };
 
 beforeAll(async () => {
@@ -65,6 +71,32 @@ beforeAll(async () => {
   x.documentId = (
     await owner.post(`/api/participants/${x.participantId}/documents`, { filename: "id.pdf", contentType: "application/pdf", sizeBytes: 10, description: "ID" })
   ).body.documentId;
+  // Housing, on the same client.
+  const approve = async (service: string, extra: Record<string, unknown> = {}) => {
+    const id = (await director.post(`/api/participants/${x.participantId}/cs-authorizations`, { service, requestedDate: isoDaysAgo(5) })).body.id;
+    await director.post(`/api/cs-authorizations/${id}/decision`, {
+      decision: "approved", decisionDate: isoDaysAgo(4), authorizationNumber: unique("A"), startDate: isoDaysAgo(4), endDate: isoDaysAgo(-60), ...extra,
+    });
+    return id as string;
+  };
+  x.authorizationId = await approve("housing_transition_navigation");
+  x.depositAuthorizationId = await approve("housing_deposits", { amountAuthorized: "1000" });
+  x.housingStatusId = (await owner.post(`/api/participants/${x.participantId}/housing-statuses`, { situation: "emergency_shelter", effectiveDate: isoDaysAgo(3) })).body.id;
+  x.housingServiceId = (
+    await owner.post(`/api/participants/${x.participantId}/housing-services`, {
+      authorizationId: x.authorizationId, serviceDate: isoDaysAgo(2), minutes: 30, activity: "housing_search", contactMethod: "phone", note: "x",
+    })
+  ).body.service.id;
+  x.tenancyId = (
+    await owner.post(`/api/participants/${x.participantId}/tenancies`, {
+      moveInDate: isoDaysAgo(1), addressLine1: "1 A St", city: "Long Beach", state: "CA", postalCode: "90802", subsidy: "none",
+    })
+  ).body.id;
+  x.depositId = (
+    await owner.post(`/api/participants/${x.participantId}/housing-deposits`, {
+      authorizationId: x.depositAuthorizationId, purpose: "security_deposit", payee: "Landlord", amount: "500",
+    })
+  ).body.id;
   for (const id of Object.values(x)) expect(id).toBeTruthy();
 });
 afterAll(async () => app?.close());
@@ -303,6 +335,46 @@ describe("an id out of reach answers exactly as an id that doesn't exist", () =>
       as: narrow(["follow_ups.record"]), method: "post", id: () => x.episodeId, url: () => "/api/follow-ups",
       body: (id) => ({ episodeId: id, milestoneMonths: 3, outcome: "no_answer" }),
     },
+    "read housing": { as: asOutsider, method: "get", id: () => x.participantId, url: (id) => `/api/participants/${id}/housing` },
+    "record a housing situation": {
+      as: asOutsider, method: "post", id: () => x.participantId, url: (id) => `/api/participants/${id}/housing-statuses`,
+      body: () => ({ situation: "unsheltered", effectiveDate: isoDaysAgo(1) }),
+    },
+    "void a housing situation": { as: asOutsider, method: "post", id: () => x.housingStatusId, url: (id) => `/api/housing-statuses/${id}/void`, body: () => ({ reason: "x" }) },
+    "log housing work": {
+      as: asOutsider, method: "post", id: () => x.participantId, url: (id) => `/api/participants/${id}/housing-services`,
+      body: () => ({ authorizationId: x.authorizationId, serviceDate: isoDaysAgo(1), minutes: 10, activity: "other", contactMethod: "phone", note: "x" }),
+    },
+    "void housing work": { as: asOutsider, method: "post", id: () => x.housingServiceId, url: (id) => `/api/housing-services/${id}/void`, body: () => ({ reason: "x" }) },
+    "record a move-in": {
+      as: asOutsider, method: "post", id: () => x.participantId, url: (id) => `/api/participants/${id}/tenancies`,
+      body: () => ({ moveInDate: isoDaysAgo(1), addressLine1: "x", city: "x", state: "CA", postalCode: "90802", subsidy: "none" }),
+    },
+    "record a move-out": { as: asOutsider, method: "post", id: () => x.tenancyId, url: (id) => `/api/tenancies/${id}/move-out`, body: () => ({ moveOutDate: isoDaysAgo(0), reason: "x" }) },
+    "void a tenancy": { as: asOutsider, method: "post", id: () => x.tenancyId, url: (id) => `/api/tenancies/${id}/void`, body: () => ({ reason: "x" }) },
+    "ask for a deposit": {
+      as: asOutsider, method: "post", id: () => x.participantId, url: (id) => `/api/participants/${id}/housing-deposits`,
+      body: () => ({ authorizationId: x.depositAuthorizationId, purpose: "other", payee: "x", amount: "1" }),
+    },
+    "void a deposit": { as: asOutsider, method: "post", id: () => x.depositId, url: (id) => `/api/housing-deposits/${id}/void`, body: () => ({ reason: "x" }) },
+    "record an authorization": {
+      as: narrow(["housing.authorizations"]), method: "post", id: () => x.participantId, url: (id) => `/api/participants/${id}/cs-authorizations`,
+      body: () => ({ service: "housing_deposits", requestedDate: isoDaysAgo(1) }),
+    },
+    "decide an authorization": {
+      as: narrow(["housing.authorizations"]), method: "post", id: () => x.authorizationId, url: (id) => `/api/cs-authorizations/${id}/decision`,
+      body: () => ({ decision: "denied", decisionDate: isoDaysAgo(0), note: "x" }),
+    },
+    "end an authorization": {
+      as: narrow(["housing.authorizations"]), method: "post", id: () => x.authorizationId, url: (id) => `/api/cs-authorizations/${id}/end`,
+      body: () => ({ endedDate: isoDaysAgo(0), reason: "x" }),
+    },
+    "void an authorization": { as: narrow(["housing.authorizations"]), method: "post", id: () => x.authorizationId, url: (id) => `/api/cs-authorizations/${id}/void`, body: () => ({ reason: "x" }) },
+    "approve a deposit": { as: narrow(["housing.deposits.approve"]), method: "post", id: () => x.depositId, url: (id) => `/api/housing-deposits/${id}/decision`, body: () => ({ decision: "approved" }) },
+    "pay a deposit": {
+      as: narrow(["housing.deposits.approve"]), method: "post", id: () => x.depositId, url: (id) => `/api/housing-deposits/${id}/paid`,
+      body: () => ({ paidDate: isoDaysAgo(0), paymentReference: "x" }),
+    },
     "link a referral in": {
       as: narrow(["incoming_referrals.manage"]), method: "post", id: () => x.participantId, url: () => `/api/incoming-referrals/${randomUUID()}/link`,
       body: (id) => ({ participantId: id }),
@@ -329,5 +401,21 @@ describe("an id out of reach answers exactly as an id that doesn't exist", () =>
     expect(record.carePlanStatus).toBe("pending_review");
     const [consent] = await db.select().from(consents).where(eq(consents.id, x.consentId));
     expect(consent.revokedAt).toBeNull();
+    const h = (await owner.get(`/api/participants/${x.participantId}/housing`)).body;
+    expect(h.current.voidedAt).toBeNull();
+    expect(h.services.every((r: { voidedAt: string | null }) => r.voidedAt === null)).toBe(true);
+    expect(h.tenancies[0]).toMatchObject({ moveOutDate: null, voidedAt: null });
+    expect(h.deposits[0]).toMatchObject({ status: "requested", voidedAt: null });
+    expect(h.authorizations.every((a: { endedDate: string | null; voidedAt: string | null }) => !a.endedDate && !a.voidedAt)).toBe(true);
+  });
+
+  it("keeps the housing overview and the service export to the records the caller can see", async () => {
+    const overview = (await outsider.get("/api/housing/overview")).body;
+    expect(overview.depositsAwaitingDecision.map((d: { participantId: string }) => d.participantId)).not.toContain(x.participantId);
+    expect(overview.active.map((a: { participantId: string }) => a.participantId)).not.toContain(x.participantId);
+    const exporter = await narrow(["housing.export"])();
+    const csv = await app.inject({ method: "POST", url: "/api/housing/service-export", payload: { from: isoDaysAgo(10), to: isoDaysAgo(0) }, headers: { cookie: exporter.cookie! } });
+    expect(csv.statusCode).toBe(200);
+    expect(csv.body.split("\r\n")).toHaveLength(1);
   });
 });

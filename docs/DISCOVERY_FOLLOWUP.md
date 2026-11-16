@@ -238,6 +238,28 @@ the same thing when M23 work starts.
     Worth confirming whether some exits should be skipped.
   QA and the Clinical Director can record calls; intake sees who asked
   to come back.
+- **Housing Community Supports — built on assumptions, to confirm.**
+  - *Which services.* Built for all three housing Community Supports
+    (Transition Navigation, Deposits, Tenancy and Sustaining). Which are
+    NMBM contracted for with ILS?
+  - *How authorizations arrive.* Recorded by hand (number, dates, units
+    or amount). Does ILS send them through a portal or a file, and does a
+    plan ever authorize without a number?
+  - *Units.* Each authorization says what its units count (15 minutes,
+    hours, visits, days, months), because plans differ. Which does ILS
+    use for each service?
+  - *What ILS wants reported.* The service log exports date, client,
+    CIN, plan, authorization number, service, activity, contact method,
+    minutes and staff — not the notes. The real report layout should
+    replace this (it overlaps M23).
+  - *Deposits.* Asked for by the case manager, approved by somebody else
+    (Clinical Director or Billing Coordinator to start), then recorded
+    paid with a check number. Is that NMBM's process, and is there a
+    lifetime limit to enforce beyond each authorization's amount?
+  - *Housing support plan.* Not a separate screen: build it, and the
+    housing assessment, in the form builder, so it's NMBM's wording.
+  - *Renewals.* Flagged 30 days before an authorization ends (a setting,
+    0–90).
 - **M1** — "Clients" vs. "cases" as the record name — still needs one
   answer.
 - **M3** — What has to be known before intake can proceed, and which of

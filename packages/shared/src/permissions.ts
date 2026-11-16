@@ -55,6 +55,13 @@ export const PERMISSIONS = [
   "attendance.record", // mark a roster — the evidence a PO relies on (M14)
   // M12: "it would be nice for our QA to be able to make the calls".
   "follow_ups.record",
+  // Housing Community Supports (M24). Recording housing work, recording
+  // what the plan authorized, approving and paying deposits, and taking
+  // the service log out for reporting are four different jobs.
+  "housing.write",
+  "housing.authorizations",
+  "housing.deposits.approve",
+  "housing.export",
   "admin.users.manage",
   "admin.settings.manage",
   // Change which permissions each role holds. NMBM decide their own
@@ -95,9 +102,19 @@ export const DEFAULT_ROLE_PERMISSIONS: Record<Role, Permission[]> = {
     "care_plans.write",
     "care_plans.approve",
     "participants.update",
+    "housing.write",
+    "housing.authorizations",
+    "housing.deposits.approve",
+    "housing.export",
     "feedback.submit",
   ],
-  billing_coordinator: ["participants.read.all", "feedback.submit"],
+  billing_coordinator: [
+    "participants.read.all",
+    "housing.authorizations",
+    "housing.deposits.approve",
+    "housing.export",
+    "feedback.submit",
+  ],
   intake_specialist: [
     "incoming_referrals.manage",
     "assessments.write",
@@ -127,6 +144,7 @@ export const DEFAULT_ROLE_PERMISSIONS: Record<Role, Permission[]> = {
     "participants.update",
     "notes.write",
     "care_plans.write",
+    "housing.write",
     "feedback.submit",
   ],
   program_manager: [
@@ -138,6 +156,7 @@ export const DEFAULT_ROLE_PERMISSIONS: Record<Role, Permission[]> = {
     "participants.read.all",
     "participants.assign",
     "notes.approve",
+    "housing.authorizations",
     "feedback.submit",
   ],
   apcc_acsw_intern: [
@@ -190,6 +209,10 @@ export const PERMISSION_INFO: Record<Permission, { group: string; label: string;
   "programs.manage": { group: "Programs", label: "Set up programs", description: "Create programs and cohorts, set what completing one takes, add class dates, enroll and withdraw." },
   "attendance.record": { group: "Programs", label: "Take attendance", description: "Mark attendance for a class." },
   "follow_ups.record": { group: "Programs", label: "Make follow-up calls", description: "See the 3/5/9/12-month call queue and record calls." },
+  "housing.write": { group: "Housing", label: "Record housing work", description: "Record housing situation, log housing services, record tenancies and request deposits." },
+  "housing.authorizations": { group: "Housing", label: "Record authorizations", description: "Record Community Supports authorizations asked for, and what the plan decided." },
+  "housing.deposits.approve": { group: "Housing", label: "Approve deposits", description: "Approve or decline housing deposit requests, and record them paid." },
+  "housing.export": { group: "Housing", label: "Export housing services", description: "Download the housing service log for reporting and billing. Logged." },
   "admin.users.manage": { group: "Administration", label: "Manage staff", description: "Give staff their roles, and deactivate or reactivate accounts." },
   "admin.roles.manage": { group: "Administration", label: "Change permissions", description: "Change what each role can do, on this screen." },
   "admin.settings.manage": { group: "Administration", label: "Change settings", description: "Change settings such as the former case manager's access window." },
@@ -238,6 +261,10 @@ export const PERMISSION_NEEDS: Partial<Record<Permission, { anyOf: Permission[];
   "episodes.write": { anyOf: [...SEES_CLIENTS, "participants.read.closed"], why: "closing and readmitting happen on a client's record" },
   "records.export": { anyOf: SEES_CLIENTS, why: "only records they can see can be exported" },
   "participants.update": { anyOf: SEES_CLIENTS, why: "details are changed on a client's record" },
+  "housing.write": { anyOf: SEES_CLIENTS, why: "housing work is recorded on a client's record" },
+  "housing.authorizations": { anyOf: SEES_CLIENTS, why: "authorizations are recorded on a client's record" },
+  "housing.deposits.approve": { anyOf: SEES_CLIENTS, why: "only deposits on records they can see reach them" },
+  "housing.export": { anyOf: SEES_CLIENTS, why: "only clients they can see are in the download" },
   "notes.reviewed_clinically": { anyOf: ["notes.write"], why: "it only decides who reviews the notes they write" },
   "participants.assign": { anyOf: ["participants.read.all"], why: "reassigning needs sight of other caseloads" },
 };

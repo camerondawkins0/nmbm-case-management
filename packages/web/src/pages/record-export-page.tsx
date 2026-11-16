@@ -5,6 +5,11 @@ import {
   formatPhone,
   PARTICIPANT_DETAIL_FIELDS,
   PARTICIPANT_DETAIL_LABELS,
+  CS_SERVICE_LABELS,
+  CS_UNIT_LABELS,
+  DEPOSIT_PURPOSE_LABELS,
+  HOUSING_ACTIVITY_LABELS,
+  HOUSING_SITUATION_LABELS,
   RECORD_EXPORT_PURPOSES,
   type RecordExportPurpose,
 } from "@nmbm/shared";
@@ -17,6 +22,7 @@ import {
   REFERRAL_SOURCE_LABELS,
 } from "../lib/labels.js";
 import type { RecordExport } from "../lib/types.js";
+import { money } from "../components/housing-section.js";
 
 const words = (code: string) => code.replace(/_/g, " ");
 const day = (iso: string | null) => (iso ? iso.slice(0, 10) : "—");
@@ -239,6 +245,77 @@ export default function RecordExportPage() {
             )}
           </div>
         ))}
+      </Section>
+
+      <Section
+        title="Housing"
+        empty={
+          doc.housing.statuses.length + doc.housing.authorizations.length + doc.housing.services.length + doc.housing.tenancies.length + doc.housing.deposits.length === 0
+        }
+      >
+        <div className="flex flex-col gap-3 text-sm">
+          <div>
+            <h3 className="font-medium">Housing situation</h3>
+            <ul>
+              {doc.housing.statuses.map((s) => (
+                <li key={s.id}>
+                  {s.effectiveDate}: {HOUSING_SITUATION_LABELS[s.situation]}
+                  {s.note && ` — ${s.note}`}
+                  {s.voidedAt && ` [void: ${s.voidReason}]`}
+                </li>
+              ))}
+            </ul>
+          </div>
+          <div>
+            <h3 className="font-medium">Community Supports authorizations</h3>
+            <ul>
+              {doc.housing.authorizations.map((a) => (
+                <li key={a.id}>
+                  {CS_SERVICE_LABELS[a.service]} {a.authorizationNumber ?? ""}: requested {a.requestedDate}, {a.status}
+                  {a.startDate && `, ${a.startDate} to ${a.lastCoveredDay}`}
+                  {a.unitType && `, ${a.unitsUsed} of ${a.unitsAuthorized} ${CS_UNIT_LABELS[a.unitType]}`}
+                  {a.amountAuthorized && `, ${money(a.amountPaid)} paid of ${money(a.amountAuthorized)}`}
+                  {a.voidedAt && ` [void: ${a.voidReason}]`}
+                </li>
+              ))}
+            </ul>
+          </div>
+          <div>
+            <h3 className="font-medium">Housing services</h3>
+            <ul>
+              {[...doc.housing.services].reverse().map((v) => (
+                <li key={v.id} className="break-inside-avoid">
+                  {v.serviceDate} · {HOUSING_ACTIVITY_LABELS[v.activity]} · {v.minutes} min · {v.authorName}
+                  {v.voidedAt && ` [void: ${v.voidReason}]`}
+                  <span className="block whitespace-pre-wrap text-nmbm-ink/80">{v.note}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+          <div>
+            <h3 className="font-medium">Homes</h3>
+            <ul>
+              {doc.housing.tenancies.map((t) => (
+                <li key={t.id}>
+                  {t.addressLine1}, {t.city} {t.state} {t.postalCode}: {t.moveInDate} to {t.moveOutDate ?? "now"}
+                  {t.voidedAt && ` [void: ${t.voidReason}]`}
+                </li>
+              ))}
+            </ul>
+          </div>
+          <div>
+            <h3 className="font-medium">Deposits</h3>
+            <ul>
+              {doc.housing.deposits.map((d) => (
+                <li key={d.id}>
+                  {money(d.amount)} to {d.payee} ({DEPOSIT_PURPOSE_LABELS[d.purpose]}): {d.status}
+                  {d.paidDate && `, paid ${d.paidDate}`}
+                  {d.voidedAt && ` [void: ${d.voidReason}]`}
+                </li>
+              ))}
+            </ul>
+          </div>
+        </div>
       </Section>
 
       <Section title="Consent forms" empty={doc.consents.length === 0}>

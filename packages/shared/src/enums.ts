@@ -71,6 +71,16 @@ export const PAYERS = [
 ] as const;
 export type Payer = (typeof PAYERS)[number];
 
+export const PAYER_LABELS: Record<Payer, string> = {
+  medicare: "Medicare",
+  medi_cal: "Medi-Cal",
+  molina: "Molina",
+  kaiser: "Kaiser",
+  blue_shield: "Blue Shield",
+  la_health_net: "LA Health Net",
+  self_pay: "Self-pay",
+};
+
 export const CONSENT_STATUSES = ["active", "expired", "revoked"] as const;
 export type ConsentStatus = (typeof CONSENT_STATUSES)[number];
 

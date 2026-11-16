@@ -1,6 +1,6 @@
 # Map
 
-Where things are. Current as of migration `0018`.
+Where things are. Current as of migration `0019`.
 
 ## Packages
 
@@ -37,7 +37,7 @@ splits out `audit.ts` for the same reason.
 
 ## API routes
 
-98 routes across 17 modules, plus five on the auth plugin and two on the
+117 routes across 18 modules, plus five on the auth plugin and two on the
 local storage stand-in. Every route outside `PUBLIC_BY_DESIGN` carries
 an `authorize()` or `authorizeAny()` preHandler, and the permission it
 requires is named in the file. `test/routes-authorized.test.ts` reads
@@ -60,6 +60,7 @@ the source and fails on any route that has neither — see testing.md.
 | `documents` | `GET /api/participants/:id/documents`, `POST /api/participants/:id/documents` (returns a signed upload link), `POST /api/documents/:id/confirm`, `GET /api/documents/:id/download-url`, `POST /api/documents/:id/void` |
 | `follow-ups` | `GET /api/follow-ups` (QA's queue), `POST /api/follow-ups` (record a call), `GET /api/follow-ups/re-enrollment-requests` |
 | `dashboard` | `GET /api/dashboard` |
+| `housing` | Read: `GET /api/participants/:id/housing`, `GET /api/housing/overview`. Situation: `POST /api/participants/:id/housing-statuses`, `POST /api/housing-statuses/:id/void`. Authorizations: `POST /api/participants/:id/cs-authorizations`, `POST /api/cs-authorizations/:id/decision`, `…/end`, `…/void`. Work: `POST /api/participants/:id/housing-services`, `POST /api/housing-services/:id/void`. Homes: `POST /api/participants/:id/tenancies`, `POST /api/tenancies/:id/move-out`, `…/void`. Deposits: `POST /api/participants/:id/housing-deposits`, `POST /api/housing-deposits/:id/decision`, `…/paid`, `…/void`. `POST /api/housing/service-export` (CSV, audited) |
 | `admin` | `GET /api/admin/users`, `GET /api/admin/roles`, `POST /api/admin/users/:id/roles`, `DELETE /api/admin/users/:id/roles/:roleCode`, `POST /api/admin/users/:id/deactivate`, `POST /api/admin/users/:id/reactivate`, `GET /api/admin/audit`, `GET /api/admin/settings`, `PUT /api/admin/settings/:key`, `GET /api/admin/permissions`, `PUT /api/admin/roles/:role/permissions/:permission`, `POST /api/admin/roles`, `PATCH /api/admin/roles/:role`, `POST /api/admin/roles/:role/retire` (`admin/permissions.ts`) |
 | `feedback` | `POST /api/feedback`, `GET /api/feedback/mine`, `GET /api/feedback`, `PATCH /api/feedback/:id/status` |
 | `plugins/auth.ts` | `GET /auth/google/login`, `GET /auth/google/callback`, `POST /auth/logout`, and in non-production with `ALLOW_DEV_LOGIN` only: `GET /auth/dev-login`, `GET /auth/dev-login/accounts` |
@@ -109,7 +110,7 @@ first is behind the session check.
 | `/` | `dashboard-page.tsx` | What needs attention: care plan clocks, the no-contact ladder, notes awaiting review, referrals with no outcome |
 | `/participants` | `participants-page.tsx` | Caseload list, scoped server-side; a Closed tab (everything, for intake and supervisors) or Recently closed (a worker's own former clients, with the date access ends) |
 | `/participants/new` | `intake-page.tsx` | Admission — record, episode and assignment in one act, with optional contact, address, insurance and emergency contact |
-| `/participants/:id` | `participant-detail-page.tsx` | The record: flags, details (edit with `participants.update`), notes with their date of service, care plan, consents, forms and assessments, documents, referrals, episode history; on a closed record, readmission |
+| `/participants/:id` | `participant-detail-page.tsx` | The record: flags, details (edit with `participants.update`), notes with their date of service, care plan, housing, consents, forms and assessments, documents, referrals, episode history; on a closed record, readmission |
 | `/assessments/:id` | `assessment-page.tsx` | Filling in a form (saves as you go, follow-ups appear as earlier answers are given), or reading and printing a completed one |
 | `/participants/:id/export` | `record-export-page.tsx` | Choose a purpose, then the whole record laid out for print / PDF, plus a data download |
 | `/referrals-in` | `incoming-referrals-page.tsx` | Intake's queue of people referred to NMBM: to deal with, referrer still to be told, all |
@@ -117,6 +118,7 @@ first is behind the session check.
 | `/notes/review` | `note-review-page.tsx` | The U6 queue — approve, or return with a reason |
 | `/care-plans/review` | `care-plan-review-page.tsx` | The same, for care plans |
 | `/programs` | `programs-page.tsx` | Programs and their cohorts; for `programs.manage`, new program and add a cohort |
+| `/housing` | `housing-page.tsx` | Housing across the caseload: authorizations awaiting a decision or ending soon, deposits to approve or pay, authorized clients with no situation recorded, recent move-ins; the service-log CSV for `housing.export` |
 | `/follow-ups` | `follow-ups-page.tsx` | M12: QA's call queue, and who asked to come back (intake sees only the latter) |
 | `/cohorts/:id` | `cohort-page.tsx` | The M14 grid — sessions across, people down — and the take-attendance panel; flags anyone whose NMBM services have ended. For `programs.manage` (`components/cohort-setup.tsx`): start / complete / cancel / reopen, add class dates, enroll by search, withdraw with a reason |
 | `/enrollments/:id/participation` | `participation-record-page.tsx` | The printable proof a probation officer receives |
@@ -134,7 +136,9 @@ reach), `sign-out-button.tsx`, `brand-mark.tsx`, `flags.tsx` (the attention badg
 `lib/rules.ts`), and the five sections the participant record composes
 — `care-plan-section.tsx`, `consents-section.tsx`,
 `assessments-section.tsx`, `documents-section.tsx`, `referrals-section.tsx`.
-`client-details.tsx` is the details boxes, shared by intake and the
+`housing-section.tsx` is the record's Housing section (situation,
+authorizations, work log, home, deposits) and `money()`, the one place a
+money string is formatted for display. `client-details.tsx` is the details boxes, shared by intake and the
 record's Details section. `question-field.tsx` renders one question, the same way for the
 staff page, the builder's preview and the participant's link.
 `participant-link.tsx` shows a new link and passcode once, and a
@@ -159,7 +163,7 @@ module layout. `enums.ts` wraps `as const` arrays from `@nmbm/shared` in
 `pgEnum`, so an enum is declared once and used in both places — same
 convention as the WSL system this was adapted from.
 
-33 tables and one view:
+38 tables and one view:
 
 | File | Tables |
 |---|---|
@@ -178,6 +182,7 @@ convention as the WSL system this was adapted from.
 | `assessments.ts` | `assessment_forms`, `assessment_form_versions`, `assessment_questions`, `assessments`, `assessment_links` (hashes only) — answers are a jsonb map keyed by each question's stable id |
 | `incoming-referrals.ts` | `incoming_referrals`, `incoming_referral_notes` |
 | `documents.ts` | `documents` — uploaded files; the bytes are in Cloud Storage under an opaque key |
+| `housing.ts` | `cs_authorizations`, `housing_statuses`, `housing_services`, `tenancies`, `housing_deposits` — every one voided, never deleted |
 | `sessions.ts` | `sessions` — sign-in sessions, keyed by a hash of the session id |
 | `views.ts` | `v_no_contact_counts` (rebuilt per episode in 0006), declared to Drizzle with `.existing()` |
 
@@ -204,6 +209,7 @@ in order in `meta/_journal.json`:
 | `0015_configurable_programs_and_permissions` | Program completion rules (default classes, late/excused count) and `role_permission_overrides` |
 | `0016_custom_roles` | `roles.builtin`, `active`, `description`, `created_by_id`, `created_at`; active role names unique ignoring capitals |
 | `0017_care_plan_per_stay_and_clinical_review` | Unique care plan per episode (fails, deliberately, on a database that already has two); `notes.clinical_review`, backfilled for interns' notes |
+| `0019_housing_community_supports` | The five housing tables and their enums; checks for what an approved authorization must carry, money only on deposits, one current tenancy, a deposit never approved by who asked or voided once paid |
 | `0018_service_date_and_contact_details` | `notes.service_date` (backfilled from `created_at` in Pacific time); `v_no_contact_counts` ordered by it; participant contact, address, CIN (unique), plan member ID, emergency contact |
 
 ## Seeds
@@ -227,7 +233,12 @@ in order in `meta/_journal.json`:
   running Anger Management cohort with six weekly sessions and three
   deliberately different attendance histories, an invented "Example
   needs assessment" with two follow-up rules, and three referrals in
-  (new, being chased, closed with the referrer still to be told). Nothing in it is real.
+  (new, being chased, closed with the referrer still to be told), and
+  housing: Andre in a shelter with navigation work logged and a deposits
+  authorization awaiting a decision, Dana moved in with a paid deposit
+  and a furniture request waiting, Brenda's authorization about to run
+  out. Bea Ward is the billing coordinator who approves deposits.
+  Nothing in it is real.
 
 ## Deployment
 

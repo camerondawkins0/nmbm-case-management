@@ -1,4 +1,4 @@
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { createDb } from "../client.js";
 import {
   users,
@@ -22,6 +22,11 @@ import {
   assessmentQuestions,
   incomingReferrals,
   incomingReferralNotes,
+  csAuthorizations,
+  housingStatuses,
+  housingServices,
+  tenancies,
+  housingDeposits,
 } from "../schema/index.js";
 import type {
   Payer,
@@ -32,7 +37,7 @@ import type {
   FollowUpMonths,
   FollowUpOutcome,
 } from "@nmbm/shared";
-import { CARE_PLAN_REVIEW_INTERVAL_DAYS, CONSENT_VALID_DAYS } from "@nmbm/shared";
+import { CARE_PLAN_REVIEW_INTERVAL_DAYS, CONSENT_VALID_DAYS, todayInOrg } from "@nmbm/shared";
 import { randomUUID } from "node:crypto";
 
 // Invented staff and participants for local development and demos. No
@@ -55,6 +60,8 @@ const STAFF: { email: string; name: string; role: Role }[] = [
   { email: "admin@nmbm.example.org", name: "Sam Okafor", role: "system_administrator" },
   // Writes clinical notes, which go to the Clinical Director (U6).
   { email: "j.reyes@nmbm.example.org", name: "Jordan Reyes", role: "apcc_acsw_intern" },
+  // Approves and pays housing deposits.
+  { email: "b.ward@nmbm.example.org", name: "Bea Ward", role: "billing_coordinator" },
 ];
 
 function daysAgo(n: number) {
@@ -355,6 +362,8 @@ async function main() {
         authorId: workerId,
         contactResult: result,
         body: bodies[index % bodies.length],
+        // Written up the day it happened.
+        serviceDate: todayInOrg(when),
         createdAt: when,
         approvedById: supervisorApproved ? supervisorId : null,
         approvedAt: supervisorApproved ? when : null,
@@ -654,6 +663,126 @@ async function main() {
     { referralId: chased.id, body: "Called, no answer. Left a voicemail.", createdById: intakeId, createdAt: daysAgo(4) },
     { referralId: chased.id, body: "Called again; number rings out.", createdById: intakeId, createdAt: daysAgo(2) },
   ]);
+
+  // Housing Community Supports (M24): Andre is being helped to find a
+  // place, Dana has moved in with deposit help, Brenda's navigation
+  // authorization is about to run out.
+  const tasha = staffByEmail.get("t.green@nmbm.example.org")!;
+  const billingId = staffByEmail.get("b.ward@nmbm.example.org")!;
+  async function openStay(first: string) {
+    const [row] = await db
+      .select({ participantId: participants.id, episodeId: episodes.id })
+      .from(participants)
+      .innerJoin(episodes, and(eq(episodes.participantId, participants.id), eq(episodes.status, "open")))
+      .where(eq(participants.firstName, first));
+    return row;
+  }
+  const andre = await openStay("Andre");
+  const dana = await openStay("Dana");
+  const brenda = await openStay("Brenda");
+  if (andre && dana && brenda) {
+    const auth = async (who: { participantId: string; episodeId: string }, service: "housing_transition_navigation" | "housing_deposits" | "housing_tenancy_sustaining", startAgo: number, endIn: number, extra = {}) => {
+      const [row] = await db
+        .insert(csAuthorizations)
+        .values({
+          ...who,
+          service,
+          status: "approved",
+          plan: "kaiser",
+          authorizationNumber: `ILS-${Math.floor(100000 + Math.random() * 899999)}`,
+          requestedDate: isoDate(daysAgo(startAgo + 7)),
+          decisionDate: isoDate(daysAgo(startAgo)),
+          startDate: isoDate(daysAgo(startAgo)),
+          endDate: isoDate(daysAgo(-endIn)),
+          recordedById: clinicalDirectorId,
+          decidedById: clinicalDirectorId,
+          ...extra,
+        })
+        .returning();
+      return row;
+    };
+    const andreNav = await auth(andre, "housing_transition_navigation", 40, 140, { unitType: "fifteen_minutes", unitsAuthorized: 96 });
+    await db.insert(housingStatuses).values([
+      { participantId: andre.participantId, situation: "unsheltered", effectiveDate: isoDate(daysAgo(60)), recordedById: tasha },
+      { participantId: andre.participantId, situation: "emergency_shelter", effectiveDate: isoDate(daysAgo(25)), note: "Bed at the Multi-Service Center", recordedById: tasha },
+    ]);
+    await db.insert(housingServices).values(
+      [
+        [30, 60, "housing_assessment", "in_person", "Housing assessment completed; wants a studio near the bus line."],
+        [21, 45, "document_gathering", "in_person", "Ordered birth certificate; ID appointment booked."],
+        [12, 90, "housing_search", "in_person", "Viewed three units on 4th St; applied for one."],
+        [5, 30, "landlord_engagement", "phone", "Followed up with the 4th St property manager."],
+      ].map(([ago, minutes, activity, contactMethod, note]) => ({
+        participantId: andre.participantId,
+        episodeId: andre.episodeId,
+        authorizationId: andreNav.id,
+        serviceDate: isoDate(daysAgo(ago as number)),
+        minutes: minutes as number,
+        activity: activity as "housing_search",
+        contactMethod: contactMethod as "in_person",
+        note: note as string,
+        authorId: tasha,
+      })),
+    );
+    await db.insert(csAuthorizations).values({
+      ...andre,
+      service: "housing_deposits",
+      plan: "kaiser",
+      requestedDate: isoDate(daysAgo(3)),
+      recordedById: clinicalDirectorId,
+    });
+
+    const danaDeposits = await auth(dana, "housing_deposits", 50, 120, { amountAuthorized: "2500.00" });
+    await auth(dana, "housing_tenancy_sustaining", 20, 160, { unitType: "hour", unitsAuthorized: 40 });
+    await db.insert(housingStatuses).values({ participantId: dana.participantId, situation: "transitional_housing", effectiveDate: isoDate(daysAgo(70)), recordedById: tasha });
+    await db.insert(tenancies).values({
+      participantId: dana.participantId,
+      moveInDate: isoDate(daysAgo(18)),
+      addressLine1: "250 Example Ave",
+      addressLine2: "Apt 3",
+      city: "Long Beach",
+      state: "CA",
+      postalCode: "90813",
+      landlordName: "Harbor View Apartments",
+      subsidy: "housing_choice_voucher",
+      monthlyRent: "1725.00",
+      tenantPortion: "517.50",
+      leaseStart: isoDate(daysAgo(18)),
+      leaseEnd: isoDate(daysAgo(-347)),
+      recordedById: tasha,
+    });
+    await db.insert(housingStatuses).values({ participantId: dana.participantId, situation: "permanent_subsidized", effectiveDate: isoDate(daysAgo(18)), note: "Moved in to 250 Example Ave", recordedById: tasha });
+    await db.insert(housingDeposits).values([
+      {
+        participantId: dana.participantId,
+        authorizationId: danaDeposits.id,
+        purpose: "security_deposit",
+        payee: "Harbor View Apartments",
+        amount: "1725.00",
+        status: "paid",
+        requestedById: tasha,
+        requestedAt: daysAgo(25),
+        decidedById: billingId,
+        decidedAt: daysAgo(24),
+        paidDate: isoDate(daysAgo(22)),
+        paymentReference: "CHK-10422",
+        paidRecordedById: billingId,
+      },
+      {
+        participantId: dana.participantId,
+        authorizationId: danaDeposits.id,
+        purpose: "furnishings_household_goods",
+        payee: "Long Beach Furniture Bank",
+        amount: "320.00",
+        status: "requested",
+        requestedById: tasha,
+        requestedAt: daysAgo(1),
+      },
+    ]);
+
+    await auth(brenda, "housing_tenancy_sustaining", 170, 10, { unitType: "visit", unitsAuthorized: 12 });
+    await db.insert(housingStatuses).values({ participantId: brenda.participantId, situation: "permanent_rental", effectiveDate: isoDate(daysAgo(400)), recordedById: tasha });
+  }
 
   console.log(
     `Synthetic data seeded: ${STAFF.length} staff, ${FIXTURES.length} participants.\n` +

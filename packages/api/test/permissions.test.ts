@@ -6,7 +6,7 @@ import type { Db } from "@nmbm/db";
 import { auditLog, rolePermissionOverrides } from "@nmbm/db";
 import { eq } from "drizzle-orm";
 import { startApp, signIn, type Client } from "./support/app.js";
-import { staff, admit } from "./support/fixtures.js";
+import { staff, staffWith, admit } from "./support/fixtures.js";
 
 let app: FastifyInstance;
 let db: Db;
@@ -128,12 +128,11 @@ describe("NMBM change their own permission grid", () => {
   });
 
   it("doesn't count somebody deactivated as still able to fix things", async () => {
-    // The only Billing Coordinator is given the permission, then leaves.
-    const leaver = await staff(db, "billing_coordinator");
-    await withGrant("billing_coordinator", "admin.roles.manage", true, async () => {
-      expect((await admin.post(`/api/admin/users/${leaver.id}/deactivate`)).status).toBe(200);
-      expect((await set("system_administrator", "admin.roles.manage", false)).status).toBe(409);
-    });
+    // Somebody else who can change permissions, through a role only they
+    // hold (a built-in role may have other holders by now), leaves.
+    const leaver = await staffWith(db, ["admin.roles.manage"]);
+    expect((await admin.post(`/api/admin/users/${leaver.id}/deactivate`)).status).toBe(200);
+    expect((await set("system_administrator", "admin.roles.manage", false)).status).toBe(409);
   });
 
   it("refuses roles and permissions that don't exist, and audits what it does", async () => {

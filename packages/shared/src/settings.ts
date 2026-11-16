@@ -28,6 +28,16 @@ export const APP_SETTINGS = {
     min: 1,
     max: 30,
   },
+  // Housing: how far ahead an authorization coming to its end is
+  // flagged, so a renewal can be asked for before services lapse.
+  cs_authorization_warning_days: {
+    label: "Flag Community Supports authorizations ending within (days)",
+    description:
+      "An approved authorization is flagged for renewal this many days before its end date. 0 to 90 days.",
+    default: 30,
+    min: 0,
+    max: 90,
+  },
 } as const;
 
 export type AppSettingKey = keyof typeof APP_SETTINGS;

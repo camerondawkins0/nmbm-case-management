@@ -612,6 +612,36 @@ machine, from text a participant may have typed. Plain numbers (`-5`,
 `+1.5`) are left alone; they're data, not formulas. Headers are guarded
 too.
 
+## Housing Community Supports run on authorizations (M24)
+
+NMBM deliver housing Community Supports through the Independent Living
+Systems network: the plan authorizes, NMBM deliver and log, the log is
+reported and later billed. So:
+
+- **Work goes only against an authorization that covers it**: this
+  client's, this stay's, approved, a time service (Navigation or Tenancy
+  and Sustaining), and the date inside its period — up to the day it was
+  ended, if it was ended early. Before one is approved, contacts are
+  notes. Work past the authorized units is still logged (it happened)
+  but flagged, so more is asked for before billing.
+- **An authorization's state is derived** (`authorizationState`): upcoming,
+  active, ending soon (within `cs_authorization_warning_days`, a setting),
+  expired, ended. Nothing stored says "active" on a date it isn't.
+- **Deposits are money under a Housing Deposits authorization**, asked
+  for by whoever works the case, decided by somebody else (the database
+  refuses self-approval), then recorded paid. A request can't take the
+  authorization past its amount: counted in SQL as numerics, with the
+  authorization row locked so two requests at once can't both fit. A
+  paid deposit is never voided.
+- **One current home.** A move-in also records the housing situation it
+  means; a second current tenancy is refused until the move-out is
+  recorded.
+- Every housing table is voided, never deleted, and the whole-record
+  export includes all of it, voids included.
+- The service-log CSV carries what was done and for how long, not the
+  free-text note (minimum necessary); it covers only clients the
+  exporter can see and is audited with its dates and row count.
+
 ## Money is a string end to end
 
 `numeric` Postgres columns, string in Zod schemas, string across the API

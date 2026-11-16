@@ -12,6 +12,9 @@ export function AppShell({ me, children }: { me: Me; children: React.ReactNode }
     { to: "/", label: "Today" },
     { to: "/participants", label: PARTICIPANT_LABEL_PLURAL },
     { to: "/programs", label: "Programs" },
+    ...(["housing.write", "housing.authorizations", "housing.deposits.approve", "housing.export"].some((p) => can(me, p))
+      ? [{ to: "/housing", label: "Housing" }]
+      : []),
     ...(can(me, "incoming_referrals.manage") ? [{ to: "/referrals-in", label: "Referrals in" }] : []),
     ...(can(me, "follow_ups.record") || can(me, "participants.read.closed")
       ? [{ to: "/follow-ups", label: "Follow-ups" }]

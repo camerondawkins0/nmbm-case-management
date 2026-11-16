@@ -24,6 +24,15 @@ import {
   ATTENDANCE_STATUSES,
   FEEDBACK_CATEGORIES,
   FEEDBACK_STATUSES,
+  CS_SERVICES,
+  CS_AUTHORIZATION_STATUSES,
+  CS_UNIT_TYPES,
+  HOUSING_SITUATIONS,
+  HOUSING_ACTIVITIES,
+  SERVICE_CONTACT_METHODS,
+  DEPOSIT_PURPOSES,
+  DEPOSIT_STATUSES,
+  SUBSIDY_TYPES,
 } from "@nmbm/shared";
 
 // Each enum is declared once in @nmbm/shared and wrapped here — never a
@@ -60,3 +69,14 @@ export const assessmentModeEnum = pgEnum("assessment_mode", ASSESSMENT_MODES);
 export const incomingReferralSourceEnum = pgEnum("incoming_referral_source", INCOMING_REFERRAL_SOURCES);
 export const incomingReferralStatusEnum = pgEnum("incoming_referral_status", INCOMING_REFERRAL_STATUSES);
 export const incomingReferralCloseReasonEnum = pgEnum("incoming_referral_close_reason", INCOMING_REFERRAL_CLOSE_REASONS);
+
+// Housing Community Supports (M24, migration 0019).
+export const csServiceEnum = pgEnum("cs_service", CS_SERVICES);
+export const csAuthorizationStatusEnum = pgEnum("cs_authorization_status", CS_AUTHORIZATION_STATUSES);
+export const csUnitTypeEnum = pgEnum("cs_unit_type", CS_UNIT_TYPES);
+export const housingSituationEnum = pgEnum("housing_situation", HOUSING_SITUATIONS);
+export const housingActivityEnum = pgEnum("housing_activity", HOUSING_ACTIVITIES);
+export const serviceContactMethodEnum = pgEnum("service_contact_method", SERVICE_CONTACT_METHODS);
+export const depositPurposeEnum = pgEnum("deposit_purpose", DEPOSIT_PURPOSES);
+export const depositStatusEnum = pgEnum("deposit_status", DEPOSIT_STATUSES);
+export const subsidyTypeEnum = pgEnum("subsidy_type", SUBSIDY_TYPES);
