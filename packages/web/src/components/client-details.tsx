@@ -2,6 +2,7 @@ import { useState } from "react";
 import { formatPhone, PARTICIPANT_DETAIL_FIELDS, type ParticipantDetails } from "@nmbm/shared";
 import { api, ApiError } from "../lib/api.js";
 import type { ClientDetails } from "../lib/types.js";
+import { Timestamp } from "./dates.js";
 
 export type DetailsForm = Record<keyof ParticipantDetails, string>;
 
@@ -197,7 +198,7 @@ export function ClientDetailsSection({
             ))}
           </dl>
           {details.updatedAt && (
-            <p className="mt-3 text-xs text-ds-muted">Last changed {new Date(details.updatedAt).toLocaleDateString()}</p>
+            <p className="mt-3 text-xs text-ds-muted">Last changed <Timestamp at={details.updatedAt} /></p>
           )}
         </>
       )}

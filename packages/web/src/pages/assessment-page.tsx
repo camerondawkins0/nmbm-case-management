@@ -8,6 +8,7 @@ import type { AssessmentDetail, IssuedLink, Me, ParticipantDetail } from "../lib
 import { LinkHandover, LinkStatus } from "../components/participant-link.js";
 import { Pill } from "../components/flags.js";
 import { QuestionField, answerText, bySection } from "../components/question-field.js";
+import { Timestamp } from "../components/dates.js";
 
 type SaveState = "saved" | "unsaved" | "saving" | "failed";
 
@@ -139,12 +140,12 @@ export default function AssessmentPage({ me }: { me: Me }) {
           <p className="mt-1 text-sm text-ds-muted">
             {name && `${name} · `}version {form.versionNumber} ·{" "}
             {ASSESSMENT_MODE_LABELS[assessment.mode].toLowerCase()} · started{" "}
-            {assessment.startedAt.slice(0, 10)}
+            <Timestamp at={assessment.startedAt} />
             {assessment.startedByName && ` by ${assessment.startedByName}`}
           </p>
           {assessment.completedAt && (
             <p className="text-sm text-ds-muted">
-              Completed {assessment.completedAt.slice(0, 10)}
+              Completed <Timestamp at={assessment.completedAt} />
               {assessment.completedByName && ` by ${assessment.completedByName}`}
             </p>
           )}

@@ -4,6 +4,7 @@ import { can } from "../lib/use-me.js";
 import type { ReferralStatus } from "@nmbm/shared";
 import type { Me, ParticipantDetail } from "../lib/types.js";
 import { Pill } from "./flags.js";
+import { Timestamp } from "./dates.js";
 
 const OUTCOMES: { value: ReferralStatus; label: string }[] = [
   { value: "accepted", label: "Partner accepted" },
@@ -105,10 +106,14 @@ export function ReferralsSection({
               <Pill tone={tone(referral.status)}>{referral.status.replace("_", " ")}</Pill>
             </div>
             <p className="mt-0.5 text-xs text-ds-muted">
-              sent {new Date(referral.referredAt).toLocaleDateString()} by{" "}
+              sent <Timestamp at={referral.referredAt} /> by{" "}
               {referral.referredByName}
-              {referral.outcomeRecordedAt &&
-                ` · outcome ${new Date(referral.outcomeRecordedAt).toLocaleDateString()}`}
+              {referral.outcomeRecordedAt && (
+                <>
+                  {" "}
+                  · outcome <Timestamp at={referral.outcomeRecordedAt} />
+                </>
+              )}
             </p>
             {referral.outcomeNote && (
               <p className="mt-1 text-xs text-ds-secondary">{referral.outcomeNote}</p>

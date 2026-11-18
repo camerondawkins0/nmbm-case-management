@@ -4,6 +4,8 @@ import { api, ApiError } from "../lib/api.js";
 import { can } from "../lib/use-me.js";
 import type { AssignableWorker, Me, ProgramSummary } from "../lib/types.js";
 import { Pill } from "../components/flags.js";
+import { DateText } from "../components/dates.js";
+import { todayInOrg } from "@nmbm/shared";
 
 const inputClass = "nmbm-control";
 
@@ -140,8 +142,13 @@ export default function ProgramsPage({ me }: { me: Me }) {
                         {cohort.name}
                       </Link>
                       <span className="block text-xs text-ds-muted">
-                        from {cohort.startDate}
-                        {cohort.endDate && ` to ${cohort.endDate}`}
+                        from <DateText value={cohort.startDate} />
+                        {cohort.endDate && (
+                          <>
+                            {" "}
+                            to <DateText value={cohort.endDate} />
+                          </>
+                        )}
                         {cohort.facilitatorName && ` · ${cohort.facilitatorName}`}
                         {cohort.requiredSessions && ` · ${cohort.requiredSessions} sessions to complete`}
                       </span>
@@ -197,7 +204,8 @@ function CohortForm({
 }) {
   const [form, setForm] = useState({
     name: "",
-    startDate: new Date().toISOString().slice(0, 10),
+    // Long Beach's today, not UTC's: after 4pm here UTC is already tomorrow.
+    startDate: todayInOrg(),
     endDate: "",
     facilitatorId: "",
     requiredSessions: defaultSessions ? String(defaultSessions) : "",

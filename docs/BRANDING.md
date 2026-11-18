@@ -17,7 +17,8 @@ color or a size.
 | Component classes (`.nmbm-btn`, `.nmbm-card`, …) and the app's additions (`.ds-*`) | `packages/web/src/design/components.css` | Only below the "app additions" line; above it is the design system's `bundle.css` verbatim |
 | The order Tailwind and the design system load in | `packages/web/src/theme.css` | Rarely: see "Load order" |
 | Tailwind's names for the tokens | `packages/web/tailwind.config.js` | When a token is added |
-| Theme choice (light, dark, high contrast) | `packages/web/src/lib/theme.ts`, the picker in `components/app-shell.tsx` | |
+| Theme choice (light, dark, high contrast) | `packages/web/src/lib/theme.ts`, the picker in the name menu in `components/app-shell.tsx` | |
+| How dates are written | `packages/web/src/components/dates.tsx` | |
 | The logo | `components/brand-mark.tsx`, files in `public/branding/` | |
 
 ## Using it
@@ -39,7 +40,8 @@ anything that carries the look comes from the system.
 | A message | `nmbm-alert nmbm-alert--alert`, `--warn`, `--ok` or `--info` |
 | A status | `<Pill tone=…>` in `components/flags.tsx`, which renders `nmbm-pill` |
 | A participant's name | `ds-person` (serif) |
-| A number, date or ID set apart | `ds-num` (mono) |
+| A date | `<DateText value="2026-11-18" />` or `<Timestamp at={iso} />` from `components/dates.tsx`; never the bare value |
+| A number or ID set apart | `ds-num` (mono) |
 
 Colors in Tailwind come from the theme, never fixed values:
 `text-ds-ink`, `text-ds-secondary`, `text-ds-muted`, `border-ds-border`,
@@ -60,6 +62,34 @@ The design system's own rules that matter most here:
   and is not for text.
 - The logo is used as supplied: not redrawn, recolored or set in type
   beside itself. The mark already carries "NMBM" and the line beneath it.
+
+## Dates
+
+Every date on screen goes through `components/dates.tsx`, which writes it
+one way, `2026-11-18` (the design system's own sample), in IBM Plex Mono.
+`DateText` is for a value that is already a day (a date of service, a lease
+end); `Timestamp` is for an instant (when a note was written) and shows the
+Long Beach day it fell on, with `withTime` for audit lines. For a date
+inside a string, such as a `title`, use `formatDay()`.
+
+Two things this replaced, both wrong in the evening: `toLocaleDateString()`
+used the browser's zone and its own format (`9/25/2026`), and
+`iso.slice(0, 10)` took the UTC day, so anything after 4pm (5pm in summer)
+read as tomorrow. A form's default "today" is `todayInOrg()` for the same
+reason. The one exception is a participant's link expiry, written
+"Wed, Nov 25" because it is read out to them.
+
+## The header
+
+Every role's links fit on one line from 1024px. Two or more review queues
+fold into a **Review** menu and two or more admin pages into **Admin**; one
+of a kind stays a plain link. The product name beside the logo shows from
+1440px. "Report an issue" sits in the bar from 1280px and moves into the
+menu under the person's name below that; the theme picker lives there too.
+Sign out is never in a menu. The menus are disclosures (a button and a
+panel of ordinary links), built from the design system's tokens because it
+does not define a dropdown yet. Adding a link to the bar means checking it
+still fits: the widest role today is the Clinical Director.
 
 ## Themes
 

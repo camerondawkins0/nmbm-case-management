@@ -6,6 +6,7 @@ import { PARTICIPANT_LABEL_PLURAL } from "@nmbm/shared";
 import { CarePlanPills, MolinaLetterPill, NoContactPill, ParticipantLink } from "../components/flags.js";
 import { CLOSURE_REASON_LABELS, PAYER_LABELS } from "../lib/labels.js";
 import { parseSearch, SearchResults, useParticipantSearch } from "../components/participant-search.js";
+import { DateText } from "../components/dates.js";
 
 type View = "active" | "closed";
 
@@ -135,7 +136,7 @@ export default function ParticipantsPage({
                   <td className="py-3 pr-4 text-ds-secondary">
                     {row.payer ? (PAYER_LABELS[row.payer] ?? row.payer) : "—"}
                   </td>
-                  <td className="py-3 pr-4 text-ds-secondary">{row.startDate ?? "—"}</td>
+                  <td className="py-3 pr-4 text-ds-secondary">{row.startDate ? <DateText value={row.startDate} /> : "—"}</td>
                   <td className="py-3 pr-4">
                     <div className="flex flex-wrap items-center gap-1.5">
                       <MolinaLetterPill flags={row.flags.noContact} />
@@ -184,13 +185,13 @@ function ClosedTable({ rows, seesAll }: { rows: ClosedParticipantRow[] | null; s
               <td className="py-3 pr-4">
                 <ParticipantLink id={row.id} firstName={row.firstName} lastName={row.lastName} />
               </td>
-              <td className="py-3 pr-4 text-ds-secondary">{row.dateOfBirth}</td>
-              <td className="py-3 pr-4 text-ds-secondary">{row.startDate}</td>
-              <td className="py-3 pr-4 text-ds-secondary">{row.endDate ?? "—"}</td>
+              <td className="py-3 pr-4 text-ds-secondary"><DateText value={row.dateOfBirth} /></td>
+              <td className="py-3 pr-4 text-ds-secondary"><DateText value={row.startDate} /></td>
+              <td className="py-3 pr-4 text-ds-secondary">{row.endDate ? <DateText value={row.endDate} /> : "—"}</td>
               <td className="py-3 pr-4 text-ds-secondary">
                 {row.closureReason ? CLOSURE_REASON_LABELS[row.closureReason] : "—"}
               </td>
-              {!seesAll && <td className="py-3 pr-4 text-ds-secondary">{row.accessUntil}</td>}
+              {!seesAll && <td className="py-3 pr-4 text-ds-secondary"><DateText value={row.accessUntil} /></td>}
             </tr>
           ))}
         </tbody>

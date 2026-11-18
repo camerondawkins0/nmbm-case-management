@@ -2,6 +2,8 @@ import { useState } from "react";
 import { api, ApiError } from "../lib/api.js";
 import type { AssessmentLinkState, IssuedLink } from "../lib/types.js";
 
+// The one date not written 2026-11-25: it is read out to the participant,
+// often over the phone, and "Wed, Nov 25" is what they will remember.
 const day = (iso: string) =>
   new Date(iso).toLocaleDateString(undefined, { weekday: "short", day: "numeric", month: "short" });
 

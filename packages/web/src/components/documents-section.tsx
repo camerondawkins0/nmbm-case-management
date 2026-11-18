@@ -4,6 +4,7 @@ import { can } from "../lib/use-me.js";
 import { DOCUMENT_CONTENT_TYPES, DOCUMENT_MAX_BYTES } from "@nmbm/shared";
 import type { Me, ParticipantDetail, ParticipantDocument } from "../lib/types.js";
 import { Pill } from "./flags.js";
+import { DateText, Timestamp } from "./dates.js";
 
 type UploadStart = {
   documentId: string;
@@ -190,7 +191,13 @@ export function DocumentsSection({
             </div>
             <p className="mt-0.5 text-xs text-ds-muted">
               {doc.originalFilename} · {formatSize(doc.sizeBytes)}
-              {doc.uploadedAt && ` · uploaded ${doc.uploadedAt.slice(0, 10)}`} by{" "}
+              {doc.uploadedAt && (
+                <>
+                  {" "}
+                  · uploaded <Timestamp at={doc.uploadedAt} />
+                </>
+              )}{" "}
+              by{" "}
               {doc.uploadedByName}
               {doc.consentFormName && ` · scan of “${doc.consentFormName}”`}
             </p>
@@ -257,7 +264,7 @@ export function DocumentsSection({
                   <option value="">No — a different document</option>
                   {record.consents.map((consent) => (
                     <option key={consent.id} value={consent.id}>
-                      {consent.formName} (signed {consent.signedDate})
+                      {consent.formName} (signed <DateText value={consent.signedDate} />)
                     </option>
                   ))}
                 </select>

@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import type { FeedbackCategory, FeedbackStatus } from "@nmbm/shared";
+import { Timestamp } from "../components/dates.js";
 
 type FeedbackItem = {
   id: string;
@@ -140,7 +141,7 @@ export default function FeedbackPage() {
                   </div>
                   <span className="text-xs text-ds-muted">
                     {CATEGORY_LABELS[item.category]} ·{" "}
-                    {new Date(item.createdAt).toLocaleDateString()}
+                    <Timestamp at={item.createdAt} />
                   </span>
                 </li>
               ))}

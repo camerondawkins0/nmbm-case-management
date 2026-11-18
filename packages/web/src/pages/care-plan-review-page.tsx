@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { api, ApiError } from "../lib/api.js";
 import type { CarePlanStatus } from "@nmbm/shared";
+import { Timestamp } from "../components/dates.js";
 
 type PendingPlan = {
   id: string;
@@ -64,7 +65,7 @@ export default function CarePlanReviewPage() {
                 {plan.firstName} {plan.lastName}
               </span>
               <span className="text-xs text-ds-muted">
-                submitted {new Date(plan.updatedAt).toLocaleDateString()}
+                submitted <Timestamp at={plan.updatedAt} />
               </span>
             </div>
             <p className="mt-2 whitespace-pre-wrap text-sm text-ds-secondary">{plan.goals}</p>

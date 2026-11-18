@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import type { FeedbackCategory, FeedbackStatus } from "@nmbm/shared";
+import { Timestamp } from "../../components/dates.js";
 
 type FeedbackItem = {
   id: string;
@@ -74,7 +75,9 @@ export default function FeedbackAdminPage() {
                     <div className="max-w-md text-ds-muted">{item.description}</div>
                   </td>
                   <td className="py-2 pr-4">{item.category}</td>
-                  <td className="py-2 pr-4">{new Date(item.createdAt).toLocaleDateString()}</td>
+                  <td className="py-2 pr-4">
+                    <Timestamp at={item.createdAt} />
+                  </td>
                   <td className="py-2 pr-4">
                     <select
                       value={item.status}

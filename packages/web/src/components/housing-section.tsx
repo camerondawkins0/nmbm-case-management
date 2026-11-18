@@ -23,6 +23,7 @@ import { can } from "../lib/use-me.js";
 import type { CsAuthorizationRow, DepositRow, HousingRecord, Me, ParticipantDetail } from "../lib/types.js";
 import { PAYER_OPTIONS } from "../lib/labels.js";
 import { Pill } from "./flags.js";
+import { DateText, Timestamp } from "./dates.js";
 
 // Dollars from a string, for display only: "1250.5" -> "$1,250.50".
 // Never added up here; the server sums money as numerics.
@@ -123,7 +124,7 @@ export function HousingSection({
           {data.current ? (
             <>
               {HOUSING_SITUATION_LABELS[data.current.situation]}
-              <span className="text-ds-muted"> · since {data.current.effectiveDate}</span>
+              <span className="text-ds-muted"> · since <DateText value={data.current.effectiveDate} /></span>
             </>
           ) : (
             <span className="text-ds-muted">Housing situation not recorded</span>
@@ -144,7 +145,7 @@ export function HousingSection({
             <ul className="mt-1 flex flex-col gap-1">
               {data.statuses.map((s) => (
                 <li key={s.id} className={s.voidedAt ? "line-through text-ds-muted" : ""}>
-                  {s.effectiveDate}: {HOUSING_SITUATION_LABELS[s.situation]}
+                  <DateText value={s.effectiveDate} />: {HOUSING_SITUATION_LABELS[s.situation]}
                   {s.note && ` — ${s.note}`} <span className="text-ds-muted">({s.recordedByName})</span>
                   {s.voidedAt && <span className="no-underline"> · void: {s.voidReason}</span>}
                   {writes && !s.voidedAt && (
@@ -194,7 +195,15 @@ export function HousingSection({
                   <Pill tone={STATE_PILL[a.state].tone}>{STATE_PILL[a.state].label}</Pill>
                 </div>
                 <p className="mt-0.5 text-xs text-ds-muted">
-                  {a.startDate ? `${a.startDate} to ${a.lastCoveredDay}` : `Requested ${a.requestedDate}`}
+                  {a.startDate ? (
+                    <>
+                      <DateText value={a.startDate} /> to <DateText value={a.lastCoveredDay} />
+                    </>
+                  ) : (
+                    <>
+                      Requested <DateText value={a.requestedDate} />
+                    </>
+                  )}
                   {a.endedDate && ` (ended early: ${a.endedReason})`}
                   {a.unitType && ` · ${a.unitsUsed} of ${a.unitsAuthorized} ${CS_UNIT_LABELS[a.unitType]} used`}
                   {!a.unitType && CS_TIME_SERVICES.includes(a.service) && a.minutesLogged > 0 && ` · ${a.minutesLogged} minutes logged`}
@@ -276,7 +285,7 @@ export function HousingSection({
                   <span className={s.voidedAt ? "line-through" : ""}>
                     {HOUSING_ACTIVITY_LABELS[s.activity]} · {s.minutes} min · {SERVICE_CONTACT_METHOD_LABELS[s.contactMethod]}
                   </span>
-                  <span className="text-xs text-ds-muted">{s.serviceDate}</span>
+                  <span className="text-xs text-ds-muted"><DateText value={s.serviceDate} /></span>
                 </div>
                 <p className="mt-0.5 whitespace-pre-wrap text-xs text-ds-secondary">{s.note}</p>
                 <p className="mt-0.5 text-xs text-ds-muted">
@@ -314,10 +323,15 @@ export function HousingSection({
               {current.addressLine2 && `, ${current.addressLine2}`}, {current.city}, {current.state} {current.postalCode}
             </p>
             <p className="mt-0.5 text-xs text-ds-muted">
-              Moved in {current.moveInDate} · {SUBSIDY_LABELS[current.subsidy]}
+              Moved in <DateText value={current.moveInDate} /> · {SUBSIDY_LABELS[current.subsidy]}
               {current.monthlyRent && ` · rent ${money(current.monthlyRent)}`}
               {current.tenantPortion && `, they pay ${money(current.tenantPortion)}`}
-              {current.leaseEnd && ` · lease to ${current.leaseEnd}`}
+              {current.leaseEnd && (
+                <>
+                  {" "}
+                  · lease to <DateText value={current.leaseEnd} />
+                </>
+              )}
               {current.landlordName && ` · landlord ${current.landlordName}`}
               {current.landlordPhone && ` ${current.landlordPhone}`}
             </p>
@@ -349,7 +363,7 @@ export function HousingSection({
               .filter((t) => t !== current)
               .map((t) => (
                 <li key={t.id} className={t.voidedAt ? "line-through" : ""}>
-                  {t.addressLine1}, {t.city}: {t.moveInDate} to {t.moveOutDate ?? "—"}
+                  {t.addressLine1}, {t.city}: <DateText value={t.moveInDate} /> to {t.moveOutDate ? <DateText value={t.moveOutDate} /> : "—"}
                   {t.moveOutReason && ` (${t.moveOutReason})`}
                   {t.voidedAt && ` · void: ${t.voidReason}`}
                 </li>
@@ -434,10 +448,15 @@ function DepositItem({
         {d.voidedAt ? <Pill tone="muted">void</Pill> : <Pill tone={tone[d.status]}>{d.status}</Pill>}
       </div>
       <p className="mt-0.5 text-xs text-ds-muted">
-        Asked for by {d.requestedByName} {new Date(d.requestedAt).toLocaleDateString()}
+        Asked for by {d.requestedByName} <Timestamp at={d.requestedAt} />
         {d.decidedByName && ` · ${d.status === "declined" ? "declined" : "approved"} by ${d.decidedByName}`}
         {d.decisionNote && `: ${d.decisionNote}`}
-        {d.paidDate && ` · paid ${d.paidDate}, ${d.paymentReference}`}
+        {d.paidDate && (
+          <>
+            {" "}
+            · paid <DateText value={d.paidDate} />, {d.paymentReference}
+          </>
+        )}
         {d.voidedAt && ` · void: ${d.voidReason}`}
       </p>
       {!d.voidedAt && (

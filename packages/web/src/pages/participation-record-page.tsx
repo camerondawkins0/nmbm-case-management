@@ -3,6 +3,7 @@ import { useParams } from "react-router-dom";
 import { api, ApiError } from "../lib/api.js";
 import type { ParticipationRecord } from "../lib/types.js";
 import { BrandMark } from "../components/brand-mark.js";
+import { DateText } from "../components/dates.js";
 
 const STATUS_LABELS = {
   present: "Present",
@@ -91,7 +92,7 @@ export default function ParticipationRecordPage() {
           <tbody>
             {record.sessions.map((session) => (
               <tr key={`${session.sessionDate}-${session.recordedAt}`} className="border-b border-ds-border">
-                <td className="py-2 pr-4 text-ds-ink">{session.sessionDate}</td>
+                <td className="py-2 pr-4 text-ds-ink"><DateText value={session.sessionDate} /></td>
                 <td className="py-2 pr-4 text-ds-secondary">{session.topic ?? "—"}</td>
                 <td className="py-2 pr-4 text-ds-ink">{STATUS_LABELS[session.status]}</td>
                 <td className="py-2 text-ds-secondary">{session.recordedByName}</td>

@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { api } from "../lib/api.js";
 import type { SearchResult } from "../lib/types.js";
+import { DateText } from "./dates.js";
 
 // Accepts what people actually type for a birthday: 1981-04-03, or
 // 4/3/1981 as it's written on US forms.
@@ -61,12 +62,16 @@ export function SearchResults({ results, compact = false }: { results: SearchRes
             <Link to={`/participants/${r.id}`} className="ds-person hover:underline">
               {r.firstName} {r.lastName}
             </Link>
-            <span className="ml-2 text-xs text-ds-muted">born {r.dateOfBirth}</span>
+            <span className="ml-2 text-xs text-ds-muted">born <DateText value={r.dateOfBirth} /></span>
           </span>
           <span className="text-xs text-ds-muted">
-            {r.active
-              ? `Active${r.workerName ? ` · ${r.workerName}` : ""}`
-              : `Closed ${r.lastEndDate ?? ""} · open to readmit`}
+            {r.active ? (
+              `Active${r.workerName ? ` · ${r.workerName}` : ""}`
+            ) : (
+              <>
+                Closed <DateText value={r.lastEndDate} /> · open to readmit
+              </>
+            )}
           </span>
         </li>
       ))}

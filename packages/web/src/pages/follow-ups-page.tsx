@@ -6,6 +6,7 @@ import type { FollowUpQueue, FollowUpQueueItem, Me, ReEnrollmentRequest } from "
 import { CLOSURE_REASON_LABELS } from "../lib/labels.js";
 import { Pill } from "../components/flags.js";
 import { FollowUpCallForm } from "../components/follow-up-call-form.js";
+import { DateText, Timestamp } from "../components/dates.js";
 
 // M12: "someone do follow up calls to reach out to participants to see
 // how they are doing ... This may lead to re-enrollment or the client is
@@ -60,11 +61,11 @@ export default function FollowUpsPage({ me }: { me: Me }) {
                 <Link to={`/participants/${r.participantId}`} className="ds-person hover:underline">
                   {r.firstName} {r.lastName}
                 </Link>
-                <span className="ml-2 text-xs text-ds-muted">born {r.dateOfBirth}</span>
+                <span className="ml-2 text-xs text-ds-muted">born <DateText value={r.dateOfBirth} /></span>
                 {r.note && <p className="mt-1 text-ds-secondary">{r.note}</p>}
                 <p className="mt-1 text-xs text-ds-muted">
                   {r.milestoneMonths}-month call by {r.calledByName} on{" "}
-                  {new Date(r.calledAt).toLocaleDateString()}
+                  <Timestamp at={r.calledAt} />
                 </p>
               </div>
               <Link
@@ -122,13 +123,18 @@ function QueueSection({
                     {item.firstName} {item.lastName}
                   </Link>
                   <span className="ml-2">
-                    <Pill tone={tone}>{item.months}-month call · due {item.dueDate}</Pill>
+                    <Pill tone={tone}>{item.months}-month call · due <DateText value={item.dueDate} /></Pill>
                   </span>
                   <p className="mt-1 text-xs text-ds-muted">
-                    Closed {item.endDate}
+                    Closed <DateText value={item.endDate} />
                     {item.closureReason && ` — ${CLOSURE_REASON_LABELS[item.closureReason]}`}
                     {item.attempts > 0 && ` · ${item.attempts} unanswered attempt${item.attempts > 1 ? "s" : ""}`}
-                    {item.state === "overdue" && ` · drops off on ${item.lapsesOn}`}
+                    {item.state === "overdue" && (
+                      <>
+                        {" "}
+                        · drops off on <DateText value={item.lapsesOn} />
+                      </>
+                    )}
                   </p>
                 </div>
                 {callable && open !== key && (

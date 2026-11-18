@@ -18,6 +18,7 @@ import { FollowUpCallForm } from "../components/follow-up-call-form.js";
 import { ClientDetailsSection } from "../components/client-details.js";
 import { HousingSection } from "../components/housing-section.js";
 import { todayInOrg } from "@nmbm/shared";
+import { DateText, Timestamp, formatDay } from "../components/dates.js";
 
 export default function ParticipantDetailPage({ me }: { me: Me }) {
   const { id } = useParams<{ id: string }>();
@@ -84,9 +85,14 @@ export default function ParticipantDetailPage({ me }: { me: Me }) {
             {record.firstName} {record.lastName}
           </h1>
           <p className="mt-1 text-sm text-ds-muted">
-            Born {record.dateOfBirth}
+            Born <DateText value={record.dateOfBirth} />
             {record.workerName && ` · ${record.workerName}`}
-            {record.startDate && ` · enrolled ${record.startDate}`}
+            {record.startDate && (
+              <>
+                {" "}
+                · enrolled <DateText value={record.startDate} />
+              </>
+            )}
           </p>
           {can(me, "records.export") && (
             <Link
@@ -115,7 +121,7 @@ export default function ParticipantDetailPage({ me }: { me: Me }) {
       {!isOpen && lastEpisode && (
         <div className="nmbm-alert nmbm-alert--info mt-6">
           <p className="font-medium">
-            Closed {lastEpisode.endDate ?? ""}
+            Closed <DateText value={lastEpisode.endDate} />
             {lastEpisode.closureReason && ` — ${CLOSURE_REASON_LABELS[lastEpisode.closureReason]}`}
           </p>
           <p className="mt-1 text-ds-muted">
@@ -239,7 +245,7 @@ export default function ParticipantDetailPage({ me }: { me: Me }) {
             {record.referralsIn.map((r) => (
               <li key={r.id}>
                 <span className="font-medium text-ds-ink">{r.sourceName || REFERRAL_SOURCE_LABELS[r.sourceType]}</span>
-                <span className="text-xs text-ds-muted"> · received {r.receivedDate}</span>
+                <span className="text-xs text-ds-muted"> · received <DateText value={r.receivedDate} /></span>
                 <p className="text-ds-secondary">{r.reason}</p>
               </li>
             ))}
@@ -398,9 +404,16 @@ export default function ParticipantDetailPage({ me }: { me: Me }) {
                     Earlier episode
                   </span>
                 )}
-                <span className="font-medium text-ds-secondary">{day(note.serviceDate)}</span> · {note.authorName}
+                <span className="font-medium text-ds-secondary">
+                  <DateText value={note.serviceDate} />
+                </span> · {note.authorName}
                 {/* Written up on a later day: both dates, so the gap is visible. */}
-                {localDay(note.createdAt) !== note.serviceDate && ` · written ${new Date(note.createdAt).toLocaleDateString()}`}
+                {formatDay(note.createdAt) !== note.serviceDate && (
+                  <>
+                    {" "}
+                    · written <Timestamp at={note.createdAt} />
+                  </>
+                )}
                 {note.clinicalReview && " · clinical"}
                 {note.status === "approved" && " · approved"}
                 {note.status === "pending_review" && " · awaiting review"}
@@ -480,17 +493,6 @@ export default function ParticipantDetailPage({ me }: { me: Me }) {
   );
 }
 
-// "2026-11-09" as the person reads dates, without the browser shifting
-// a date-only value back a day into UTC.
-function day(iso: string) {
-  const [y, m, d] = iso.split("-").map(Number);
-  return new Date(y, m - 1, d).toLocaleDateString();
-}
-
-// The Long Beach day a timestamp fell on, to compare with a date of service.
-function localDay(timestamp: string) {
-  return todayInOrg(new Date(timestamp));
-}
 
 function NoteForm({
   participantId,
@@ -706,7 +708,7 @@ function EpisodeHistory({ episodes }: { episodes: EpisodeSummary[] }) {
             className="ds-row flex flex-wrap items-center justify-between gap-2"
           >
             <span className="text-ds-ink">
-              {episode.startDate} – {episode.endDate ?? "present"}
+              <DateText value={episode.startDate} /> – {episode.endDate ? <DateText value={episode.endDate} /> : "present"}
               {episode.readmittedFromEpisodeId && (
                 <span className="ml-2 text-xs text-ds-muted">readmission</span>
               )}
@@ -743,7 +745,8 @@ function ReadmitForm({
 }) {
   const [workers, setWorkers] = useState<AssignableWorker[]>([]);
   const [workerId, setWorkerId] = useState("");
-  const [startDate, setStartDate] = useState(new Date().toISOString().slice(0, 10));
+  // Long Beach's today, not UTC's: after 4pm here UTC is already tomorrow.
+  const [startDate, setStartDate] = useState(todayInOrg);
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
@@ -846,14 +849,14 @@ function FollowUpSection({
   return (
     <section className="nmbm-card nmbm-card--dense mt-6">
       <h2 className="ds-section-heading">Follow-up calls</h2>
-      <p className="mt-1 text-xs text-ds-muted">Counted from the case closing on {schedule.endDate}.</p>
+      <p className="mt-1 text-xs text-ds-muted">Counted from the case closing on <DateText value={schedule.endDate} />.</p>
       <ol className="mt-3 flex flex-col gap-2">
         {schedule.milestones.map((m) => (
           <li key={m.months} className="ds-row">
             <div className="flex flex-wrap items-center justify-between gap-2">
               <span className="text-ds-ink">
                 <span className="font-medium">{m.months}-month call</span>
-                <span className="ml-2 text-xs text-ds-muted">due {m.dueDate}</span>
+                <span className="ml-2 text-xs text-ds-muted">due <DateText value={m.dueDate} /></span>
               </span>
               <span className="flex items-center gap-2">
                 <Pill tone={MILESTONE_TONE[m.state]}>{MILESTONE_LABEL[m.state]}</Pill>
@@ -871,7 +874,7 @@ function FollowUpSection({
               <div key={call.id} className="mt-2 border-l-2 border-ds-border pl-3 text-xs text-ds-secondary">
                 <p>
                   <span className="font-medium text-ds-ink">{FOLLOW_UP_OUTCOME_LABELS[call.outcome]}</span> ·{" "}
-                  {call.calledByName} · {new Date(call.calledAt).toLocaleDateString()}
+                  {call.calledByName} · <Timestamp at={call.calledAt} />
                 </p>
                 {call.note && <p className="mt-0.5">{call.note}</p>}
                 {call.servicesFeedback && <p className="mt-0.5 italic">On NMBM's services: {call.servicesFeedback}</p>}

@@ -137,7 +137,8 @@ classes in `packages/web/src/design/`, generated from
 
 Shared components in `packages/web/src/components/`: `app-shell.tsx`
 (header and navigation, which hides what the signed-in user cannot
-reach, and carries the theme picker), `sign-out-button.tsx`, `brand-mark.tsx`, `flags.tsx` (the attention badges derived in
+reach and folds review queues and admin pages into menus), `dates.tsx`
+(every date on screen: `DateText`, `Timestamp`, `formatDay`), `sign-out-button.tsx`, `brand-mark.tsx`, `flags.tsx` (the attention badges derived in
 `lib/rules.ts`), and the five sections the participant record composes
 — `care-plan-section.tsx`, `consents-section.tsx`,
 `assessments-section.tsx`, `documents-section.tsx`, `referrals-section.tsx`.

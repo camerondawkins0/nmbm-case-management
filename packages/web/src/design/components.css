@@ -200,3 +200,29 @@ textarea.nmbm-control { resize: vertical; min-height: 80px; }
 :where(.flex:not(.flex-col)) > .nmbm-control,
 :where(.flex:not(.flex-col)) > label > .nmbm-control,
 .nmbm-shell__end .nmbm-control { width: auto; }
+
+/* Header menus. The design system lists a dropdown as "not yet defined";
+   this one is built from what it does define: shadow-md is its token for
+   menus, and the items are nav links in every other respect. */
+.ds-menu { position: relative; }
+.ds-menu__trigger { display: inline-flex; align-items: center; gap: 6px; border: 0; background: none; cursor: pointer; font-family: inherit; }
+.ds-menu__chevron { width: 10px; height: 10px; flex-shrink: 0; transition: transform 120ms ease; }
+.ds-menu__trigger[aria-expanded="true"] .ds-menu__chevron { transform: rotate(180deg); }
+.ds-menu__panel { position: absolute; top: calc(100% + 6px); left: 0; z-index: 40; display: flex; flex-direction: column; gap: 2px; min-width: 200px; max-width: calc(100vw - 16px); padding: var(--space-1); border: 1px solid var(--border); border-radius: var(--radius-lg); background: var(--surface-raised); box-shadow: var(--shadow-md); }
+.ds-menu__panel[hidden] { display: none; }
+.ds-menu--end .ds-menu__panel { left: auto; right: 0; }
+.ds-menu__item { display: block; padding: 8px var(--space-3); border-radius: var(--radius-md); font-size: 13px; line-height: 18px; font-weight: 500; color: var(--ink-secondary); text-decoration: none; white-space: nowrap; }
+.ds-menu__item:hover { background: var(--surface-subtle); color: var(--ink); }
+.ds-menu__item.is-active { background: var(--nav-active-bg); color: var(--nav-active-text); font-weight: 600; }
+.ds-menu__item:focus-visible, .ds-menu__trigger:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+[data-theme="high-contrast"] .ds-menu__item:hover { text-decoration: underline; }
+.ds-menu__field { padding: var(--space-2) var(--space-3) var(--space-3); }
+.nmbm-shell__end .ds-menu__field .nmbm-control { width: 100%; }
+
+/* The account trigger is the name and roles the bar always showed, now a
+   button; it keeps their look rather than a button's. */
+.ds-account { padding: 2px var(--space-2); border-radius: var(--radius-md); color: var(--ink); text-align: right; }
+.ds-account:hover { background: var(--surface-subtle); }
+/* An open menu's button stays pressed when the pointer leaves it, so it is
+   clear which button the panel belongs to. */
+.ds-menu__trigger[aria-expanded="true"]:not(.is-active) { background: var(--surface-subtle); color: var(--ink); }

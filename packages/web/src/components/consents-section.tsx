@@ -1,9 +1,10 @@
 import { useState } from "react";
 import { api, ApiError } from "../lib/api.js";
 import { can } from "../lib/use-me.js";
-import type { ConsentType } from "@nmbm/shared";
+import { todayInOrg, type ConsentType } from "@nmbm/shared";
 import type { Me, ParticipantDetail } from "../lib/types.js";
 import { Pill } from "./flags.js";
+import { DateText } from "./dates.js";
 
 const TYPE_LABELS: Record<ConsentType, string> = {
   general_services: "General services",
@@ -31,7 +32,8 @@ export function ConsentsSection({
   const [adding, setAdding] = useState(false);
   const [type, setType] = useState<ConsentType>("release_of_information");
   const [formName, setFormName] = useState("Authorization to release information");
-  const [signedDate, setSignedDate] = useState(new Date().toISOString().slice(0, 10));
+  // Long Beach's today, not UTC's: after 4pm here UTC is already tomorrow.
+  const [signedDate, setSignedDate] = useState(todayInOrg);
   const [busy, setBusy] = useState(false);
 
   async function run(fn: () => Promise<unknown>, message: string) {
@@ -88,8 +90,8 @@ export function ConsentsSection({
               </Pill>
             </div>
             <p className="mt-0.5 text-xs text-ds-muted">
-              {TYPE_LABELS[consent.type]} · signed {consent.signedDate} · expires{" "}
-              {consent.expiresDate}
+              {TYPE_LABELS[consent.type]} · signed <DateText value={consent.signedDate} /> · expires{" "}
+              <DateText value={consent.expiresDate} />
               {consent.recordedByName && ` · recorded by ${consent.recordedByName}`}
             </p>
             {consent.revokedReason && (

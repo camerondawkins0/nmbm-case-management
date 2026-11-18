@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
 import type { CarePlanFlags, NoContactFlags } from "../lib/types.js";
+import { DateText } from "./dates.js";
 
 // The design system's StatusPill: words carry the meaning, color only
 // reinforces it. "gold" is a rare milestone, never a warning.
@@ -44,7 +45,7 @@ export function CarePlanPills({ flags }: { flags: CarePlanFlags }) {
     if (flags.completionOverdue) {
       pills.push(
         <Pill key="overdue" tone="alert">
-          No care plan · {flags.completionDueDate} passed
+          No care plan · <DateText value={flags.completionDueDate} /> passed
         </Pill>,
       );
     } else if (flags.daysUntilCompletionDue !== null) {

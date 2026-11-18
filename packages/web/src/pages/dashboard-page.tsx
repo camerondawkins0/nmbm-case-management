@@ -4,6 +4,7 @@ import { Link } from "react-router-dom";
 import type { Dashboard, Me, ParticipantRow, ReturnedNote } from "../lib/types.js";
 import { can } from "../lib/use-me.js";
 import { CarePlanPills, MolinaLetterPill, NoContactPill, ParticipantLink, Pill } from "../components/flags.js";
+import { Timestamp } from "../components/dates.js";
 
 // M9's framing, literally: an overdue plan turns up here rather than in
 // a report nobody opens. Everything on this screen is something someone
@@ -87,7 +88,7 @@ export default function DashboardPage({ me }: { me: Me }) {
                   <Link to={`/participants/${note.participantId}#note-${note.id}`} className="font-medium text-ds-ink hover:underline">
                     {note.firstName} {note.lastName}
                   </Link>
-                  <span className="text-xs text-ds-muted">written {new Date(note.createdAt).toLocaleDateString()}</span>
+                  <span className="text-xs text-ds-muted">written <Timestamp at={note.createdAt} /></span>
                 </div>
                 {note.reviewNote && (
                   <p className="mt-1 rounded bg-state-warn-bg px-2 py-1 text-xs text-state-warn">Returned: {note.reviewNote}</p>

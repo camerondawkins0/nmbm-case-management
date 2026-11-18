@@ -5,6 +5,7 @@ import { api, ApiError } from "../lib/api.js";
 import { can } from "../lib/use-me.js";
 import type { HousingOverview, Me } from "../lib/types.js";
 import { money } from "../components/housing-section.js";
+import { DateText } from "../components/dates.js";
 
 // Housing across the caseload (M24): what's waiting on somebody, for the
 // clients the person looking can see. The work itself is done on each
@@ -39,7 +40,7 @@ export default function HousingPage({ me }: { me: Me }) {
       <List title="Authorizations awaiting the plan's decision" empty="None waiting." rows={data.awaitingDecision}>
         {(a) => (
           <>
-            {person(a)} · {CS_SERVICE_LABELS[a.service]} <Muted>requested {a.requestedDate}</Muted>
+            {person(a)} · {CS_SERVICE_LABELS[a.service]} <Muted>requested <DateText value={a.requestedDate} /></Muted>
           </>
         )}
       </List>
@@ -48,7 +49,7 @@ export default function HousingPage({ me }: { me: Me }) {
         {(a) => (
           <>
             {person(a)} · {CS_SERVICE_LABELS[a.service]} {a.authorizationNumber && <Muted>{a.authorizationNumber}</Muted>}{" "}
-            <Muted>covers to {a.lastCoveredDay}</Muted>
+            <Muted>covers to <DateText value={a.lastCoveredDay} /></Muted>
           </>
         )}
       </List>
@@ -77,7 +78,7 @@ export default function HousingPage({ me }: { me: Me }) {
       <List title="Moved in during the last 90 days" empty="Nobody yet." rows={data.movedIn}>
         {(t) => (
           <>
-            {person(t)} <Muted>moved in {t.moveInDate}</Muted>
+            {person(t)} <Muted>moved in <DateText value={t.moveInDate} /></Muted>
           </>
         )}
       </List>

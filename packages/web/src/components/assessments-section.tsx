@@ -12,6 +12,7 @@ import type {
 } from "../lib/types.js";
 import { Pill } from "./flags.js";
 import { LinkHandover, LinkStatus } from "./participant-link.js";
+import { Timestamp } from "./dates.js";
 
 // M13: the registration form and the needs assessment, on the record.
 export function AssessmentsSection({
@@ -118,9 +119,14 @@ export function AssessmentsSection({
             </div>
             <p className="mt-0.5 text-xs text-ds-muted">
               v{a.versionNumber} · {ASSESSMENT_MODE_LABELS[a.mode].toLowerCase()} · started{" "}
-              {a.startedAt.slice(0, 10)}
+              <Timestamp at={a.startedAt} />
               {a.startedByName && ` by ${a.startedByName}`}
-              {a.completedAt && ` · completed ${a.completedAt.slice(0, 10)}`}
+              {a.completedAt && (
+                <>
+                  {" "}
+                  · completed <Timestamp at={a.completedAt} />
+                </>
+              )}
             </p>
             {a.voidReason && <p className="mt-1 text-xs text-state-alert">Voided: {a.voidReason}</p>}
             {a.link && a.status === "in_progress" && (

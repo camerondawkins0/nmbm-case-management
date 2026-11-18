@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { api, ApiError } from "../../lib/api.js";
 import type { AppSetting } from "../../lib/types.js";
+import { formatDay } from "../../components/dates.js";
 
 // M31: NMBM has no IT staff, so anything they'll want to tune is a
 // field here rather than a request for a deploy. Every change is
@@ -93,7 +94,7 @@ export default function SettingsPage() {
               </div>
               <p className="mt-2 text-xs text-ds-muted">
                 {setting.updatedAt
-                  ? `Last changed by ${setting.updatedByName} on ${new Date(setting.updatedAt).toLocaleDateString()}.`
+                  ? `Last changed by ${setting.updatedByName} on ${formatDay(setting.updatedAt)}.`
                   : "Using the default."}
               </p>
             </li>

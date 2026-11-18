@@ -4,6 +4,7 @@ import { permissionWarnings, PERMISSION_INFO, type Permission } from "@nmbm/shar
 import { api, ApiError } from "../../lib/api.js";
 import type { GridRole, PermissionGrid } from "../../lib/types.js";
 import { Pill } from "../../components/flags.js";
+import { formatDay } from "../../components/dates.js";
 
 type GridPermission = PermissionGrid["permissions"][number];
 
@@ -310,7 +311,7 @@ function ChangedDot({ change }: { change: PermissionGrid["changes"][number] | un
   if (!change) return null;
   return (
     <span
-      title={`Changed from the starting setup by ${change.changedByName} on ${new Date(change.changedAt).toLocaleDateString()}`}
+      title={`Changed from the starting setup by ${change.changedByName} on ${formatDay(change.changedAt)}`}
       className="inline-block h-2 w-2 shrink-0 rounded-full bg-nmbm-gold"
     >
       <span className="sr-only">Changed from the starting setup</span>

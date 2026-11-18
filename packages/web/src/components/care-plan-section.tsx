@@ -3,6 +3,7 @@ import { api, ApiError } from "../lib/api.js";
 import { can } from "../lib/use-me.js";
 import type { Me, ParticipantDetail } from "../lib/types.js";
 import { Pill } from "./flags.js";
+import { DateText } from "./dates.js";
 
 // The other half of M9. The home screen has been able to say "no care
 // plan, 5 days left" since the dashboard existed; this is where a CHW
@@ -45,7 +46,7 @@ export function CarePlanSection({
         </h2>
         <div className="flex items-center gap-1.5">
           {carePlan.missing && carePlan.completionOverdue && (
-            <Pill tone="alert">Due {carePlan.completionDueDate} — overdue</Pill>
+            <Pill tone="alert">Due <DateText value={carePlan.completionDueDate} /> — overdue</Pill>
           )}
           {carePlan.missing && !carePlan.completionOverdue && (
             <Pill tone="warn">Due in {carePlan.daysUntilCompletionDue} days</Pill>

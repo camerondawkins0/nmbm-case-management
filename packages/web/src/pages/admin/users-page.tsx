@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import { api, ApiError } from "../../lib/api.js";
 import type { AdminUser, AuditEntry } from "../../lib/types.js";
 import { Pill } from "../../components/flags.js";
+import { Timestamp } from "../../components/dates.js";
 
 type Role = { id: string; code: string; label: string; builtin: boolean };
 
@@ -173,7 +174,7 @@ export default function AdminUsersPage() {
                   {entry.detail && <span className="text-ds-muted"> — {entry.detail}</span>}
                 </span>
                 <span className="text-xs text-ds-muted">
-                  {new Date(entry.createdAt).toLocaleString()}
+                  <Timestamp at={entry.createdAt} withTime />
                 </span>
               </li>
             ))}

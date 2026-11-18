@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { api } from "../lib/api.js";
 import type { AssignableWorker, CohortDetail } from "../lib/types.js";
 import { useParticipantSearch, parseSearch } from "./participant-search.js";
+import { DateText } from "./dates.js";
 
 const inputClass = "nmbm-control";
 
@@ -118,7 +119,7 @@ export function EnrollPanel({ cohortId, rosterIds, act }: { cohortId: string; ro
                   {r.firstName} {r.lastName}
                 </span>
                 <span className="ml-2 text-xs text-ds-muted">
-                  born {r.dateOfBirth}
+                  born <DateText value={r.dateOfBirth} />
                   {!r.active && " · services ended"}
                 </span>
               </span>

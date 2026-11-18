@@ -1,10 +1,11 @@
 import { useCallback, useEffect, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { INCOMING_REFERRAL_SOURCES, type IncomingReferralSource, type Payer } from "@nmbm/shared";
+import { INCOMING_REFERRAL_SOURCES, todayInOrg, type IncomingReferralSource, type Payer } from "@nmbm/shared";
 import { api, ApiError } from "../lib/api.js";
 import { PAYER_OPTIONS, REFERRAL_CLOSE_LABELS, REFERRAL_SOURCE_LABELS } from "../lib/labels.js";
 import type { IncomingReferralRow } from "../lib/types.js";
 import { Pill } from "../components/flags.js";
+import { DateText } from "../components/dates.js";
 
 type View = "open" | "outcome_owed" | "all";
 const VIEWS: { value: View; label: string }[] = [
@@ -14,7 +15,8 @@ const VIEWS: { value: View; label: string }[] = [
 ];
 
 const inputClass = "nmbm-control";
-const today = () => new Date().toISOString().slice(0, 10);
+// Long Beach's today, not UTC's: after 4pm here UTC is already tomorrow.
+const today = () => todayInOrg();
 
 // People referred to NMBM, before they're participants: intake's queue.
 export default function IncomingReferralsPage() {
@@ -207,8 +209,13 @@ export default function IncomingReferralsPage() {
                 {r.status === "closed" && <Pill tone="muted">{r.closeReason ? REFERRAL_CLOSE_LABELS[r.closeReason] : "closed"}</Pill>}
               </div>
               <p className="mt-0.5 text-xs text-ds-muted">
-                {r.sourceName || REFERRAL_SOURCE_LABELS[r.sourceType]} · received {r.receivedDate}
-                {r.dateOfBirth && ` · born ${r.dateOfBirth}`}
+                {r.sourceName || REFERRAL_SOURCE_LABELS[r.sourceType]} · received <DateText value={r.receivedDate} />
+                {r.dateOfBirth && (
+                  <>
+                    {" "}
+                    · born <DateText value={r.dateOfBirth} />
+                  </>
+                )}
               </p>
               <p className="mt-1 line-clamp-2 text-xs text-ds-secondary">{r.reason}</p>
             </li>

@@ -23,9 +23,12 @@ import {
 } from "../lib/labels.js";
 import type { RecordExport } from "../lib/types.js";
 import { money } from "../components/housing-section.js";
+import { DateText, Timestamp, formatDay } from "../components/dates.js";
 
 const words = (code: string) => code.replace(/_/g, " ");
-const day = (iso: string | null) => (iso ? iso.slice(0, 10) : "—");
+// The Long Beach day, not the UTC one slicing the timestamp gave: an evening
+// note was printed as the next day.
+const day = (iso: string | null) => (iso ? <Timestamp at={iso} /> : "—");
 
 function Section({ title, empty, children }: { title: string; empty: boolean; children: React.ReactNode }) {
   return (
@@ -72,7 +75,7 @@ export default function RecordExportPage() {
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `record-${doc.participant.lastName}-${doc.generatedAt.slice(0, 10)}.json`;
+    a.download = `record-${doc.participant.lastName}-${formatDay(doc.generatedAt)}.json`;
     a.click();
     URL.revokeObjectURL(url);
   }
@@ -150,11 +153,11 @@ export default function RecordExportPage() {
           {p.firstName} {p.lastName}
         </h1>
         <p className="text-sm">
-          Born {p.dateOfBirth} · payer {payer} · on file since {day(p.recordCreatedAt)}
+          Born <DateText value={p.dateOfBirth} /> · payer {payer} · on file since {day(p.recordCreatedAt)}
         </p>
         <ExportDetails details={p.details} />
         <p className="mt-2 text-xs text-ds-muted">
-          Exported {new Date(doc.generatedAt).toLocaleString()} by {doc.generatedByName} for:{" "}
+          Exported <Timestamp at={doc.generatedAt} withTime /> by {doc.generatedByName} for:{" "}
           {EXPORT_PURPOSE_LABELS[doc.purpose]}
           {doc.purposeNote && ` (${doc.purposeNote})`}
         </p>
@@ -164,7 +167,7 @@ export default function RecordExportPage() {
         <ul className="text-sm">
           {doc.episodes.map((e) => (
             <li key={e.id}>
-              {e.startDate} to {e.endDate ?? "now"}
+              <DateText value={e.startDate} /> to {e.endDate ? <DateText value={e.endDate} /> : "now"}
               {e.closureReason && ` — ${CLOSURE_REASON_LABELS[e.closureReason]}`}
               {e.closureNote && `: ${e.closureNote}`}
             </li>
@@ -186,7 +189,7 @@ export default function RecordExportPage() {
         <ul className="flex flex-col gap-1 text-sm">
           {doc.referralsIn.map((r) => (
             <li key={r.id}>
-              {r.sourceName || REFERRAL_SOURCE_LABELS[r.sourceType]}, {r.receivedDate}: {r.reason}
+              {r.sourceName || REFERRAL_SOURCE_LABELS[r.sourceType]}, <DateText value={r.receivedDate} />: {r.reason}
             </li>
           ))}
         </ul>
@@ -197,7 +200,7 @@ export default function RecordExportPage() {
           {[...doc.notes].reverse().map((n) => (
             <li key={n.id} className="break-inside-avoid">
               <p className="text-xs text-ds-muted">
-                {n.serviceDate} (written {new Date(n.createdAt).toLocaleString()}) · {n.authorName} ·{" "}
+                <DateText value={n.serviceDate} /> (written <Timestamp at={n.createdAt} withTime />) · {n.authorName} ·{" "}
                 {n.contactResult === "contacted" ? "reached" : "no contact"} · {words(n.status)}
               </p>
               <p className="whitespace-pre-wrap">{n.body}</p>
@@ -212,7 +215,12 @@ export default function RecordExportPage() {
             <li key={i} className="break-inside-avoid">
               <p className="text-xs text-ds-muted">
                 Written {day(c.createdAt)} · {words(c.status)}
-                {c.approvedAt && ` · approved ${day(c.approvedAt)} by ${c.approvedByName}`}
+                {c.approvedAt && (
+                  <>
+                    {" "}
+                    · approved {day(c.approvedAt)} by {c.approvedByName}
+                  </>
+                )}
               </p>
               <p className="whitespace-pre-wrap">{c.goals}</p>
             </li>
@@ -228,7 +236,7 @@ export default function RecordExportPage() {
             </p>
             <p className="text-xs text-ds-muted">
               {ASSESSMENT_MODE_LABELS[a.mode]} · started {day(a.startedAt)} · {words(a.status)}
-              {a.completedAt && ` ${day(a.completedAt)}`}
+              {a.completedAt && <> {day(a.completedAt)}</>}
               {a.voidReason && ` — voided: ${a.voidReason}`}
             </p>
             {a.answers.length === 0 ? (
@@ -259,7 +267,7 @@ export default function RecordExportPage() {
             <ul>
               {doc.housing.statuses.map((s) => (
                 <li key={s.id}>
-                  {s.effectiveDate}: {HOUSING_SITUATION_LABELS[s.situation]}
+                  <DateText value={s.effectiveDate} />: {HOUSING_SITUATION_LABELS[s.situation]}
                   {s.note && ` — ${s.note}`}
                   {s.voidedAt && ` [void: ${s.voidReason}]`}
                 </li>
@@ -271,8 +279,12 @@ export default function RecordExportPage() {
             <ul>
               {doc.housing.authorizations.map((a) => (
                 <li key={a.id}>
-                  {CS_SERVICE_LABELS[a.service]} {a.authorizationNumber ?? ""}: requested {a.requestedDate}, {a.status}
-                  {a.startDate && `, ${a.startDate} to ${a.lastCoveredDay}`}
+                  {CS_SERVICE_LABELS[a.service]} {a.authorizationNumber ?? ""}: requested <DateText value={a.requestedDate} />, {a.status}
+                  {a.startDate && (
+                    <>
+                      , <DateText value={a.startDate} /> to <DateText value={a.lastCoveredDay} />
+                    </>
+                  )}
                   {a.unitType && `, ${a.unitsUsed} of ${a.unitsAuthorized} ${CS_UNIT_LABELS[a.unitType]}`}
                   {a.amountAuthorized && `, ${money(a.amountPaid)} paid of ${money(a.amountAuthorized)}`}
                   {a.voidedAt && ` [void: ${a.voidReason}]`}
@@ -285,7 +297,7 @@ export default function RecordExportPage() {
             <ul>
               {[...doc.housing.services].reverse().map((v) => (
                 <li key={v.id} className="break-inside-avoid">
-                  {v.serviceDate} · {HOUSING_ACTIVITY_LABELS[v.activity]} · {v.minutes} min · {v.authorName}
+                  <DateText value={v.serviceDate} /> · {HOUSING_ACTIVITY_LABELS[v.activity]} · {v.minutes} min · {v.authorName}
                   {v.voidedAt && ` [void: ${v.voidReason}]`}
                   <span className="block whitespace-pre-wrap text-ds-secondary">{v.note}</span>
                 </li>
@@ -297,7 +309,7 @@ export default function RecordExportPage() {
             <ul>
               {doc.housing.tenancies.map((t) => (
                 <li key={t.id}>
-                  {t.addressLine1}, {t.city} {t.state} {t.postalCode}: {t.moveInDate} to {t.moveOutDate ?? "now"}
+                  {t.addressLine1}, {t.city} {t.state} {t.postalCode}: <DateText value={t.moveInDate} /> to {t.moveOutDate ? <DateText value={t.moveOutDate} /> : "now"}
                   {t.voidedAt && ` [void: ${t.voidReason}]`}
                 </li>
               ))}
@@ -309,7 +321,11 @@ export default function RecordExportPage() {
               {doc.housing.deposits.map((d) => (
                 <li key={d.id}>
                   {money(d.amount)} to {d.payee} ({DEPOSIT_PURPOSE_LABELS[d.purpose]}): {d.status}
-                  {d.paidDate && `, paid ${d.paidDate}`}
+                  {d.paidDate && (
+                    <>
+                      , paid <DateText value={d.paidDate} />
+                    </>
+                  )}
                   {d.voidedAt && ` [void: ${d.voidReason}]`}
                 </li>
               ))}
@@ -322,7 +338,7 @@ export default function RecordExportPage() {
         <ul className="text-sm">
           {doc.consents.map((c) => (
             <li key={c.id}>
-              {c.formName}: signed {c.signedDate}, expires {c.expiresDate} · {c.status}
+              {c.formName}: signed <DateText value={c.signedDate} />, expires <DateText value={c.expiresDate} /> · {c.status}
               {c.revokedReason && ` (revoked: ${c.revokedReason})`}
             </li>
           ))}
@@ -344,13 +360,20 @@ export default function RecordExportPage() {
         {doc.programs.map((g, i) => (
           <div key={i} className="mb-3 break-inside-avoid text-sm">
             <p className="font-medium">
-              {g.programName} — {g.cohortName} (from {g.startDate}) · {words(g.status)}
+              {g.programName} — {g.cohortName} (from <DateText value={g.startDate} />) · {words(g.status)}
             </p>
             <p className="text-xs text-ds-muted">
               {ATTENDANCE_STATUSES.map((s) => `${g.attendance.filter((x) => x.status === s).length} ${s}`).join(" · ")}
             </p>
             <p className="text-xs">
-              {g.attendance.map((x) => `${x.date} ${x.status}`).join("; ") || "No classes recorded."}
+              {g.attendance.length === 0
+                ? "No classes recorded."
+                : g.attendance.map((x, i) => (
+                    <span key={i}>
+                      {i > 0 && "; "}
+                      <DateText value={x.date} /> {x.status}
+                    </span>
+                  ))}
             </p>
           </div>
         ))}

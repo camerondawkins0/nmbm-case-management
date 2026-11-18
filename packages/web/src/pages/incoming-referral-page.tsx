@@ -6,6 +6,7 @@ import { PAYER_OPTIONS, REFERRAL_CLOSE_LABELS, REFERRAL_SOURCE_LABELS } from "..
 import type { IncomingReferralDetail } from "../lib/types.js";
 import { Pill } from "../components/flags.js";
 import { useParticipantSearch } from "../components/participant-search.js";
+import { DateText, Timestamp } from "../components/dates.js";
 
 const inputClass = "nmbm-control";
 
@@ -70,7 +71,7 @@ export default function IncomingReferralPage() {
           <p className="mt-1 text-sm text-ds-muted">
             Referred by {r.sourceName || REFERRAL_SOURCE_LABELS[r.sourceType]}
             {r.sourceName && ` (${REFERRAL_SOURCE_LABELS[r.sourceType].toLowerCase()})`} · received{" "}
-            {r.receivedDate} · recorded by {r.recordedByName}
+            <DateText value={r.receivedDate} /> · recorded by {r.recordedByName}
           </p>
         </div>
         {r.status === "admitted" && <Pill tone="ok">admitted</Pill>}
@@ -114,7 +115,7 @@ export default function IncomingReferralPage() {
 
       {r.status === "admitted" && r.participantId && (
         <p className="mt-4 text-sm text-ds-secondary">
-          Admitted {r.admittedAt?.slice(0, 10)} by {r.admittedByName}.{" "}
+          Admitted {r.admittedAt && <Timestamp at={r.admittedAt} />} by {r.admittedByName}.{" "}
           <Link to={`/participants/${r.participantId}`} className="font-medium text-ds-ink underline underline-offset-2">
             Open the record
           </Link>{" "}
@@ -123,7 +124,7 @@ export default function IncomingReferralPage() {
       )}
       {r.status === "closed" && r.closeReason && (
         <p className="mt-4 text-sm text-ds-secondary">
-          Closed {r.closedAt?.slice(0, 10)} by {r.closedByName}: {REFERRAL_CLOSE_LABELS[r.closeReason]}
+          Closed {r.closedAt && <Timestamp at={r.closedAt} />} by {r.closedByName}: {REFERRAL_CLOSE_LABELS[r.closeReason]}
           {r.closeNote && ` — ${r.closeNote}`}
         </p>
       )}
@@ -132,7 +133,7 @@ export default function IncomingReferralPage() {
         <section className="ds-row mt-4">
           {r.outcomeReportedAt ? (
             <p className="text-ds-secondary">
-              {r.sourceName || "The referrer"} was told the outcome on {r.outcomeReportedAt.slice(0, 10)} by{" "}
+              {r.sourceName || "The referrer"} was told the outcome on <Timestamp at={r.outcomeReportedAt} /> by{" "}
               {r.outcomeReportedByName}.
             </p>
           ) : (
@@ -163,7 +164,7 @@ export default function IncomingReferralPage() {
             <li key={n.id} className="ds-row">
               <p className="whitespace-pre-wrap">{n.body}</p>
               <p className="mt-0.5 text-xs text-ds-muted">
-                {n.createdByName} · {new Date(n.createdAt).toLocaleString()}
+                {n.createdByName} · <Timestamp at={n.createdAt} withTime />
               </p>
             </li>
           ))}

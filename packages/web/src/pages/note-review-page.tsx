@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { api, ApiError } from "../lib/api.js";
 import type { PendingNote } from "../lib/types.js";
 import { Pill } from "../components/flags.js";
+import { DateText } from "../components/dates.js";
 
 // U6: "CHW supervisor/Program Manager can either approve CHW notes or
 // return them for revision." The permission was granted from the start;
@@ -63,7 +64,7 @@ export default function NoteReviewPage() {
                   {note.contactResult === "contacted" ? "Reached" : "No contact"}
                 </Pill>
                 {note.clinicalReview && <Pill tone="muted">Clinical</Pill>}
-                {note.authorName} · {note.contactResult === "contacted" ? "contact" : "attempt"} on {note.serviceDate}
+                {note.authorName} · {note.contactResult === "contacted" ? "contact" : "attempt"} on <DateText value={note.serviceDate} />
               </span>
             </div>
             <p className="mt-2 whitespace-pre-wrap text-sm text-ds-secondary">{note.body}</p>

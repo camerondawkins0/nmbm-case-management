@@ -7,6 +7,7 @@ import type { Payer } from "@nmbm/shared";
 import { SearchResults, useParticipantSearch } from "../components/participant-search.js";
 import { PAYER_OPTIONS } from "../lib/labels.js";
 import { DetailsFields, detailsPayload, emptyDetails } from "../components/client-details.js";
+import { DateText } from "../components/dates.js";
 
 const PAYERS = PAYER_OPTIONS;
 
@@ -125,7 +126,7 @@ export default function IntakePage() {
 
       {referral && (
         <p className="nmbm-alert nmbm-alert--info mt-4">
-          Admitting from the referral by {referral.sourceName || "a referrer"} received {referral.receivedDate}.
+          Admitting from the referral by {referral.sourceName || "a referrer"} received <DateText value={referral.receivedDate} />.
           Admitting closes the referral.
         </p>
       )}

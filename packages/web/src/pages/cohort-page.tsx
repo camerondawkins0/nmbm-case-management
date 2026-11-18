@@ -6,6 +6,7 @@ import type { AttendanceStatus } from "@nmbm/shared";
 import type { CohortDetail, Me } from "../lib/types.js";
 import { Pill } from "../components/flags.js";
 import { AddClassDate, CohortDetailsForm, CohortStatusActions, EnrollPanel, WithdrawButton } from "../components/cohort-setup.js";
+import { DateText } from "../components/dates.js";
 
 const MARKS: { value: AttendanceStatus; label: string; short: string }[] = [
   { value: "present", label: "Present", short: "P" },
@@ -120,7 +121,7 @@ export default function CohortPage({ me }: { me: Me }) {
           <h1 className="ds-display">{data.cohort.name}</h1>
           <p className="mt-1 text-sm text-ds-muted">
             {data.cohort.programName} · {data.cohort.status === "planned" ? "starts" : "started"}{" "}
-            {data.cohort.startDate} · {data.sessions.length} class date(s)
+            <DateText value={data.cohort.startDate} /> · {data.sessions.length} class date(s)
             {data.cohort.requiredSessions && ` · ${data.cohort.requiredSessions} needed to complete`}
           </p>
           <p className="text-xs text-ds-muted">
@@ -262,7 +263,7 @@ export default function CohortPage({ me }: { me: Me }) {
                   onClick={() => startTaking(session.id)}
                   className="nmbm-btn nmbm-btn--secondary nmbm-btn--md"
                 >
-                  {session.sessionDate}
+                  <DateText value={session.sessionDate} />
                 </button>
               ))}
               {data.sessions.length === 0 && (
