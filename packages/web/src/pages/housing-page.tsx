@@ -24,7 +24,7 @@ export default function HousingPage({ me }: { me: Me }) {
   if (!data) return <p className="text-sm text-ds-muted">Loading…</p>;
 
   const person = (p: { participantId: string; firstName: string; lastName: string }) => (
-    <Link to={`/participants/${p.participantId}`} className="ds-person hover:underline">
+    <Link to={`/participants/${p.participantId}?tab=housing`} className="ds-person hover:underline">
       {p.firstName} {p.lastName}
     </Link>
   );

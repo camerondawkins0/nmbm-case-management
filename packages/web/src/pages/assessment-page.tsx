@@ -128,7 +128,7 @@ export default function AssessmentPage({ me }: { me: Me }) {
     <div className="mx-auto max-w-3xl">
       <div className="print:hidden">
         <Link
-          to={`/participants/${assessment.participantId}`}
+          to={`/participants/${assessment.participantId}?tab=forms`}
           className="text-sm text-ds-muted underline-offset-2 hover:underline"
         >
           ← {name || "Back to the record"}

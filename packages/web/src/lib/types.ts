@@ -122,6 +122,9 @@ export type PendingNote = {
   participantId: string;
   firstName: string;
   lastName: string;
+  // Whose caseload the client is on now; null once the case is closed.
+  caseManagerId: string | null;
+  caseManagerName: string | null;
 };
 
 export type ParticipantConsent = {

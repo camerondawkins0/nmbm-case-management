@@ -23,6 +23,7 @@ import { can } from "../lib/use-me.js";
 import type { CsAuthorizationRow, DepositRow, HousingRecord, Me, ParticipantDetail } from "../lib/types.js";
 import { PAYER_OPTIONS } from "../lib/labels.js";
 import { Pill } from "./flags.js";
+import { useShowMore } from "./show-more.js";
 import { DateText, Timestamp } from "./dates.js";
 
 // Dollars from a string, for display only: "1250.5" -> "$1,250.50".
@@ -74,6 +75,8 @@ export function HousingSection({
       .catch(() => setData(null));
   }, [record.id]);
   useEffect(load, [load]);
+  // It used to stop at 15 without saying so; older work was on the export only.
+  const services = useShowMore(data?.services ?? []);
 
   if (!data) return null;
   const isOpen = record.episodeStatus === "open";
@@ -278,8 +281,9 @@ export function HousingSection({
         {data.services.length === 0 ? (
           <p className="mt-2 text-sm text-ds-muted">None logged.</p>
         ) : (
+          <>
           <ul className="ds-list mt-2">
-            {data.services.slice(0, 15).map((s) => (
+            {services.shown.map((s) => (
               <li key={s.id} className={`px-3 py-2 text-sm ${s.voidedAt ? "text-ds-muted" : ""}`}>
                 <div className="flex flex-wrap justify-between gap-2">
                   <span className={s.voidedAt ? "line-through" : ""}>
@@ -300,6 +304,8 @@ export function HousingSection({
               </li>
             ))}
           </ul>
+          {services.toggle}
+          </>
         )}
       </div>
 

@@ -1,6 +1,6 @@
 import type { Db } from "@nmbm/db";
 import { episodes, notes, participants, users } from "@nmbm/db";
-import { eq, desc, and, inArray } from "drizzle-orm";
+import { eq, desc, and, inArray, sql } from "drizzle-orm";
 import type { NoteRevise, Permission } from "@nmbm/shared";
 import { assertServiceDate } from "./service.js";
 import { keepVisible } from "../../lib/caseload.js";
@@ -46,6 +46,12 @@ export async function listAwaitingReview(db: Db, held: Set<Permission>, visible:
       participantId: participants.id,
       firstName: participants.firstName,
       lastName: participants.lastName,
+      // The queue is grouped by whose caseload the client is on today, which
+      // is not always the author (an intern, someone covering). A closed case
+      // has no case manager and groups on its own. One row each, so a client
+      // never shows twice whatever the assignments table holds.
+      caseManagerId: sql<string | null>`(select a.worker_id from "assignments" a where a.participant_id = ${participants.id} and a.ended_at is null order by a.started_at desc limit 1)`,
+      caseManagerName: sql<string | null>`(select u.display_name from "assignments" a join "users" u on u.id = a.worker_id where a.participant_id = ${participants.id} and a.ended_at is null order by a.started_at desc limit 1)`,
     })
     .from(notes)
     .innerJoin(users, eq(users.id, notes.authorId))

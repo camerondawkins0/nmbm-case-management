@@ -62,6 +62,40 @@ describe("U6: work is signed off by someone other than its author", () => {
   });
 });
 
+describe("the review queue says whose caseload each note's client is on", () => {
+  type QueueRow = { id: string; authorName: string; caseManagerId: string | null; caseManagerName: string | null };
+
+  it("names the client's case manager when someone else wrote the note, and nobody once the case is closed", async () => {
+    const reviewer = await signIn(
+      app,
+      (await staffWith(db, ["notes.approve", "participants.read.all", "participants.read.closed"])).email,
+    );
+    const queued = async (id: string) =>
+      ((await reviewer.get("/api/notes/awaiting-review")).body as QueueRow[]).find((n) => n.id === id);
+
+    // Someone covering writes on the CHW's client: the note is theirs, the
+    // client is still the CHW's.
+    const coverer = await staffWith(db, ["notes.write", "participants.read.all"]);
+    const ids = await admit(db, { workerId: chwId, actorId: chwId });
+    const written = await (await signIn(app, coverer.email)).post("/api/notes", {
+      ...ids,
+      contactResult: "contacted",
+      body: "Covering visit.",
+    });
+    expect(written.status).toBe(201);
+    expect(written.body.note.status).toBe("pending_review");
+    const noteId = written.body.note.id as string;
+
+    const row = await queued(noteId);
+    expect(row?.authorName).toBe(coverer.displayName);
+    expect(row?.caseManagerId).toBe(chwId);
+    expect(row?.caseManagerName).not.toBe(coverer.displayName);
+
+    expect((await director.post(`/api/episodes/${ids.episodeId}/close`, { closureReason: "completed" })).status).toBe(200);
+    expect(await queued(noteId)).toMatchObject({ caseManagerId: null, caseManagerName: null });
+  });
+});
+
 describe("U6: a returned note goes back to its author, and round again", () => {
   async function returned() {
     const n = await chwNote();

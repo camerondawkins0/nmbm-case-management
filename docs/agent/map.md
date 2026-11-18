@@ -110,12 +110,12 @@ first is behind the session check.
 | `/` | `dashboard-page.tsx` | What needs attention: care plan clocks, the no-contact ladder, notes awaiting review, referrals with no outcome |
 | `/participants` | `participants-page.tsx` | Caseload list, scoped server-side; a Closed tab (everything, for intake and supervisors) or Recently closed (a worker's own former clients, with the date access ends) |
 | `/participants/new` | `intake-page.tsx` | Admission — record, episode and assignment in one act, with optional contact, address, insurance and emergency contact |
-| `/participants/:id` | `participant-detail-page.tsx` | The record: flags, details (edit with `participants.update`), notes with their date of service, care plan, housing, consents, forms and assessments, documents, referrals, episode history; on a closed record, readmission |
+| `/participants/:id` | `participant-detail-page.tsx` | The record, in tabs (`?tab=` care-plan, housing, forms, referrals, case; Overview by default): flags, details (edit with `participants.update`), notes with their date of service, care plan, housing, consents, forms and assessments, documents, referrals, episode history; on a closed record, readmission |
 | `/assessments/:id` | `assessment-page.tsx` | Filling in a form (saves as you go, follow-ups appear as earlier answers are given), or reading and printing a completed one |
 | `/participants/:id/export` | `record-export-page.tsx` | Choose a purpose, then the whole record laid out for print / PDF, plus a data download |
 | `/referrals-in` | `incoming-referrals-page.tsx` | Intake's queue of people referred to NMBM: to deal with, referrer still to be told, all |
 | `/referrals-in/:id` | `incoming-referral-page.tsx` | One referral: notes, matching records, admit / readmit / add to current stay / close, referrer told |
-| `/notes/review` | `note-review-page.tsx` | The U6 queue — approve, or return with a reason |
+| `/notes/review` | `note-review-page.tsx` | The U6 queue, grouped by the client's current case manager (closed cases last): approve, or return with a reason |
 | `/care-plans/review` | `care-plan-review-page.tsx` | The same, for care plans |
 | `/programs` | `programs-page.tsx` | Programs and their cohorts; for `programs.manage`, new program and add a cohort |
 | `/housing` | `housing-page.tsx` | Housing across the caseload: authorizations awaiting a decision or ending soon, deposits to approve or pay, authorized clients with no situation recorded, recent move-ins; the service-log CSV for `housing.export` |
@@ -124,7 +124,7 @@ first is behind the session check.
 | `/enrollments/:id/participation` | `participation-record-page.tsx` | The printable proof a probation officer receives |
 | `/admin/users` | `admin/users-page.tsx` | Staff, roles, deactivation |
 | `/admin/permissions` | `admin/permissions-page.tsx` | What each role can do, one role at a time or compared; search, area and changes-only filters; new, renamed and retired custom roles. Gold dot = differs from the default |
-| `/admin/settings` | `admin/settings-page.tsx` | Settings NMBM change themselves (the former-worker window) |
+| `/admin/settings` | `admin/settings-page.tsx` | Settings NMBM change themselves (the former-worker window). Each is locked until Edit, and a change is confirmed before it is saved |
 | `/feedback` | `feedback-page.tsx` | Report an issue |
 | `/admin/forms` | `admin/forms-page.tsx` | NMBM's forms: which exist, which version is live |
 | `/admin/forms/:id` | `admin/form-builder-page.tsx` | Build a draft — questions, options, sections, show-if rules — preview it, publish it; past versions read-only |
@@ -136,8 +136,10 @@ classes in `packages/web/src/design/`, generated from
 `docs/BRANDING.md`.
 
 Shared components in `packages/web/src/components/`: `app-shell.tsx`
-(header and navigation, which hides what the signed-in user cannot
-reach and folds review queues and admin pages into menus), `dates.tsx`
+(the side navigation, which hides what the signed-in user cannot reach,
+collapses to icons and is a drawer on a phone; `nav-icons.tsx` draws its
+icons), `tabs.tsx` (the record's tabs), `show-more.tsx` (latest ten of a
+long list, and a button for the rest), `dates.tsx`
 (every date on screen: `DateText`, `Timestamp`, `formatDay`), `sign-out-button.tsx`, `brand-mark.tsx`, `flags.tsx` (the attention badges derived in
 `lib/rules.ts`), and the five sections the participant record composes
 — `care-plan-section.tsx`, `consents-section.tsx`,

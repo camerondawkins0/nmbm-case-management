@@ -79,17 +79,33 @@ read as tomorrow. A form's default "today" is `todayInOrg()` for the same
 reason. The one exception is a participant's link expiry, written
 "Wed, Nov 25" because it is read out to them.
 
-## The header
+## Navigation
 
-Every role's links fit on one line from 1024px. Two or more review queues
-fold into a **Review** menu and two or more admin pages into **Admin**; one
-of a kind stays a plain link. The product name beside the logo shows from
-1440px. "Report an issue" sits in the bar from 1280px and moves into the
-menu under the person's name below that; the theme picker lives there too.
-Sign out is never in a menu. The menus are disclosures (a button and a
-panel of ordinary links), built from the design system's tokens because it
-does not define a dropdown yet. Adding a link to the bar means checking it
-still fits: the widest role today is the Clinical Director.
+Navigation runs down the left side (`components/app-shell.tsx`). It is the
+window's height and sticky, and its links scroll inside it on a short
+window, so Sign out stays in view. "Collapse" folds it to a rail of icons
+(`components/nav-icons.tsx`), and the choice is kept per browser like the
+theme. Below 768px it is a drawer opened from a bar at the top. Review
+queues and admin pages are labeled groups. The person's name opens a
+panel with the theme picker. Sign out is never inside a panel.
+
+The design system's AppShell is a top bar, so the sidebar reuses its parts
+(logo, product name, nav link and active colors, name and roles) laid out
+in a column. The panel is built from the system's tokens, because the
+system doesn't define a dropdown yet.
+
+## The client record
+
+The record has tabs (`components/tabs.tsx`): Overview, Care plan, Housing,
+Forms & documents, Referrals & programs, and Case. The open tab is in the
+URL (`?tab=housing`), so a link can open the record on the tab its work is
+on, as the Housing queue and the dashboard's care-plan rows do. Every tab
+stays mounted, so a half-written note survives switching tabs. Inside a
+tab, sections sit in two columns when the record is at least 860px wide.
+That is measured on the record itself (a container query), not the
+window, because the sidebar takes a different share when collapsed.
+Long lists (contacts, housing work) show the latest 10 with a button for
+the rest (`components/show-more.tsx`).
 
 ## Themes
 

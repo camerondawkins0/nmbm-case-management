@@ -122,7 +122,7 @@ export default function DashboardPage({ me }: { me: Me }) {
               >
                 <span>
                   <Link
-                    to={`/participants/${referral.participantId}`}
+                    to={`/participants/${referral.participantId}?tab=referrals`}
                     className="ds-person hover:underline"
                   >
                     {referral.firstName} {referral.lastName}
@@ -193,7 +193,12 @@ function Section({
             key={row.id}
             className="flex flex-wrap items-center justify-between gap-2 px-4 py-3 text-sm"
           >
-            <ParticipantLink id={row.id} firstName={row.firstName} lastName={row.lastName} />
+            <ParticipantLink
+              id={row.id}
+              firstName={row.firstName}
+              lastName={row.lastName}
+              tab={kind === "no-contact" ? undefined : "care-plan"}
+            />
             <div className="flex flex-wrap items-center gap-1.5">
               {kind === "no-contact" && (
                 <>

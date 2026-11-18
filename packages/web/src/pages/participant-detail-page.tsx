@@ -19,13 +19,37 @@ import { ClientDetailsSection } from "../components/client-details.js";
 import { HousingSection } from "../components/housing-section.js";
 import { todayInOrg } from "@nmbm/shared";
 import { DateText, Timestamp, formatDay } from "../components/dates.js";
+import { TabList, TabPanel } from "../components/tabs.js";
+import { useShowMore } from "../components/show-more.js";
+
+// The record was one page of a dozen sections, several screens long. It is
+// now in tabs, by the kind of work: what a worker does on most visits is on
+// Overview, and the rest is a tab away rather than a long scroll down.
+const RECORD_TABS = [
+  { id: "overview", label: "Overview" },
+  { id: "care-plan", label: "Care plan" },
+  { id: "housing", label: "Housing" },
+  { id: "forms", label: "Forms & documents" },
+  { id: "referrals", label: "Referrals & programs" },
+  { id: "case", label: "Case" },
+] as const;
 
 export default function ParticipantDetailPage({ me }: { me: Me }) {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   // Arrived from the referrals queue to readmit a returning client.
-  const [params] = useSearchParams();
+  const [params, setParams] = useSearchParams();
   const fromReferral = params.get("referral");
+  // The open tab is in the address, so a reload or a shared link lands on
+  // the same tab, and Back still leaves the record rather than stepping
+  // through every tab looked at.
+  const tab = RECORD_TABS.some((t) => t.id === params.get("tab")) ? params.get("tab")! : "overview";
+  function chooseTab(next: string) {
+    const p = new URLSearchParams(params);
+    if (next === "overview") p.delete("tab");
+    else p.set("tab", next);
+    setParams(p, { replace: true });
+  }
   const [record, setRecord] = useState<ParticipantDetail | null>(null);
   // A failed load means there is nothing to show. A rejected action —
   // the disenrollment gate, say — must not take the record off screen
@@ -37,6 +61,9 @@ export default function ParticipantDetailPage({ me }: { me: Me }) {
   const [revising, setRevising] = useState<string | null>(null);
   const [revision, setRevision] = useState("");
   const [revisionDate, setRevisionDate] = useState("");
+  // Arriving at one note from a link shows them all, so the note is there to
+  // scroll to however old it is.
+  const contacts = useShowMore(record?.notes ?? [], 10, window.location.hash.startsWith("#note-"));
 
   const load = useCallback(() => {
     if (!id) return;
@@ -78,7 +105,7 @@ export default function ParticipantDetailPage({ me }: { me: Me }) {
   }
 
   return (
-    <div className="mx-auto max-w-3xl">
+    <div className="ds-record mx-auto max-w-6xl">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <h1 className="ds-display">
@@ -205,290 +232,344 @@ export default function ParticipantDetailPage({ me }: { me: Me }) {
         </div>
       )}
 
-      <ClientDetailsSection
-        participantId={record.id}
-        details={record.details}
-        canEdit={can(me, "participants.update") && record.canWrite}
-        onSaved={(message) => {
-          setNotice(message);
-          load();
-        }}
-      />
+      <TabList tabs={[...RECORD_TABS]} active={tab} onChange={chooseTab} idPrefix="record" label="Record sections" />
 
-      {can(me, "notes.write") && record.episodeStatus === "open" && record.episodeId && (
-        <NoteForm
-          participantId={record.id}
-          episodeId={record.episodeId}
-          stayStarted={record.startDate}
-          onSaved={(message) => {
-            setNotice(message);
-            load();
-          }}
-        />
-      )}
-
-      {record.followUps && (
-        <FollowUpSection
-          schedule={record.followUps}
-          canRecord={can(me, "follow_ups.record")}
-          onSaved={(message) => {
-            setNotice(message);
-            load();
-          }}
-        />
-      )}
-
-      {record.referralsIn.length > 0 && (
-        <section className="nmbm-card nmbm-card--dense mt-6">
-          <h2 className="ds-section-heading">Referred to NMBM</h2>
-          <ul className="mt-2 flex flex-col gap-2 text-sm">
-            {record.referralsIn.map((r) => (
-              <li key={r.id}>
-                <span className="font-medium text-ds-ink">{r.sourceName || REFERRAL_SOURCE_LABELS[r.sourceType]}</span>
-                <span className="text-xs text-ds-muted"> · received <DateText value={r.receivedDate} /></span>
-                <p className="text-ds-secondary">{r.reason}</p>
-              </li>
-            ))}
-          </ul>
-        </section>
-      )}
-
-      <CarePlanSection
-        record={record}
-        me={me}
-        onChanged={(message) => {
-          setNotice(message);
-          load();
-        }}
-      />
-
-      <HousingSection record={record} me={me} onChanged={setNotice} onError={setActionError} />
-
-      <ConsentsSection
-        record={record}
-        me={me}
-        onChanged={(message) => {
-          setNotice(message);
-          load();
-        }}
-        onError={setActionError}
-      />
-
-      <AssessmentsSection record={record} me={me} onError={setActionError} />
-
-      <DocumentsSection
-        record={record}
-        me={me}
-        onChanged={(message) => {
-          setNotice(message);
-          load();
-        }}
-        onError={setActionError}
-      />
-
-      <ReferralsSection
-        record={record}
-        me={me}
-        onChanged={(message) => {
-          setNotice(message);
-          load();
-        }}
-        onError={setActionError}
-      />
-
-      {record.programs.length > 0 && (
-        <section className="nmbm-card nmbm-card--dense mt-6">
-          <h2 className="ds-section-heading">
-            Programs
-          </h2>
-          <ul className="mt-3 flex flex-col gap-2">
-            {record.programs.map((enrollment) => (
-              <li
-                key={enrollment.enrollmentId}
-                className="ds-row flex flex-wrap items-center justify-between gap-2"
-              >
-                <span>
-                  <Link to={`/cohorts/${enrollment.cohortId}`} className="font-medium text-ds-ink hover:underline">
-                    {enrollment.programName}
-                  </Link>
-                  <span className="block text-xs text-ds-muted">
-                    {enrollment.cohortName} · {enrollment.status}
-                  </span>
-                </span>
-                {/* M14: the reason this record exists — proof for a
-                    probation officer, reachable from the case. */}
-                <Link
-                  to={`/enrollments/${enrollment.enrollmentId}/participation`}
-                  className="text-xs text-ds-accent hover:underline"
-                >
-                  Proof of participation
-                </Link>
-              </li>
-            ))}
-          </ul>
-        </section>
-      )}
-
-      {can(me, "participants.assign") && isOpen && (
-        <AssignmentControl
-          participantId={record.id}
-          currentWorker={record.workerName}
-          onChanged={(message) => {
-            setNotice(message);
-            load();
-          }}
-          onError={setActionError}
-        />
-      )}
-
-      {can(me, "episodes.write") && record.episodeStatus === "open" && record.episodeId && (
-        <CloseEpisodeForm
-          onClose={async (reason) => {
-            setActionError(null);
-            setNotice(null);
-            const name = `${record.firstName} ${record.lastName}`;
-            try {
-              await api(`/api/episodes/${record.episodeId}/close`, {
-                method: "POST",
-                body: JSON.stringify({ closureReason: reason }),
-              });
-            } catch (e) {
-              // The M6 gate's message says how many attempts are still
-              // needed, or that the Molina letter is outstanding.
-              setActionError(e instanceof ApiError ? e.message : "Could not close episode");
-              return;
-            }
-            // R10: closing ends the assignment. Whether the closer can
-            // still open the record depends on their role and on the
-            // former-worker window, which the server decides — so ask it,
-            // and if the answer is no, go to the list and say why rather
-            // than land on a 404.
-            try {
-              setRecord(await api<ParticipantDetail>(`/api/participants/${record.id}`));
-            } catch {
-              navigate("/participants", {
-                state: { notice: `Episode closed. ${name} has left your caseload.` },
-              });
-              return;
-            }
-            setNotice(
-              record.workerName
-                ? `Episode closed. ${name} is no longer on ${record.workerName}'s caseload.`
-                : "Episode closed.",
-            );
-          }}
-        />
-      )}
-
-      <EpisodeHistory episodes={record.episodes} />
-
-      <section className="mt-8">
-        <h2 className="ds-section-heading">
-          Contact history
-        </h2>
-        <ul className="ds-list mt-2">
-          {record.notes.map((note) => (
-            <li key={note.id} id={`note-${note.id}`} className="scroll-mt-6 px-4 py-3 text-sm">
-              <div className="flex flex-wrap items-center justify-between gap-2">
-                <span className="text-ds-ink">{note.body}</span>
-                <Pill tone={note.contactResult === "contacted" ? "ok" : "warn"}>
-                  {note.contactResult === "contacted" ? "Reached" : "No contact"}
-                </Pill>
-              </div>
-              <p className="mt-1 text-xs text-ds-muted">
-                {/* After a readmission the old episode's misses are still
-                    here, but no longer count — say so, or a run of "No
-                    contact" under a fresh episode reads as current. */}
-                {isOpen && note.episodeId !== record.episodeId && (
-                  <span className="mr-1.5 rounded bg-ds-subtle px-1.5 py-0.5 text-ds-muted">
-                    Earlier episode
-                  </span>
+      {/* Overview: the day-to-day of a case, side by side where there is
+          room. Logging a contact sits beside the details it needs (a phone
+          number), with the history underneath. */}
+      <TabPanel id="overview" active={tab} idPrefix="record">
+        <div className="ds-record-grid">
+          <div className="ds-col">
+            <ClientDetailsSection
+              participantId={record.id}
+              details={record.details}
+              canEdit={can(me, "participants.update") && record.canWrite}
+              onSaved={(message) => {
+                setNotice(message);
+                load();
+              }}
+            />
+          </div>
+          <div className="ds-col">
+            {can(me, "notes.write") && record.episodeStatus === "open" && record.episodeId && (
+              <NoteForm
+                participantId={record.id}
+                episodeId={record.episodeId}
+                stayStarted={record.startDate}
+                onSaved={(message) => {
+                  setNotice(message);
+                  load();
+                }}
+              />
+            )}
+            {record.followUps && (
+              <FollowUpSection
+                schedule={record.followUps}
+                canRecord={can(me, "follow_ups.record")}
+                onSaved={(message) => {
+                  setNotice(message);
+                  load();
+                }}
+              />
+            )}
+          </div>
+        </div>
+        <div className="ds-col mt-6">
+            <section className="flex flex-col">
+              <h2 className="ds-section-heading">
+                Contact history
+              </h2>
+              <ul className="ds-list mt-2">
+                {contacts.shown.map((note) => (
+                  <li key={note.id} id={`note-${note.id}`} className="scroll-mt-6 px-4 py-3 text-sm">
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <span className="text-ds-ink">{note.body}</span>
+                      <Pill tone={note.contactResult === "contacted" ? "ok" : "warn"}>
+                        {note.contactResult === "contacted" ? "Reached" : "No contact"}
+                      </Pill>
+                    </div>
+                    <p className="mt-1 text-xs text-ds-muted">
+                      {/* After a readmission the old episode's misses are still
+                          here, but no longer count — say so, or a run of "No
+                          contact" under a fresh episode reads as current. */}
+                      {isOpen && note.episodeId !== record.episodeId && (
+                        <span className="mr-1.5 rounded bg-ds-subtle px-1.5 py-0.5 text-ds-muted">
+                          Earlier episode
+                        </span>
+                      )}
+                      <span className="font-medium text-ds-secondary">
+                        <DateText value={note.serviceDate} />
+                      </span> · {note.authorName}
+                      {/* Written up on a later day: both dates, so the gap is visible. */}
+                      {formatDay(note.createdAt) !== note.serviceDate && (
+                        <>
+                          {" "}
+                          · written <Timestamp at={note.createdAt} />
+                        </>
+                      )}
+                      {note.clinicalReview && " · clinical"}
+                      {note.status === "approved" && " · approved"}
+                      {note.status === "pending_review" && " · awaiting review"}
+                    </p>
+                    {/* U6: the author has to be able to see why it bounced. */}
+                    {note.status === "needs_revision" && note.reviewNote && (
+                      <p className="mt-1 rounded bg-state-warn-bg px-2 py-1 text-xs text-state-warn">
+                        Returned: {note.reviewNote}
+                      </p>
+                    )}
+                    {note.status === "needs_revision" && note.authorId === me.id && revising !== note.id && (
+                      <button
+                        onClick={() => {
+                          setRevising(note.id);
+                          setRevision(note.body);
+                          setRevisionDate(note.serviceDate);
+                        }}
+                        className="nmbm-btn nmbm-btn--secondary nmbm-btn--sm mt-2"
+                      >
+                        Revise and resubmit
+                      </button>
+                    )}
+                    {revising === note.id && (
+                      <form
+                        className="mt-2 flex flex-col gap-2"
+                        onSubmit={(e) => {
+                          e.preventDefault();
+                          act(
+                            () =>
+                              api(`/api/notes/${note.id}`, {
+                                method: "PATCH",
+                                body: JSON.stringify({ body: revision, serviceDate: revisionDate }),
+                              }),
+                            "Note revised and sent back for review.",
+                          ).then((ok) => ok && setRevising(null));
+                        }}
+                      >
+                        <textarea
+                          aria-label="Revised note"
+                          rows={4}
+                          value={revision}
+                          onChange={(e) => setRevision(e.target.value)}
+                          className="nmbm-control nmbm-textarea"
+                        />
+                        <label className="flex items-center gap-2 text-xs text-ds-secondary">
+                          Date of service
+                          <input
+                            type="date"
+                            required
+                            value={revisionDate}
+                            max={todayInOrg()}
+                            onChange={(e) => setRevisionDate(e.target.value)}
+                            className="nmbm-control"
+                          />
+                        </label>
+                        <div className="flex gap-2">
+                          <button
+                            disabled={!revision.trim() || (revision === note.body && revisionDate === note.serviceDate)}
+                            className="nmbm-btn nmbm-btn--dark nmbm-btn--sm"
+                          >
+                            Resubmit for review
+                          </button>
+                          <button type="button" onClick={() => setRevising(null)} className="nmbm-btn nmbm-btn--secondary nmbm-btn--sm">
+                            Cancel
+                          </button>
+                        </div>
+                      </form>
+                    )}
+                  </li>
+                ))}
+                {record.notes.length === 0 && (
+                  <li className="px-4 py-3 text-sm text-ds-muted">No contact logged yet.</li>
                 )}
-                <span className="font-medium text-ds-secondary">
-                  <DateText value={note.serviceDate} />
-                </span> · {note.authorName}
-                {/* Written up on a later day: both dates, so the gap is visible. */}
-                {formatDay(note.createdAt) !== note.serviceDate && (
-                  <>
-                    {" "}
-                    · written <Timestamp at={note.createdAt} />
-                  </>
-                )}
-                {note.clinicalReview && " · clinical"}
-                {note.status === "approved" && " · approved"}
-                {note.status === "pending_review" && " · awaiting review"}
-              </p>
-              {/* U6: the author has to be able to see why it bounced. */}
-              {note.status === "needs_revision" && note.reviewNote && (
-                <p className="mt-1 rounded bg-state-warn-bg px-2 py-1 text-xs text-state-warn">
-                  Returned: {note.reviewNote}
-                </p>
-              )}
-              {note.status === "needs_revision" && note.authorId === me.id && revising !== note.id && (
-                <button
-                  onClick={() => {
-                    setRevising(note.id);
-                    setRevision(note.body);
-                    setRevisionDate(note.serviceDate);
-                  }}
-                  className="nmbm-btn nmbm-btn--secondary nmbm-btn--sm mt-2"
-                >
-                  Revise and resubmit
-                </button>
-              )}
-              {revising === note.id && (
-                <form
-                  className="mt-2 flex flex-col gap-2"
-                  onSubmit={(e) => {
-                    e.preventDefault();
-                    act(
-                      () =>
-                        api(`/api/notes/${note.id}`, {
-                          method: "PATCH",
-                          body: JSON.stringify({ body: revision, serviceDate: revisionDate }),
-                        }),
-                      "Note revised and sent back for review.",
-                    ).then((ok) => ok && setRevising(null));
-                  }}
-                >
-                  <textarea
-                    aria-label="Revised note"
-                    rows={4}
-                    value={revision}
-                    onChange={(e) => setRevision(e.target.value)}
-                    className="nmbm-control nmbm-textarea"
-                  />
-                  <label className="flex items-center gap-2 text-xs text-ds-secondary">
-                    Date of service
-                    <input
-                      type="date"
-                      required
-                      value={revisionDate}
-                      max={todayInOrg()}
-                      onChange={(e) => setRevisionDate(e.target.value)}
-                      className="nmbm-control"
-                    />
-                  </label>
-                  <div className="flex gap-2">
-                    <button
-                      disabled={!revision.trim() || (revision === note.body && revisionDate === note.serviceDate)}
-                      className="nmbm-btn nmbm-btn--dark nmbm-btn--sm"
+              </ul>
+              {contacts.toggle}
+            </section>
+        </div>
+      </TabPanel>
+
+      <TabPanel id="care-plan" active={tab} idPrefix="record">
+        <div className="ds-col">
+            <CarePlanSection
+              record={record}
+              me={me}
+              onChanged={(message) => {
+                setNotice(message);
+                load();
+              }}
+            />
+        </div>
+      </TabPanel>
+
+      <TabPanel id="housing" active={tab} idPrefix="record">
+        <div className="ds-col">
+            <HousingSection record={record} me={me} onChanged={setNotice} onError={setActionError} />
+        </div>
+      </TabPanel>
+
+      <TabPanel id="forms" active={tab} idPrefix="record">
+        <div className="ds-record-grid ds-record-grid--even">
+          <div className="ds-col">
+            <ConsentsSection
+              record={record}
+              me={me}
+              onChanged={(message) => {
+                setNotice(message);
+                load();
+              }}
+              onError={setActionError}
+            />
+          </div>
+          <div className="ds-col">
+            <DocumentsSection
+              record={record}
+              me={me}
+              onChanged={(message) => {
+                setNotice(message);
+                load();
+              }}
+              onError={setActionError}
+            />
+          </div>
+        </div>
+        <div className="ds-col mt-6">
+            <AssessmentsSection record={record} me={me} onError={setActionError} />
+        </div>
+      </TabPanel>
+
+      <TabPanel id="referrals" active={tab} idPrefix="record">
+        <div className="ds-record-grid ds-record-grid--even">
+          <div className="ds-col">
+            <ReferralsSection
+              record={record}
+              me={me}
+              onChanged={(message) => {
+                setNotice(message);
+                load();
+              }}
+              onError={setActionError}
+            />
+          </div>
+          <div className="ds-col">
+            {record.referralsIn.length > 0 && (
+              <section className="nmbm-card nmbm-card--dense mt-6">
+                <h2 className="ds-section-heading">Referred to NMBM</h2>
+                <ul className="mt-2 flex flex-col gap-2 text-sm">
+                  {record.referralsIn.map((r) => (
+                    <li key={r.id}>
+                      <span className="font-medium text-ds-ink">{r.sourceName || REFERRAL_SOURCE_LABELS[r.sourceType]}</span>
+                      <span className="text-xs text-ds-muted"> · received <DateText value={r.receivedDate} /></span>
+                      <p className="text-ds-secondary">{r.reason}</p>
+                    </li>
+                  ))}
+                </ul>
+              </section>
+            )}
+            {record.programs.length > 0 && (
+              <section className="nmbm-card nmbm-card--dense mt-6">
+                <h2 className="ds-section-heading">
+                  Programs
+                </h2>
+                <ul className="mt-3 flex flex-col gap-2">
+                  {record.programs.map((enrollment) => (
+                    <li
+                      key={enrollment.enrollmentId}
+                      className="ds-row flex flex-wrap items-center justify-between gap-2"
                     >
-                      Resubmit for review
-                    </button>
-                    <button type="button" onClick={() => setRevising(null)} className="nmbm-btn nmbm-btn--secondary nmbm-btn--sm">
-                      Cancel
-                    </button>
-                  </div>
-                </form>
-              )}
-            </li>
-          ))}
-          {record.notes.length === 0 && (
-            <li className="px-4 py-3 text-sm text-ds-muted">No contact logged yet.</li>
-          )}
-        </ul>
-      </section>
+                      <span>
+                        <Link to={`/cohorts/${enrollment.cohortId}`} className="font-medium text-ds-ink hover:underline">
+                          {enrollment.programName}
+                        </Link>
+                        <span className="block text-xs text-ds-muted">
+                          {enrollment.cohortName} · {enrollment.status}
+                        </span>
+                      </span>
+                      {/* M14: the reason this record exists — proof for a
+                          probation officer, reachable from the case. */}
+                      <Link
+                        to={`/enrollments/${enrollment.enrollmentId}/participation`}
+                        className="text-xs text-ds-accent hover:underline"
+                      >
+                        Proof of participation
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              </section>
+            )}
+            {record.referralsIn.length === 0 && record.programs.length === 0 && (
+              <p className="nmbm-card nmbm-card--dense text-sm text-ds-muted">Not referred in, and in no programs.</p>
+            )}
+          </div>
+        </div>
+      </TabPanel>
+
+      <TabPanel id="case" active={tab} idPrefix="record">
+        <div className="ds-record-grid ds-record-grid--even">
+          <div className="ds-col">
+            {/* Who holds the case, for anyone who can't change it; the
+                reassign control says the same for those who can. */}
+            {!(can(me, "participants.assign") && isOpen) && (
+              <section className="nmbm-card nmbm-card--dense">
+                <h2 className="ds-section-heading">Case manager</h2>
+                <p className="mt-2 text-sm">
+                  {isOpen ? (record.workerName ?? "Nobody assigned") : "None: the case is closed."}
+                </p>
+              </section>
+            )}
+            {can(me, "participants.assign") && isOpen && (
+              <AssignmentControl
+                participantId={record.id}
+                currentWorker={record.workerName}
+                onChanged={(message) => {
+                  setNotice(message);
+                  load();
+                }}
+                onError={setActionError}
+              />
+            )}
+            {can(me, "episodes.write") && record.episodeStatus === "open" && record.episodeId && (
+              <CloseEpisodeForm
+                onClose={async (reason) => {
+                  setActionError(null);
+                  setNotice(null);
+                  const name = `${record.firstName} ${record.lastName}`;
+                  try {
+                    await api(`/api/episodes/${record.episodeId}/close`, {
+                      method: "POST",
+                      body: JSON.stringify({ closureReason: reason }),
+                    });
+                  } catch (e) {
+                    // The M6 gate's message says how many attempts are still
+                    // needed, or that the Molina letter is outstanding.
+                    setActionError(e instanceof ApiError ? e.message : "Could not close episode");
+                    return;
+                  }
+                  // R10: closing ends the assignment. Whether the closer can
+                  // still open the record depends on their role and on the
+                  // former-worker window, which the server decides — so ask it,
+                  // and if the answer is no, go to the list and say why rather
+                  // than land on a 404.
+                  try {
+                    setRecord(await api<ParticipantDetail>(`/api/participants/${record.id}`));
+                  } catch {
+                    navigate("/participants", {
+                      state: { notice: `Episode closed. ${name} has left your caseload.` },
+                    });
+                    return;
+                  }
+                  setNotice(
+                    record.workerName
+                      ? `Episode closed. ${name} is no longer on ${record.workerName}'s caseload.`
+                      : "Episode closed.",
+                  );
+                }}
+              />
+            )}
+          </div>
+          <div className="ds-col">
+            <EpisodeHistory episodes={record.episodes} />
+          </div>
+        </div>
+      </TabPanel>
     </div>
   );
 }
@@ -694,8 +775,10 @@ function AssignmentControl({
 
 // M2: each stay is its own episode. Shown whenever there is more than
 // one, or the record is closed, since that's when "which time?" matters.
+// Every stay with NMBM, the current one included: on its own tab there is
+// room, and "since when" is the first thing asked about a case.
 function EpisodeHistory({ episodes }: { episodes: EpisodeSummary[] }) {
-  if (episodes.length < 2 && episodes[0]?.status !== "closed") return null;
+  if (episodes.length === 0) return null;
   return (
     <section className="nmbm-card nmbm-card--dense mt-6">
       <h2 className="ds-section-heading">

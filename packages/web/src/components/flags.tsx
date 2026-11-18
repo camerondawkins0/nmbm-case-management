@@ -67,17 +67,21 @@ export function CarePlanPills({ flags }: { flags: CarePlanFlags }) {
   return <div className="flex flex-wrap gap-1.5">{pills}</div>;
 }
 
+// `tab` opens the record on the tab the work is on: a care plan that is
+// due goes to Care plan, not to the overview a tab away from it.
 export function ParticipantLink({
   id,
   firstName,
   lastName,
+  tab,
 }: {
   id: string;
   firstName: string;
   lastName: string;
+  tab?: string;
 }) {
   return (
-    <Link to={`/participants/${id}`} className="ds-person hover:underline">
+    <Link to={`/participants/${id}${tab ? `?tab=${tab}` : ""}`} className="ds-person hover:underline">
       {firstName} {lastName}
     </Link>
   );
