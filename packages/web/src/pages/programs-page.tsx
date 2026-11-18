@@ -5,7 +5,7 @@ import { can } from "../lib/use-me.js";
 import type { AssignableWorker, Me, ProgramSummary } from "../lib/types.js";
 import { Pill } from "../components/flags.js";
 
-const inputClass = "rounded border border-nmbm-ink/20 px-2 py-1.5 text-sm";
+const inputClass = "nmbm-control";
 
 const STATUS_TONE = { running: "ok", planned: "warn", completed: "muted", canceled: "muted" } as const;
 
@@ -48,31 +48,31 @@ export default function ProgramsPage({ me }: { me: Me }) {
     }
   }
 
-  if (!programs) return <p className="text-sm text-nmbm-ink/50">Loading…</p>;
+  if (!programs) return <p className="text-sm text-ds-muted">Loading…</p>;
 
   return (
     <div className="mx-auto max-w-3xl">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h1 className="text-2xl font-semibold text-nmbm-ink">Programs</h1>
+        <h1 className="ds-display">Programs</h1>
         {manage && !adding && (
           <button
             onClick={() => setAdding(true)}
-            className="rounded bg-nmbm-ink px-4 py-1.5 text-sm font-medium text-nmbm-paper"
+            className="nmbm-btn nmbm-btn--dark nmbm-btn--md"
           >
             New program
           </button>
         )}
       </div>
-      <p className="mt-1 text-sm text-nmbm-ink/60">
+      <p className="mt-1 text-sm text-ds-muted">
         Attendance here is evidence someone outside NMBM relies on — every mark records who took
         it and when.
       </p>
 
       {notice && (
-        <p className="mt-4 rounded border border-state-ok/20 bg-state-ok-bg px-3 py-2 text-sm text-state-ok">{notice}</p>
+        <p className="nmbm-alert nmbm-alert--ok mt-4">{notice}</p>
       )}
       {error && (
-        <p className="mt-4 rounded border border-state-alert/20 bg-state-alert-bg px-3 py-2 text-sm text-state-alert">
+        <p className="nmbm-alert nmbm-alert--alert mt-4">
           {error}
         </p>
       )}
@@ -90,21 +90,21 @@ export default function ProgramsPage({ me }: { me: Me }) {
         />
       )}
 
-      {programs.length === 0 && !adding && <p className="mt-6 text-sm text-nmbm-ink/60">No programs yet.</p>}
+      {programs.length === 0 && !adding && <p className="mt-6 text-sm text-ds-muted">No programs yet.</p>}
 
       <ul className="mt-6 flex flex-col gap-4">
         {programs.map((program) => (
-          <li key={program.id} className="rounded border border-nmbm-ink/10 p-4">
+          <li key={program.id} className="nmbm-card nmbm-card--dense">
             <div className="flex flex-wrap items-baseline justify-between gap-2">
-              <span className="font-medium text-nmbm-ink">{program.name}</span>
+              <span className="font-medium text-ds-ink">{program.name}</span>
               {!program.active && <Pill tone="muted">Retired</Pill>}
             </div>
-            {program.description && <p className="mt-1 text-sm text-nmbm-ink/60">{program.description}</p>}
-            <p className="mt-1 text-xs text-nmbm-ink/60">{ruleSummary(program)}</p>
+            {program.description && <p className="mt-1 text-sm text-ds-muted">{program.description}</p>}
+            <p className="mt-1 text-xs text-ds-muted">{ruleSummary(program)}</p>
             {manage && editing !== program.id && (
               <button
                 onClick={() => setEditing(program.id)}
-                className="mt-1 text-xs text-nmbm-ink/60 underline underline-offset-2 hover:text-nmbm-ink"
+                className="mt-1 text-xs text-ds-muted underline underline-offset-2 hover:text-ds-ink"
               >
                 Edit program and completion rules
               </button>
@@ -124,22 +124,22 @@ export default function ProgramsPage({ me }: { me: Me }) {
             )}
 
             {program.cohorts.length === 0 ? (
-              <p className="mt-3 text-sm text-nmbm-ink/50">No cohorts yet.</p>
+              <p className="mt-3 text-sm text-ds-muted">No cohorts yet.</p>
             ) : (
               <ul className="mt-3 flex flex-col gap-2">
                 {program.cohorts.map((cohort) => (
                   <li
                     key={cohort.id}
-                    className="flex flex-wrap items-center justify-between gap-2 rounded border border-nmbm-ink/10 px-3 py-2 text-sm"
+                    className="ds-row flex flex-wrap items-center justify-between gap-2"
                   >
                     <span>
                       <Link
                         to={`/cohorts/${cohort.id}`}
-                        className={`font-medium hover:underline ${cohort.status === "running" ? "text-nmbm-ink" : "text-nmbm-ink/60"}`}
+                        className={`font-medium hover:underline ${cohort.status === "running" ? "text-ds-ink" : "text-ds-muted"}`}
                       >
                         {cohort.name}
                       </Link>
-                      <span className="block text-xs text-nmbm-ink/50">
+                      <span className="block text-xs text-ds-muted">
                         from {cohort.startDate}
                         {cohort.endDate && ` to ${cohort.endDate}`}
                         {cohort.facilitatorName && ` · ${cohort.facilitatorName}`}
@@ -170,7 +170,7 @@ export default function ProgramsPage({ me }: { me: Me }) {
               ) : (
                 <button
                   onClick={() => setCohortFor(program.id)}
-                  className="mt-3 text-sm text-nmbm-ink/60 underline underline-offset-2 hover:text-nmbm-ink"
+                  className="mt-3 text-sm text-ds-muted underline underline-offset-2 hover:text-ds-ink"
                 >
                   Add a cohort
                 </button>
@@ -207,7 +207,7 @@ function CohortForm({
 
   return (
     <form
-      className="mt-3 grid gap-3 rounded border border-nmbm-ink/15 p-3 sm:grid-cols-2"
+      className="nmbm-card nmbm-card--dense mt-3 grid gap-3 sm:grid-cols-2"
       onSubmit={(e) => {
         e.preventDefault();
         onSave({
@@ -248,8 +248,8 @@ function CohortForm({
         <input type="number" min={1} value={form.requiredSessions} onChange={set("requiredSessions")} className={inputClass} />
       </label>
       <div className="flex gap-2 sm:col-span-2">
-        <button className="rounded bg-nmbm-ink px-4 py-1.5 text-sm font-medium text-nmbm-paper">Add cohort</button>
-        <button type="button" onClick={onCancel} className="rounded border border-nmbm-ink/30 px-4 py-1.5 text-sm">
+        <button className="nmbm-btn nmbm-btn--dark nmbm-btn--md">Add cohort</button>
+        <button type="button" onClick={onCancel} className="nmbm-btn nmbm-btn--secondary nmbm-btn--md">
           Cancel
         </button>
       </div>
@@ -296,7 +296,7 @@ function ProgramForm({
   });
   return (
     <form
-      className="mt-3 grid gap-3 rounded border border-nmbm-ink/15 p-3 sm:grid-cols-2"
+      className="nmbm-card nmbm-card--dense mt-3 grid gap-3 sm:grid-cols-2"
       onSubmit={(e) => {
         e.preventDefault();
         onSave({
@@ -330,7 +330,7 @@ function ProgramForm({
             placeholder="none set"
             className={`${inputClass} w-28`}
           />
-          <span className="text-xs text-nmbm-ink/50">The starting number for new cohorts; each cohort can change its own.</span>
+          <span className="text-xs text-ds-muted">The starting number for new cohorts; each cohort can change its own.</span>
         </label>
         <label className="flex items-center gap-2">
           <input type="checkbox" checked={form.lateCounts} onChange={(e) => setForm({ ...form, lateCounts: e.target.checked })} />
@@ -340,7 +340,7 @@ function ProgramForm({
           <input type="checkbox" checked={form.excusedCounts} onChange={(e) => setForm({ ...form, excusedCounts: e.target.checked })} />
           An excused absence counts as attending
         </label>
-        <p className="text-xs text-nmbm-ink/50">
+        <p className="text-xs text-ds-muted">
           Present always counts and an unexcused absence never does. Changing these recounts every
           enrollment in the program, past ones included, and the change is logged.
         </p>
@@ -352,8 +352,8 @@ function ProgramForm({
         </label>
       )}
       <div className="flex gap-2 sm:col-span-2">
-        <button className="rounded bg-nmbm-ink px-4 py-1.5 text-sm font-medium text-nmbm-paper">{submitLabel}</button>
-        <button type="button" onClick={onCancel} className="rounded border border-nmbm-ink/30 px-4 py-1.5 text-sm">
+        <button className="nmbm-btn nmbm-btn--dark nmbm-btn--md">{submitLabel}</button>
+        <button type="button" onClick={onCancel} className="nmbm-btn nmbm-btn--secondary nmbm-btn--md">
           Cancel
         </button>
       </div>

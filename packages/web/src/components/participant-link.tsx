@@ -9,13 +9,13 @@ function CopyLine({ label, value }: { label: string; value: string }) {
   const [copied, setCopied] = useState(false);
   return (
     <div className="flex flex-col gap-1">
-      <span className="text-xs font-medium uppercase tracking-wide text-nmbm-ink/50">{label}</span>
+      <span className="nmbm-label">{label}</span>
       <div className="flex gap-2">
         <input
           readOnly
           value={value}
           onFocus={(e) => e.target.select()}
-          className="min-w-0 flex-1 rounded border border-nmbm-ink/20 bg-white px-2 py-1.5 font-mono text-sm"
+          className="nmbm-control min-w-0 flex-1 font-mono"
         />
         <button
           type="button"
@@ -28,7 +28,7 @@ function CopyLine({ label, value }: { label: string; value: string }) {
               // Clipboard blocked; the field is selectable instead.
             }
           }}
-          className="rounded border border-nmbm-ink/30 px-3 text-sm"
+          className="nmbm-btn nmbm-btn--secondary nmbm-btn--md"
         >
           {copied ? "Copied" : "Copy"}
         </button>
@@ -44,16 +44,16 @@ function CopyLine({ label, value }: { label: string; value: string }) {
 export function LinkHandover({ issued, onDone }: { issued: IssuedLink; onDone: () => void }) {
   const url = `${window.location.origin}/f/${issued.token}`;
   return (
-    <div className="mt-3 rounded border border-nmbm-gold/60 bg-nmbm-gold/5 p-4">
-      <h3 className="text-sm font-semibold text-nmbm-ink">Give these to the participant</h3>
-      <p className="mt-1 text-sm text-nmbm-ink/70">
+    <div className="mt-3 nmbm-alert nmbm-alert--warn">
+      <h3 className="text-sm font-semibold text-ds-ink">Give these to the participant</h3>
+      <p className="mt-1 text-sm text-ds-secondary">
         Shown once — the passcode can't be looked up again. If it's lost, make a new link.
       </p>
       <div className="mt-3 flex flex-col gap-3">
         <CopyLine label="Link" value={url} />
         <CopyLine label="Passcode" value={issued.passcode} />
       </div>
-      <ul className="mt-3 list-disc pl-5 text-xs text-nmbm-ink/60">
+      <ul className="mt-3 list-disc pl-5 text-xs text-ds-muted">
         <li>
           Send them separately: the link by email from your NMBM account, say, and the passcode by
           phone or in person.
@@ -63,7 +63,7 @@ export function LinkHandover({ issued, onDone }: { issued: IssuedLink; onDone: (
       </ul>
       <button
         onClick={onDone}
-        className="mt-4 rounded bg-nmbm-ink px-4 py-1.5 text-sm font-medium text-nmbm-paper"
+        className="nmbm-btn nmbm-btn--dark nmbm-btn--md mt-4"
       >
         I've passed these on
       </button>
@@ -108,7 +108,7 @@ export function LinkStatus({
     }
   }
   return (
-    <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-nmbm-ink/60">
+    <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-ds-muted">
       <span>
         {STATE_TEXT[link.state]}
         {link.state === "live" && ` ${day(link.expiresAt)}`}
@@ -127,7 +127,7 @@ export function LinkStatus({
               onIssued(await api<IssuedLink>(`/api/assessments/${assessmentId}/link`, { method: "POST" }));
             })
           }
-          className="underline underline-offset-2 hover:text-nmbm-ink"
+          className="underline underline-offset-2 hover:text-ds-ink"
         >
           New link and passcode
         </button>
@@ -142,7 +142,7 @@ export function LinkStatus({
               onChanged();
             })
           }
-          className="underline underline-offset-2 hover:text-state-alert"
+          className="nmbm-btn nmbm-btn--danger nmbm-btn--md"
         >
           Withdraw link
         </button>

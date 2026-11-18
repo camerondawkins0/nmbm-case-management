@@ -1,22 +1,20 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+/* The NMBM design system (the "NMBM" Design System artifact): fonts, the
+   generated tokens for the light, dark and high-contrast themes, and the
+   component styles. Tailwind's colors point at the same tokens
+   (tailwind.config.js), so utility classes follow the theme too.
+   Order matters: Tailwind's reset, then the components (so the reset
+   can't flatten them), then utilities (so layout classes still apply). */
+@import "./design/fonts.css";
+@import "./design/tokens.css";
+@import "./design/tailwind-base.css";
+@import "./design/components.css";
+@import "./design/tailwind-utilities.css";
 
-/* NMBM palette — see tailwind.config.js for the token values this
-   mirrors as CSS custom properties, for anything that can't reach
-   Tailwind's config directly (e.g. an inline SVG's fill). */
-:root {
-  --nmbm-ink: #0a0a0a;
-  --nmbm-gold: #b8860b;
-  --nmbm-gold-light: #f5d576;
-  --nmbm-paper: #ffffff;
-}
-
+html { background: var(--surface); }
 body {
-  background: var(--nmbm-paper);
-  color: var(--nmbm-ink);
-  font-family:
-    "Segoe UI",
-    system-ui,
-    sans-serif;
+  background: var(--surface);
+  color: var(--ink);
+  font-family: var(--font-sans);
+  font-size: 14px;
+  line-height: 20px;
 }

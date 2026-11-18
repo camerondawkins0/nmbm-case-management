@@ -3,7 +3,7 @@ import { api } from "../lib/api.js";
 import type { AssignableWorker, CohortDetail } from "../lib/types.js";
 import { useParticipantSearch, parseSearch } from "./participant-search.js";
 
-const inputClass = "rounded border border-nmbm-ink/20 px-2 py-1.5 text-sm";
+const inputClass = "nmbm-control";
 
 type Act = (fn: () => Promise<unknown>, message: string) => Promise<boolean>;
 
@@ -49,8 +49,8 @@ export function CohortStatusActions({ cohort, act }: { cohort: CohortDetail["coh
           }}
           className={`rounded px-3 py-1.5 text-sm ${
             o.status === "canceled"
-              ? "border border-nmbm-ink/20 text-nmbm-ink/60 hover:text-state-alert"
-              : "border border-nmbm-ink/30 text-nmbm-ink"
+              ? "border border-ds-control text-ds-muted hover:text-state-alert"
+              : "border border-ds-control text-ds-ink"
           }`}
         >
           {o.label}
@@ -90,7 +90,7 @@ export function AddClassDate({ cohortId, act }: { cohortId: string; act: Act }) 
         Topic (optional)
         <input value={topic} onChange={(e) => setTopic(e.target.value)} placeholder="e.g. Recognizing triggers" className={inputClass} />
       </label>
-      <button className="rounded border border-nmbm-ink/30 px-3 py-1.5 text-sm">Add class date</button>
+      <button className="nmbm-btn nmbm-btn--secondary nmbm-btn--md">Add class date</button>
     </form>
   );
 }
@@ -107,23 +107,23 @@ export function EnrollPanel({ cohortId, rosterIds, act }: { cohortId: string; ro
         Find a client by name or date of birth
         <input value={text} onChange={(e) => setText(e.target.value)} placeholder="e.g. Rivera or 4/3/1981" className={inputClass} />
       </label>
-      {text.trim().length >= 2 && !results && <p className="mt-2 text-sm text-nmbm-ink/50">Searching…</p>}
+      {text.trim().length >= 2 && !results && <p className="mt-2 text-sm text-ds-muted">Searching…</p>}
       {results && (
-        <ul className="mt-2 divide-y divide-nmbm-ink/5 rounded border border-nmbm-ink/10">
-          {results.length === 0 && <li className="px-3 py-2 text-sm text-nmbm-ink/50">No matching records you can open.</li>}
+        <ul className="ds-list mt-2">
+          {results.length === 0 && <li className="px-3 py-2 text-sm text-ds-muted">No matching records you can open.</li>}
           {results.map((r) => (
             <li key={r.id} className="flex flex-wrap items-center justify-between gap-2 px-3 py-2 text-sm">
               <span>
                 <span className="font-medium">
                   {r.firstName} {r.lastName}
                 </span>
-                <span className="ml-2 text-xs text-nmbm-ink/50">
+                <span className="ml-2 text-xs text-ds-muted">
                   born {r.dateOfBirth}
                   {!r.active && " · services ended"}
                 </span>
               </span>
               {rosterIds.has(r.id) ? (
-                <span className="text-xs text-nmbm-ink/50">On the roster</span>
+                <span className="text-xs text-ds-muted">On the roster</span>
               ) : (
                 <button
                   onClick={() =>
@@ -136,7 +136,7 @@ export function EnrollPanel({ cohortId, rosterIds, act }: { cohortId: string; ro
                       `${r.firstName} ${r.lastName} added to the roster.`,
                     )
                   }
-                  className="rounded border border-nmbm-ink/30 px-3 py-1 text-xs"
+                  className="nmbm-btn nmbm-btn--secondary nmbm-btn--sm"
                 >
                   Add to roster
                 </button>
@@ -160,7 +160,7 @@ export function WithdrawButton({ enrollmentId, name, act }: { enrollmentId: stri
           `${name} withdrawn.`,
         );
       }}
-      className="ml-2 rounded border border-nmbm-ink/20 px-2 py-0.5 text-xs text-nmbm-ink/60 hover:border-state-alert hover:text-state-alert"
+      className="nmbm-btn nmbm-btn--danger nmbm-btn--sm ml-2"
     >
       Withdraw…
     </button>
@@ -197,7 +197,7 @@ export function CohortDetailsForm({
 
   return (
     <form
-      className="mt-4 grid gap-3 rounded border border-nmbm-ink/15 p-4 sm:grid-cols-2"
+      className="nmbm-card nmbm-card--dense mt-4 grid gap-3 sm:grid-cols-2"
       onSubmit={(e) => {
         e.preventDefault();
         act(
@@ -244,8 +244,8 @@ export function CohortDetailsForm({
         <input type="number" min={1} value={form.requiredSessions} onChange={set("requiredSessions")} placeholder="none set" className={inputClass} />
       </label>
       <div className="flex gap-2 sm:col-span-2">
-        <button className="rounded bg-nmbm-ink px-4 py-1.5 text-sm font-medium text-nmbm-paper">Save</button>
-        <button type="button" onClick={onDone} className="rounded border border-nmbm-ink/30 px-4 py-1.5 text-sm">
+        <button className="nmbm-btn nmbm-btn--dark nmbm-btn--md">Save</button>
+        <button type="button" onClick={onDone} className="nmbm-btn nmbm-btn--secondary nmbm-btn--md">
           Cancel
         </button>
       </div>

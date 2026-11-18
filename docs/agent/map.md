@@ -130,9 +130,14 @@ first is behind the session check.
 | `/admin/forms/:id` | `admin/form-builder-page.tsx` | Build a draft — questions, options, sections, show-if rules — preview it, publish it; past versions read-only |
 | `/admin/feedback` | `admin/feedback-admin-page.tsx` | The triage queue |
 
+The look is the NMBM Design System: tokens, typefaces and component
+classes in `packages/web/src/design/`, generated from
+`packages/web/design-system/tokens.json`; how to use them is in
+`docs/BRANDING.md`.
+
 Shared components in `packages/web/src/components/`: `app-shell.tsx`
 (header and navigation, which hides what the signed-in user cannot
-reach), `sign-out-button.tsx`, `brand-mark.tsx`, `flags.tsx` (the attention badges derived in
+reach, and carries the theme picker), `sign-out-button.tsx`, `brand-mark.tsx`, `flags.tsx` (the attention badges derived in
 `lib/rules.ts`), and the five sections the participant record composes
 — `care-plan-section.tsx`, `consents-section.tsx`,
 `assessments-section.tsx`, `documents-section.tsx`, `referrals-section.tsx`.

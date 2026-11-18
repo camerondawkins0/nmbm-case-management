@@ -34,48 +34,48 @@ export default function FollowUpsPage({ me }: { me: Me }) {
 
   return (
     <div className="mx-auto max-w-4xl">
-      <h1 className="text-2xl font-semibold text-nmbm-ink">Follow-up calls</h1>
-      <p className="mt-1 text-sm text-nmbm-ink/60">
+      <h1 className="ds-display">Follow-up calls</h1>
+      <p className="mt-1 text-sm text-ds-muted">
         Calls to former clients at 3, 5, 9 and 12 months after their case closed — to see how
         they're doing and how NMBM's services were received.
       </p>
 
       {notice && (
-        <p className="mt-4 rounded border border-state-ok/20 bg-state-ok-bg px-3 py-2 text-sm text-state-ok">
+        <p className="nmbm-alert nmbm-alert--ok mt-4">
           {notice}
         </p>
       )}
 
       <section className="mt-8">
-        <h2 className="text-sm font-semibold uppercase tracking-wide text-nmbm-ink/50">
-          Asked to come back {requests && <span className="text-nmbm-ink/30">({requests.length})</span>}
+        <h2 className="ds-section-heading">
+          Asked to come back {requests && <span className="text-ds-muted">({requests.length})</span>}
         </h2>
-        <p className="mt-1 text-xs text-nmbm-ink/50">
+        <p className="mt-1 text-xs text-ds-muted">
           Each leaves this list on its own once the person is readmitted.
         </p>
-        <ul className="mt-2 divide-y divide-nmbm-ink/5 rounded border border-nmbm-ink/10">
+        <ul className="ds-list mt-2">
           {requests?.map((r) => (
             <li key={r.callId} className="flex flex-wrap items-start justify-between gap-3 px-4 py-3 text-sm">
               <div>
-                <Link to={`/participants/${r.participantId}`} className="font-medium text-nmbm-ink hover:underline">
+                <Link to={`/participants/${r.participantId}`} className="ds-person hover:underline">
                   {r.firstName} {r.lastName}
                 </Link>
-                <span className="ml-2 text-xs text-nmbm-ink/50">born {r.dateOfBirth}</span>
-                {r.note && <p className="mt-1 text-nmbm-ink/70">{r.note}</p>}
-                <p className="mt-1 text-xs text-nmbm-ink/50">
+                <span className="ml-2 text-xs text-ds-muted">born {r.dateOfBirth}</span>
+                {r.note && <p className="mt-1 text-ds-secondary">{r.note}</p>}
+                <p className="mt-1 text-xs text-ds-muted">
                   {r.milestoneMonths}-month call by {r.calledByName} on{" "}
                   {new Date(r.calledAt).toLocaleDateString()}
                 </p>
               </div>
               <Link
                 to={`/participants/${r.participantId}`}
-                className="rounded border border-nmbm-ink/30 px-3 py-1 text-xs font-medium text-nmbm-ink hover:border-nmbm-ink"
+                className="nmbm-btn nmbm-btn--secondary nmbm-btn--sm"
               >
                 Open record to readmit
               </Link>
             </li>
           ))}
-          {requests?.length === 0 && <li className="px-4 py-3 text-sm text-nmbm-ink/50">Nobody waiting.</li>}
+          {requests?.length === 0 && <li className="px-4 py-3 text-sm text-ds-muted">Nobody waiting.</li>}
         </ul>
       </section>
 
@@ -107,10 +107,10 @@ function QueueSection({
 }) {
   return (
     <section className="mt-8">
-      <h2 className="text-sm font-semibold uppercase tracking-wide text-nmbm-ink/50">
-        {title} <span className="text-nmbm-ink/30">({items.length})</span>
+      <h2 className="ds-section-heading">
+        {title} <span className="text-ds-muted">({items.length})</span>
       </h2>
-      <ul className="mt-2 divide-y divide-nmbm-ink/5 rounded border border-nmbm-ink/10">
+      <ul className="ds-list mt-2">
         {items.map((item) => {
           const key = `${item.episodeId}:${item.months}`;
           const callable = item.state !== "upcoming";
@@ -118,13 +118,13 @@ function QueueSection({
             <li key={key} className="px-4 py-3 text-sm">
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <div>
-                  <Link to={`/participants/${item.participantId}`} className="font-medium text-nmbm-ink hover:underline">
+                  <Link to={`/participants/${item.participantId}`} className="ds-person hover:underline">
                     {item.firstName} {item.lastName}
                   </Link>
                   <span className="ml-2">
                     <Pill tone={tone}>{item.months}-month call · due {item.dueDate}</Pill>
                   </span>
-                  <p className="mt-1 text-xs text-nmbm-ink/50">
+                  <p className="mt-1 text-xs text-ds-muted">
                     Closed {item.endDate}
                     {item.closureReason && ` — ${CLOSURE_REASON_LABELS[item.closureReason]}`}
                     {item.attempts > 0 && ` · ${item.attempts} unanswered attempt${item.attempts > 1 ? "s" : ""}`}
@@ -134,7 +134,7 @@ function QueueSection({
                 {callable && open !== key && (
                   <button
                     onClick={() => setOpen(key)}
-                    className="rounded border border-nmbm-ink/30 px-3 py-1 text-xs font-medium text-nmbm-ink hover:border-nmbm-ink"
+                    className="nmbm-btn nmbm-btn--secondary nmbm-btn--sm"
                   >
                     Record call
                   </button>
@@ -151,7 +151,7 @@ function QueueSection({
             </li>
           );
         })}
-        {items.length === 0 && <li className="px-4 py-3 text-sm text-nmbm-ink/50">None.</li>}
+        {items.length === 0 && <li className="px-4 py-3 text-sm text-ds-muted">None.</li>}
       </ul>
     </section>
   );

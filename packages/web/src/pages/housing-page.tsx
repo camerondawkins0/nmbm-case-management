@@ -20,18 +20,18 @@ export default function HousingPage({ me }: { me: Me }) {
   }, []);
 
   if (error) return <p className="text-sm text-state-alert">{error}</p>;
-  if (!data) return <p className="text-sm text-nmbm-ink/50">Loading…</p>;
+  if (!data) return <p className="text-sm text-ds-muted">Loading…</p>;
 
   const person = (p: { participantId: string; firstName: string; lastName: string }) => (
-    <Link to={`/participants/${p.participantId}`} className="font-medium text-nmbm-ink hover:underline">
+    <Link to={`/participants/${p.participantId}`} className="ds-person hover:underline">
       {p.firstName} {p.lastName}
     </Link>
   );
 
   return (
     <div className="mx-auto max-w-4xl">
-      <h1 className="text-2xl font-semibold text-nmbm-ink">Housing</h1>
-      <p className="mt-1 text-sm text-nmbm-ink/60">
+      <h1 className="ds-display">Housing</h1>
+      <p className="mt-1 text-sm text-ds-muted">
         Community Supports for the clients you can see: what's waiting on somebody, and who's moved in.
         {" "}{data.active.length} active authorization{data.active.length === 1 ? "" : "s"}.
       </p>
@@ -88,7 +88,7 @@ export default function HousingPage({ me }: { me: Me }) {
 }
 
 function Muted({ children }: { children: React.ReactNode }) {
-  return <span className="text-xs text-nmbm-ink/50">{children}</span>;
+  return <span className="text-xs text-ds-muted">{children}</span>;
 }
 
 function List<T extends { participantId: string }>({
@@ -104,13 +104,13 @@ function List<T extends { participantId: string }>({
 }) {
   return (
     <section className="mt-6">
-      <h2 className="text-sm font-semibold uppercase tracking-wide text-nmbm-ink/50">
-        {title} <span className="text-nmbm-ink/30">({rows.length})</span>
+      <h2 className="ds-section-heading">
+        {title} <span className="text-ds-muted">({rows.length})</span>
       </h2>
       {rows.length === 0 ? (
-        <p className="mt-1 text-sm text-nmbm-ink/50">{empty}</p>
+        <p className="mt-1 text-sm text-ds-muted">{empty}</p>
       ) : (
-        <ul className="mt-2 divide-y divide-nmbm-ink/5 rounded border border-nmbm-ink/10">
+        <ul className="ds-list mt-2">
           {rows.map((row, i) => (
             <li key={(row as { id?: string }).id ?? `${row.participantId}-${i}`} className="px-3 py-2 text-sm">
               {children(row)}
@@ -160,22 +160,22 @@ function ExportPanel() {
   }
 
   return (
-    <form onSubmit={download} className="mt-8 rounded border border-nmbm-ink/10 p-4">
-      <h2 className="text-sm font-semibold uppercase tracking-wide text-nmbm-ink/50">Service log for reporting</h2>
-      <p className="mt-1 text-xs text-nmbm-ink/60">
+    <form onSubmit={download} className="nmbm-card nmbm-card--dense mt-8">
+      <h2 className="ds-section-heading">Service log for reporting</h2>
+      <p className="mt-1 text-xs text-ds-muted">
         A spreadsheet of housing work in a period: client, Medi-Cal CIN, authorization, activity and minutes — not
         the notes. Each download is recorded in the audit log.
       </p>
       <div className="mt-3 flex flex-wrap items-end gap-3">
-        <label className="flex flex-col gap-1 text-xs text-nmbm-ink/70">
+        <label className="flex flex-col gap-1 text-xs text-ds-secondary">
           From
-          <input type="date" required value={from} onChange={(e) => setFrom(e.target.value)} className="rounded border border-nmbm-ink/20 px-2 py-1 text-sm" />
+          <input type="date" required value={from} onChange={(e) => setFrom(e.target.value)} className="nmbm-control" />
         </label>
-        <label className="flex flex-col gap-1 text-xs text-nmbm-ink/70">
+        <label className="flex flex-col gap-1 text-xs text-ds-secondary">
           To
-          <input type="date" required value={to} min={from} onChange={(e) => setTo(e.target.value)} className="rounded border border-nmbm-ink/20 px-2 py-1 text-sm" />
+          <input type="date" required value={to} min={from} onChange={(e) => setTo(e.target.value)} className="nmbm-control" />
         </label>
-        <button disabled={busy} className="rounded bg-nmbm-ink px-4 py-1.5 text-sm font-medium text-nmbm-paper disabled:opacity-50">
+        <button disabled={busy} className="nmbm-btn nmbm-btn--dark nmbm-btn--md">
           {busy ? "Preparing…" : "Download CSV"}
         </button>
       </div>

@@ -83,15 +83,15 @@ export function AssessmentsSection({
   }
 
   return (
-    <section className="mt-6 rounded border border-nmbm-ink/10 p-4">
+    <section className="nmbm-card nmbm-card--dense mt-6">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <h2 className="text-sm font-semibold uppercase tracking-wide text-nmbm-ink/50">
+        <h2 className="ds-section-heading">
           Forms and assessments
         </h2>
         {writable && record.episodeStatus === "open" && !starting && (
           <button
             onClick={() => setStarting(true)}
-            className="rounded border border-nmbm-ink/30 px-3 py-1 text-sm"
+            className="nmbm-btn nmbm-btn--secondary nmbm-btn--sm"
           >
             Start a form
           </button>
@@ -99,16 +99,16 @@ export function AssessmentsSection({
       </div>
 
       {rows && rows.length === 0 && !starting && (
-        <p className="mt-3 text-sm text-nmbm-ink/60">None yet.</p>
+        <p className="mt-3 text-sm text-ds-muted">None yet.</p>
       )}
 
       <ul className="mt-3 flex flex-col gap-2">
         {(rows ?? []).map((a) => (
-          <li key={a.id} className="rounded border border-nmbm-ink/10 px-3 py-2 text-sm">
+          <li key={a.id} className="ds-row">
             <div className="flex flex-wrap items-center justify-between gap-2">
               <Link
                 to={`/assessments/${a.id}`}
-                className={`font-medium underline-offset-2 hover:underline ${a.status === "voided" ? "text-nmbm-ink/50 line-through" : "text-nmbm-ink"}`}
+                className={`font-medium underline-offset-2 hover:underline ${a.status === "voided" ? "text-ds-muted line-through" : "text-ds-ink"}`}
               >
                 {a.formName}
               </Link>
@@ -116,7 +116,7 @@ export function AssessmentsSection({
                 {a.status === "in_progress" ? "in progress" : a.status}
               </Pill>
             </div>
-            <p className="mt-0.5 text-xs text-nmbm-ink/50">
+            <p className="mt-0.5 text-xs text-ds-muted">
               v{a.versionNumber} · {ASSESSMENT_MODE_LABELS[a.mode].toLowerCase()} · started{" "}
               {a.startedAt.slice(0, 10)}
               {a.startedByName && ` by ${a.startedByName}`}
@@ -143,9 +143,9 @@ export function AssessmentsSection({
       {issued && <LinkHandover issued={issued} onDone={() => setIssued(null)} />}
 
       {starting && (
-        <div className="mt-3 rounded border border-nmbm-ink/15 p-3">
+        <div className="nmbm-card nmbm-card--dense mt-3">
           {forms.length === 0 ? (
-            <p className="text-sm text-nmbm-ink/60">
+            <p className="text-sm text-ds-muted">
               No forms have been published yet. The Clinical Director or Program Manager sets them
               up under Forms.
             </p>
@@ -156,7 +156,7 @@ export function AssessmentsSection({
                 <select
                   value={formId}
                   onChange={(e) => setFormId(e.target.value)}
-                  className="rounded border border-nmbm-ink/20 px-2 py-1.5 text-sm"
+                  className="nmbm-control nmbm-select"
                 >
                   {forms.map((f) => (
                     <option key={f.id} value={f.id}>
@@ -170,7 +170,7 @@ export function AssessmentsSection({
                 <select
                   value={mode}
                   onChange={(e) => setMode(e.target.value as "with_staff" | "from_paper" | "self")}
-                  className="rounded border border-nmbm-ink/20 px-2 py-1.5 text-sm"
+                  className="nmbm-control nmbm-select"
                 >
                   <option value="with_staff">{ASSESSMENT_MODE_LABELS.with_staff}</option>
                   <option value="from_paper">{ASSESSMENT_MODE_LABELS.from_paper}</option>
@@ -183,13 +183,13 @@ export function AssessmentsSection({
             <button
               disabled={busy || !formId}
               onClick={start}
-              className="rounded bg-nmbm-ink px-4 py-1.5 text-sm font-medium text-nmbm-paper disabled:opacity-50"
+              className="nmbm-btn nmbm-btn--dark nmbm-btn--md"
             >
               {mode === "self" ? "Make link and passcode" : "Start"}
             </button>
             <button
               onClick={() => setStarting(false)}
-              className="rounded border border-nmbm-ink/30 px-4 py-1.5 text-sm"
+              className="nmbm-btn nmbm-btn--secondary nmbm-btn--md"
             >
               Cancel
             </button>

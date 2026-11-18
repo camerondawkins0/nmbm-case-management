@@ -1,98 +1,96 @@
-# Branding kit
+# Branding and the design system
 
-Status: **approximated, not final.** The real NMBM logo (a mountain mark in
-a circle, black-on-white and a gold-foil variant, "NMBM" in a brush
-script, "Make Your Next Move Your Best Move" underneath) was shared as
-images in chat, not as files this environment could read from disk — so
-nothing here was sampled from the source art. Treat every hex value below
-as a placeholder to replace once the real files are available; see
-"Finishing this kit" at the bottom.
+The app's look comes from the **NMBM Design System**, kept as a Design
+System artifact on claude.ai (the `project/` files: `tokens.json`,
+`bundle.css`, the type and component guidelines, the logo files). This
+repository carries a copy of the parts the app needs. When the design
+system changes, re-copy them; nothing here is the source of truth for a
+color or a size.
 
-## Where this lives in code
+## Where it lives in code
 
-| What | File |
-|---|---|
-| Tailwind color tokens | `packages/web/tailwind.config.js` (the `nmbm` color group) |
-| CSS custom properties (for anything Tailwind's config can't reach, e.g. an inline SVG fill) | `packages/web/src/theme.css` |
-| Stand-in mark | `packages/web/src/components/brand-mark.tsx` |
-| Asset drop point + instructions | `packages/web/public/branding/README.md` |
-
-The mark is currently rendered in three places: the sign-in page, the
-app header (`components/app-shell.tsx`), and the printable participation
-record (`pages/participation-record-page.tsx`). That third one is the
-only place the brand leaves the building — it is handed to a probation
-officer or a court — so it is the one to check first after the real
-asset lands.
-
-## Palette
-
-| Token | Hex (approximate) | Use |
+| What | File | Edited by hand? |
 |---|---|---|
-| `nmbm-ink` | `#0A0A0A` | Primary text, the black lockup of the mark, borders |
-| `nmbm-gold` | `#B8860B` | Accent — links, active states, the motto text |
-| `nmbm-gold-light` | `#F5D576` | Gold-on-gold detail (foil highlight), hover states over dark backgrounds |
-| `nmbm-gold-dark` | `#8A6508` | Gold text on light backgrounds, where the base gold doesn't meet contrast |
-| `nmbm-paper` | `#FFFFFF` | Page background — the mark is drawn for white, not off-white |
+| Tokens, copied from the design system | `packages/web/design-system/tokens.json` | No: re-copy it |
+| The tokens as CSS variables, per theme | `packages/web/src/design/tokens.css` | No: `node packages/web/scripts/tokens-to-css.mjs` regenerates it |
+| Typefaces (`@font-face`) | `packages/web/src/design/fonts.css`, files in `public/fonts/` | Rarely |
+| Component classes (`.nmbm-btn`, `.nmbm-card`, …) and the app's additions (`.ds-*`) | `packages/web/src/design/components.css` | Only below the "app additions" line; above it is the design system's `bundle.css` verbatim |
+| The order Tailwind and the design system load in | `packages/web/src/theme.css` | Rarely: see "Load order" |
+| Tailwind's names for the tokens | `packages/web/tailwind.config.js` | When a token is added |
+| Theme choice (light, dark, high contrast) | `packages/web/src/lib/theme.ts`, the picker in `components/app-shell.tsx` | |
+| The logo | `components/brand-mark.tsx`, files in `public/branding/` | |
 
-The logo itself is single-color (pure black, or a gold gradient) on a
-plain white ground — no secondary or tertiary brand colors were visible
-in either version shared. Don't invent one; if the UI needs a state color
-(error, warning, success) outside this palette, treat that as a separate,
-functional palette rather than an extension of the brand one.
+## Using it
 
-### The functional palette, which is not brand
+Reach for a design-system class before a Tailwind utility. Tailwind
+stays for layout (`flex`, `grid`, `gap-*`, `mt-*`, `sm:` breakpoints);
+anything that carries the look comes from the system.
 
-That separation is now real in the config. `tailwind.config.js` carries
-a second `state` group — `alert`, `warn`, `ok` and a background tint for
-each — used for overdue care plans, the no-contact ladder and consent
-expiry. It is deliberately not named after the brand and does not derive
-from the gold, because a two-color mark cannot legitimately be stretched
-to mean "this person is four weeks overdue." Replacing the brand hexes
-with sampled values should leave this group untouched.
+| Need | Use |
+|---|---|
+| Page title | `ds-display` |
+| Section title | `ds-section-heading` |
+| Field label, small heading | `ds-field` (a `<label>` around its control), `nmbm-label` |
+| Text box, select, text area | `nmbm-control` (selects and text areas pick up their treatment from the element) |
+| The one main action on a view | `nmbm-btn nmbm-btn--primary` (gold). **One per view.** |
+| Other actions | `nmbm-btn--dark`, `--secondary`, `--quiet`, `--danger`, plus `--sm` or `--md` |
+| A panel | `nmbm-card` (`nmbm-card--dense` for record sections) |
+| A list of rows | `ds-list`; a lone row `ds-row`; an inline form inside a card `ds-inset` |
+| A message | `nmbm-alert nmbm-alert--alert`, `--warn`, `--ok` or `--info` |
+| A status | `<Pill tone=…>` in `components/flags.tsx`, which renders `nmbm-pill` |
+| A participant's name | `ds-person` (serif) |
+| A number, date or ID set apart | `ds-num` (mono) |
 
-## Typography
+Colors in Tailwind come from the theme, never fixed values:
+`text-ds-ink`, `text-ds-secondary`, `text-ds-muted`, `border-ds-border`,
+`border-ds-control`, `bg-ds-raised`, `bg-ds-subtle`, `text-ds-accent`,
+and `state-alert`, `state-warn`, `state-ok` plus `-bg` for each. They
+are defined as `rgb(var(--token-rgb) / <alpha-value>)`, so an opacity
+modifier still follows the theme. `nmbm-ink`, `nmbm-paper` and
+`nmbm-gold` are kept as aliases of the same variables. A hex value in a
+class name will be wrong in dark or high-contrast mode, so the only ones
+left are on Google's sign-in button (`.ds-google`), whose colors Google's
+branding terms fix.
 
-The mark pairs a **brush-script wordmark** ("NMBM") with a **small-caps,
-wide-tracked sans** for the motto ("MAKE YOUR NEXT MOVE YOUR BEST MOVE").
-That split is a logo-only treatment — don't use a script face for UI text.
-For the product itself, `tailwind.config.js` currently points `font-display`
-at system UI fonts (`Segoe UI` / system-ui) as a neutral placeholder. If
-NMBM has a house font for documents or their website, match that instead
-of leaving system-ui as the permanent choice.
+The design system's own rules that matter most here:
 
-## Mark usage
+- One gold primary button per view.
+- Nothing smaller than 12px.
+- Text color comes from a theme token. `ink/50` (#808080) fails contrast
+  and is not for text.
+- The logo is used as supplied: not redrawn, recolored or set in type
+  beside itself. The mark already carries "NMBM" and the line beneath it.
 
-- **Circular badge, not a wordmark alone.** Both logo versions are the
-  full circular lockup (ring + mountain + NMBM + motto) — there's no
-  evidence of a simplified icon-only mark for small spaces like a
-  favicon. `brand-mark.tsx`'s stand-in reproduces the badge's
-  construction (double ring, white mountain range clipped into a filled
-  circle) as that reduction, and takes a `variant` prop for the ink and
-  gold versions. The brush wordmark isn't reproducible in SVG here and
-  is set as text beside the mark instead.
-- **Two color versions, one background.** Black-on-white for standard
-  use; the gold-foil version reads as an emphasis/premium variant (the
-  kind of thing you'd put on a printed certificate, not a nav bar).
-  Default the product UI to the black version; reserve gold for accents,
-  not for reproducing the mark itself in gold.
-- **Minimum clear space.** Not determinable from a chat image — ask NMBM
-  if a brand guideline exists, or default to roughly the height of the
-  mountain glyph on all sides once the real asset is available.
+## Themes
 
-## Finishing this kit
+`data-theme` on `<html>` picks light, dark or high contrast.
+`lib/theme.ts` reads the person's choice from `localStorage` before the
+first render, so there is no flash of the wrong theme, and it falls back
+to light when storage is unavailable. The choice is per browser, not
+per account. Print always uses the light colors, and the logo is forced
+to the black version on paper.
 
-1. Get the source logo files from NMBM (vector, if they have it — a
-   chat-shared PNG is a rasterized export, not a source file).
-2. Drop them into `packages/web/public/branding/` as `logo-black.png`,
-   `logo-gold.png`, and a square `favicon.png` — see that folder's
-   README for the exact expectation.
-3. Sample the real hex values from the files and update the palette
-   table above, `tailwind.config.js`, and `theme.css` to match.
-4. Replace `<BrandMark />` with the real asset in all three call sites
-   (`login-page.tsx`, `app-shell.tsx`,
-   `participation-record-page.tsx`), or trace it into the SVG if it
-   needs to stay inline (e.g. to recolor per theme). Print the
-   participation record afterward — a raster logo that looks fine at
-   44px in a header can be visibly rough on paper.
-5. Ask NMBM whether a font, minimum clear space, or usage guideline
-   exists beyond what's visible in the mark itself.
+## Load order
+
+Tailwind's preflight resets `button` and `input`, so it must load
+*before* the component classes, and Tailwind's utilities *after* them
+so `mt-4` still wins over a component's margin. That is why `theme.css`
+imports `tailwind-base.css`, then `components.css`, then
+`tailwind-utilities.css`, instead of putting the three `@tailwind`
+lines together.
+
+## Typefaces
+
+Public Sans (interface), Source Serif 4 (people's names, page titles,
+their own words) and IBM Plex Mono (IDs, dates, figures) are served from
+`public/fonts/`, not a font CDN, so a participant's record page makes no
+request to a third party. All three are under the SIL Open Font License.
+
+## The logo
+
+`public/branding/` holds the black-on-white and gold-on-black marks at
+96, 256 and 640 pixels, downscaled from the design system's logo files.
+`BrandMark` serves the black one in light and high contrast and the gold
+one in dark. The 96px black mark is the favicon. The printable
+participation record goes to a probation officer or a court, so print it
+after any change to the logo.

@@ -1,4 +1,6 @@
+import { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
+import { applyTheme, storedTheme, THEMES, type ThemeId } from "../lib/theme.js";
 import { BrandMark } from "./brand-mark.js";
 import { SignOutButton } from "./sign-out-button.js";
 import { can } from "../lib/use-me.js";
@@ -29,51 +31,71 @@ export function AppShell({ me, children }: { me: Me; children: React.ReactNode }
   ];
 
   return (
-    <div className="min-h-screen bg-nmbm-paper">
+    <div className="nmbm-shell min-h-screen">
       {/* Printed pages — a participation record, an exported file — are
           documents in their own right; the app's navigation isn't part
           of them. */}
-      <header className="border-b border-nmbm-ink/10 print:hidden">
-        <div className="flex flex-wrap items-center gap-x-6 gap-y-3 px-6 py-3">
-          <Link to="/" className="flex items-center gap-2.5">
-            <BrandMark size={34} />
-            <span className="font-semibold tracking-wide text-nmbm-ink">NMBM</span>
+      <header className="nmbm-shell__bar print:hidden">
+        <Link to="/" className="nmbm-shell__brand">
+          <BrandMark size={40} />
+          <span className="nmbm-shell__product">NMBM</span>
+        </Link>
+
+        <nav aria-label="Main" className="nmbm-shell__nav">
+          {links.map((link) => {
+            const active = pathname === link.to;
+            return (
+              <Link
+                key={link.to}
+                to={link.to}
+                aria-current={active ? "page" : undefined}
+                className={`nmbm-shell__link${active ? " is-active" : ""}`}
+              >
+                {link.label}
+              </Link>
+            );
+          })}
+        </nav>
+
+        <div className="nmbm-shell__end">
+          <Link to="/feedback" className="nmbm-shell__link whitespace-nowrap">
+            Report an issue
           </Link>
-
-          <nav className="flex flex-wrap items-center gap-1 text-sm">
-            {links.map((link) => {
-              const active = pathname === link.to;
-              return (
-                <Link
-                  key={link.to}
-                  to={link.to}
-                  className={`rounded px-3 py-1.5 transition ${
-                    active
-                      ? "bg-nmbm-ink text-nmbm-paper"
-                      : "text-nmbm-ink/70 hover:bg-nmbm-ink/5 hover:text-nmbm-ink"
-                  }`}
-                >
-                  {link.label}
-                </Link>
-              );
-            })}
-          </nav>
-
-          <div className="ml-auto flex items-center gap-3 text-sm">
-            <Link to="/feedback" className="text-nmbm-ink/60 underline-offset-2 hover:underline">
-              Report an issue
-            </Link>
-            <span className="hidden text-right sm:block">
-              <span className="block leading-tight text-nmbm-ink">{me.displayName}</span>
-              <span className="block text-xs leading-tight text-nmbm-ink/50">
-                {me.roles.map((r) => r.label).join(", ")}
-              </span>
-            </span>
-            <SignOutButton className="rounded border border-nmbm-ink/20 px-3 py-1 text-nmbm-ink/70 transition hover:border-nmbm-ink hover:text-nmbm-ink" />
-          </div>
+          <ThemePicker />
+          <span className="nmbm-shell__user hidden sm:flex">
+            <span className="nmbm-shell__name">{me.displayName}</span>
+            <span className="nmbm-shell__roles">{me.roles.map((r) => r.label).join(", ")}</span>
+          </span>
+          <SignOutButton className="nmbm-btn nmbm-btn--secondary nmbm-btn--sm" />
         </div>
       </header>
-      <main className="px-6 py-8 print:p-0">{children}</main>
+      <main className="nmbm-shell__main print:p-0">{children}</main>
     </div>
+  );
+}
+
+// Light, dark (the brand's gold-on-black) or high contrast, for this browser.
+function ThemePicker() {
+  const [theme, setTheme] = useState<ThemeId>(storedTheme);
+  return (
+    <label>
+      <span className="nmbm-sr">Theme</span>
+      <select
+        value={theme}
+        onChange={(e) => {
+          const next = e.target.value as ThemeId;
+          setTheme(next);
+          applyTheme(next);
+        }}
+        className="nmbm-control nmbm-select"
+        style={{ width: "auto", minHeight: 28, paddingTop: 3, paddingBottom: 3 }}
+      >
+        {THEMES.map((t) => (
+          <option key={t.id} value={t.id}>
+            {t.label}
+          </option>
+        ))}
+      </select>
+    </label>
   );
 }

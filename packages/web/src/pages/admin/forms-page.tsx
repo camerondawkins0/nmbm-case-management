@@ -35,42 +35,42 @@ export default function FormsPage() {
   }
 
   if (error && !forms) return <p className="text-sm text-state-alert">{error}</p>;
-  if (!forms) return <p className="text-sm text-nmbm-ink/50">Loading…</p>;
+  if (!forms) return <p className="text-sm text-ds-muted">Loading…</p>;
 
   return (
     <div className="mx-auto max-w-3xl">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h1 className="text-2xl font-semibold text-nmbm-ink">Forms</h1>
+        <h1 className="ds-display">Forms</h1>
         {!creating && (
           <button
             onClick={() => setCreating(true)}
-            className="rounded bg-nmbm-ink px-4 py-1.5 text-sm font-medium text-nmbm-paper"
+            className="nmbm-btn nmbm-btn--dark nmbm-btn--md"
           >
             New form
           </button>
         )}
       </div>
-      <p className="mt-1 text-sm text-nmbm-ink/60">
+      <p className="mt-1 text-sm text-ds-muted">
         The forms staff fill in on a participant's record. A published version never changes —
         editing a form makes a new version, and everything already filled in stays with the
         wording it was answered against.
       </p>
 
       {error && (
-        <p className="mt-4 rounded border border-state-alert/20 bg-state-alert-bg px-3 py-2 text-sm text-state-alert">
+        <p className="nmbm-alert nmbm-alert--alert mt-4">
           {error}
         </p>
       )}
 
       {creating && (
-        <div className="mt-4 rounded border border-nmbm-ink/15 p-4">
+        <div className="nmbm-card nmbm-card--dense mt-4">
           <label className="flex flex-col gap-1 text-sm">
             Name
             <input
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder="e.g. Comprehensive needs assessment"
-              className="rounded border border-nmbm-ink/20 px-2 py-1.5 text-sm"
+              className="nmbm-control"
             />
           </label>
           <label className="mt-3 flex flex-col gap-1 text-sm">
@@ -78,20 +78,20 @@ export default function FormsPage() {
             <input
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              className="rounded border border-nmbm-ink/20 px-2 py-1.5 text-sm"
+              className="nmbm-control"
             />
           </label>
           <div className="mt-3 flex gap-2">
             <button
               disabled={!name.trim()}
               onClick={create}
-              className="rounded bg-nmbm-ink px-4 py-1.5 text-sm font-medium text-nmbm-paper disabled:opacity-50"
+              className="nmbm-btn nmbm-btn--dark nmbm-btn--md"
             >
               Create and add questions
             </button>
             <button
               onClick={() => setCreating(false)}
-              className="rounded border border-nmbm-ink/30 px-4 py-1.5 text-sm"
+              className="nmbm-btn nmbm-btn--secondary nmbm-btn--md"
             >
               Cancel
             </button>
@@ -100,15 +100,15 @@ export default function FormsPage() {
       )}
 
       {forms.length === 0 && !creating && (
-        <p className="mt-6 text-sm text-nmbm-ink/60">No forms yet.</p>
+        <p className="mt-6 text-sm text-ds-muted">No forms yet.</p>
       )}
       <ul className="mt-6 flex flex-col gap-2">
         {forms.map((f) => (
-          <li key={f.id} className="rounded border border-nmbm-ink/10 px-4 py-3">
+          <li key={f.id} className="ds-row">
             <div className="flex flex-wrap items-center justify-between gap-2">
               <Link
                 to={`/admin/forms/${f.id}`}
-                className="font-medium text-nmbm-ink underline-offset-2 hover:underline"
+                className="font-medium text-ds-ink underline-offset-2 hover:underline"
               >
                 {f.name}
               </Link>
@@ -122,7 +122,7 @@ export default function FormsPage() {
                 {f.draftVersionId && f.currentVersionNumber && <Pill tone="warn">draft in progress</Pill>}
               </div>
             </div>
-            {f.description && <p className="mt-0.5 text-sm text-nmbm-ink/60">{f.description}</p>}
+            {f.description && <p className="mt-0.5 text-sm text-ds-muted">{f.description}</p>}
           </li>
         ))}
       </ul>

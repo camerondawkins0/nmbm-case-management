@@ -16,7 +16,7 @@ import type { AssessmentFormDetail, FormQuestion, FormVersion } from "../../lib/
 import { Pill } from "../../components/flags.js";
 import { QuestionField } from "../../components/question-field.js";
 
-const inputClass = "rounded border border-nmbm-ink/20 px-2 py-1.5 text-sm";
+const inputClass = "nmbm-control";
 
 // Option values are made here, once, and never shown. Rewording an
 // option's label keeps its value, so answers and rules that name it
@@ -136,7 +136,7 @@ export default function FormBuilderPage() {
     }).then(() => setChanged(false));
 
   if (error && !form) return <p className="text-sm text-state-alert">{error}</p>;
-  if (!form || !version) return <p className="text-sm text-nmbm-ink/50">Loading…</p>;
+  if (!form || !version) return <p className="text-sm text-ds-muted">Loading…</p>;
 
   const isDraft = version.status === "draft";
   const hasDraft = form.versions.some((v) => v.status === "draft");
@@ -145,13 +145,13 @@ export default function FormBuilderPage() {
 
   return (
     <div className="mx-auto max-w-3xl">
-      <Link to="/admin/forms" className="text-sm text-nmbm-ink/60 underline-offset-2 hover:underline">
+      <Link to="/admin/forms" className="text-sm text-ds-muted underline-offset-2 hover:underline">
         ← Forms
       </Link>
       <div className="mt-2 flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-semibold text-nmbm-ink">{form.name}</h1>
-          <p className="mt-1 text-sm text-nmbm-ink/60">
+          <h1 className="ds-display">{form.name}</h1>
+          <p className="mt-1 text-sm text-ds-muted">
             Version {version.versionNumber} · {isDraft ? "draft — not yet in use" : "published"}
           </p>
         </div>
@@ -174,7 +174,7 @@ export default function FormBuilderPage() {
               setPreview((p) => !p);
               setPreviewAnswers({});
             }}
-            className="rounded border border-nmbm-ink/30 px-3 py-1.5 text-sm"
+            className="nmbm-btn nmbm-btn--secondary nmbm-btn--md"
           >
             {preview ? "Back to editing" : "Preview"}
           </button>
@@ -182,19 +182,19 @@ export default function FormBuilderPage() {
       </div>
 
       {notice && (
-        <p className="mt-4 rounded border border-state-ok/20 bg-state-ok-bg px-3 py-2 text-sm text-state-ok">
+        <p className="nmbm-alert nmbm-alert--ok mt-4">
           {notice}
         </p>
       )}
       {error && (
-        <p className="mt-4 rounded border border-state-alert/20 bg-state-alert-bg px-3 py-2 text-sm text-state-alert">
+        <p className="nmbm-alert nmbm-alert--alert mt-4">
           {error}
         </p>
       )}
 
       {preview ? (
-        <div className="mt-6 flex flex-col gap-5 rounded border border-dashed border-nmbm-ink/20 p-4">
-          <p className="text-xs text-nmbm-ink/50">
+        <div className="nmbm-card nmbm-card--dense mt-6 flex flex-col gap-5">
+          <p className="text-xs text-ds-muted">
             Try answering — follow-up questions appear and disappear as they will for staff.
             Nothing here is saved.
           </p>
@@ -219,7 +219,7 @@ export default function FormBuilderPage() {
       ) : (
         <>
           {!isDraft && (
-            <div className="mt-4 rounded border border-nmbm-ink/10 bg-nmbm-ink/[0.03] px-4 py-3 text-sm text-nmbm-ink/70">
+            <div className="nmbm-alert nmbm-alert--info mt-4">
               This version is published and can't be changed.{" "}
               {hasDraft ? (
                 "There's already a draft of the next version — choose it above."
@@ -234,7 +234,7 @@ export default function FormBuilderPage() {
                       await load(draft.id);
                     }, "A new draft has been started from this version.")
                   }
-                  className="font-medium text-nmbm-ink underline underline-offset-2"
+                  className="font-medium text-ds-ink underline underline-offset-2"
                 >
                   Edit as a new version
                 </button>
@@ -249,35 +249,35 @@ export default function FormBuilderPage() {
                 .slice(0, i)
                 .filter((x) => x.type === "yes_no" || CHOICE_TYPES.has(x.type));
               return (
-                <li key={q.stableId} className="rounded border border-nmbm-ink/10 p-4">
+                <li key={q.stableId} className="nmbm-card nmbm-card--dense">
                   {!isDraft ? (
                     <div>
                       {q.section && (i === 0 || ordered[i - 1].section !== q.section) && (
-                        <p className="text-xs font-semibold uppercase tracking-wide text-nmbm-ink/50">
+                        <p className="nmbm-label">
                           {q.section}
                         </p>
                       )}
-                      <p className="text-sm font-medium text-nmbm-ink">
+                      <p className="text-sm font-medium text-ds-ink">
                         {i + 1}. {q.prompt}
                         {q.required && <span className="text-state-alert"> *</span>}
                       </p>
-                      <p className="text-xs text-nmbm-ink/50">
+                      <p className="text-xs text-ds-muted">
                         {QUESTION_TYPE_LABELS[q.type]}
                         {optionsOf(q).length > 0 && `: ${optionsOf(q).map((o) => o.label).join(" / ")}`}
                       </p>
                       {rule && rule !== "complex" && (
-                        <p className="mt-1 text-xs text-nmbm-ink/60">{describeRule(rule, ordered)}</p>
+                        <p className="mt-1 text-xs text-ds-muted">{describeRule(rule, ordered)}</p>
                       )}
                     </div>
                   ) : (
                     <div className="flex flex-col gap-3">
                       <div className="flex flex-wrap items-center justify-between gap-2">
-                        <span className="text-xs font-semibold text-nmbm-ink/50">Question {i + 1}</span>
+                        <span className="text-xs font-semibold text-ds-muted">Question {i + 1}</span>
                         <div className="flex gap-1 text-xs">
                           <button
                             disabled={i === 0}
                             onClick={() => move(i, -1)}
-                            className="rounded border border-nmbm-ink/20 px-2 py-0.5 disabled:opacity-30"
+                            className="nmbm-btn nmbm-btn--secondary nmbm-btn--sm"
                             aria-label="Move up"
                           >
                             ↑
@@ -285,7 +285,7 @@ export default function FormBuilderPage() {
                           <button
                             disabled={i === ordered.length - 1}
                             onClick={() => move(i, 1)}
-                            className="rounded border border-nmbm-ink/20 px-2 py-0.5 disabled:opacity-30"
+                            className="nmbm-btn nmbm-btn--secondary nmbm-btn--sm"
                             aria-label="Move down"
                           >
                             ↓
@@ -295,7 +295,7 @@ export default function FormBuilderPage() {
                               setQuestions((qs) => qs.filter((_, j) => j !== i));
                               setChanged(true);
                             }}
-                            className="rounded border border-nmbm-ink/20 px-2 py-0.5 hover:text-state-alert"
+                            className="nmbm-btn nmbm-btn--danger nmbm-btn--sm"
                           >
                             Remove
                           </button>
@@ -371,7 +371,7 @@ export default function FormBuilderPage() {
                               />
                               <button
                                 onClick={() => update(i, { options: q.options.filter((_, k) => k !== j) })}
-                                className="rounded border border-nmbm-ink/20 px-2 text-xs hover:text-state-alert"
+                                className="nmbm-btn nmbm-btn--danger nmbm-btn--sm"
                               >
                                 Remove
                               </button>
@@ -379,7 +379,7 @@ export default function FormBuilderPage() {
                           ))}
                           <button
                             onClick={() => update(i, { options: [...q.options, { value: newValue(), label: "" }] })}
-                            className="self-start text-xs text-nmbm-ink/60 underline underline-offset-2"
+                            className="self-start text-xs text-ds-muted underline underline-offset-2"
                           >
                             Add an option
                           </button>
@@ -396,15 +396,15 @@ export default function FormBuilderPage() {
                       </label>
 
                       {rule === "complex" ? (
-                        <p className="text-xs text-nmbm-ink/60">
+                        <p className="text-xs text-ds-muted">
                           Has a rule with several conditions.{" "}
                           <button onClick={() => update(i, { showIf: null })} className="underline">
                             Remove it
                           </button>
                         </p>
                       ) : earlier.length > 0 || rule ? (
-                        <div className="flex flex-col gap-1.5 rounded bg-nmbm-ink/[0.03] p-2 text-sm">
-                          <span className="text-xs text-nmbm-ink/60">
+                        <div className="flex flex-col gap-1.5 rounded bg-ds-subtle p-2 text-sm">
+                          <span className="text-xs text-ds-muted">
                             {rule ? describeRule(rule, ordered) : "Always shown"}
                           </span>
                           <div className="flex flex-wrap items-center gap-2">
@@ -481,20 +481,20 @@ export default function FormBuilderPage() {
           </ol>
 
           {isDraft && (
-            <div className="sticky bottom-0 mt-4 flex flex-wrap items-center gap-2 border-t border-nmbm-ink/10 bg-nmbm-paper py-3">
+            <div className="sticky bottom-0 mt-4 flex flex-wrap items-center gap-2 border-t border-ds-border bg-ds-surface py-3">
               <button
                 onClick={() => {
                   setQuestions((qs) => [...qs, blankQuestion(qs[qs.length - 1]?.section ?? null)]);
                   setChanged(true);
                 }}
-                className="rounded border border-nmbm-ink/30 px-3 py-1.5 text-sm"
+                className="nmbm-btn nmbm-btn--secondary nmbm-btn--md"
               >
                 Add a question
               </button>
               <button
                 disabled={busy || !changed}
                 onClick={() => run(save, "Draft saved.")}
-                className="rounded border border-nmbm-ink/30 px-3 py-1.5 text-sm disabled:opacity-40"
+                className="nmbm-btn nmbm-btn--secondary nmbm-btn--md"
               >
                 Save draft
               </button>
@@ -513,15 +513,15 @@ export default function FormBuilderPage() {
                     await load(version.id);
                   }, `Version ${version.versionNumber} published.`);
                 }}
-                className="rounded bg-nmbm-ink px-4 py-1.5 text-sm font-medium text-nmbm-paper disabled:opacity-50"
+                className="nmbm-btn nmbm-btn--primary nmbm-btn--md"
               >
                 Publish
               </button>
-              {changed && <span className="text-xs text-nmbm-ink/50">Unsaved changes</span>}
+              {changed && <span className="text-xs text-ds-muted">Unsaved changes</span>}
             </div>
           )}
 
-          <div className="mt-8 border-t border-nmbm-ink/10 pt-4">
+          <div className="mt-8 border-t border-ds-border pt-4">
             <button
               disabled={busy}
               onClick={() =>
@@ -533,11 +533,11 @@ export default function FormBuilderPage() {
                   await load(version.id);
                 }, form.active ? "Form retired." : "Form back in use.")
               }
-              className="text-sm text-nmbm-ink/50 underline-offset-2 hover:underline"
+              className="text-sm text-ds-muted underline-offset-2 hover:underline"
             >
               {form.active ? "Retire this form" : "Bring this form back into use"}
             </button>
-            <p className="mt-1 text-xs text-nmbm-ink/50">
+            <p className="mt-1 text-xs text-ds-muted">
               A retired form can't be started. Everything already filled in stays on the record.
             </p>
           </div>

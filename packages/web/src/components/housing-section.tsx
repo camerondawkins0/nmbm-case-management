@@ -43,11 +43,11 @@ const STATE_PILL: Record<CsAuthorizationRow["state"], { tone: "ok" | "warn" | "a
   void: { tone: "muted", label: "void" },
 };
 
-const field = "rounded border border-nmbm-ink/20 px-2 py-1 text-sm";
-const label = "flex flex-col gap-1 text-xs text-nmbm-ink/70";
-const h3 = "text-xs font-semibold uppercase tracking-wide text-nmbm-ink/50";
-const small = "rounded border border-nmbm-ink/30 px-2 py-0.5 text-xs";
-const primary = "rounded bg-nmbm-ink px-3 py-1 text-xs font-medium text-nmbm-paper disabled:opacity-50";
+const field = "nmbm-control";
+const label = "ds-field";
+const h3 = "text-xs font-semibold uppercase tracking-wide text-ds-muted";
+const small = "nmbm-btn nmbm-btn--secondary nmbm-btn--sm";
+const primary = "nmbm-btn nmbm-btn--dark nmbm-btn--sm";
 
 // Housing Community Supports on the record (M24): where they're living,
 // what the plan authorized, the work logged against it, their home, and
@@ -114,19 +114,19 @@ export function HousingSection({
   };
 
   return (
-    <section aria-labelledby="housing-heading" className="mt-6 rounded border border-nmbm-ink/10 p-4">
+    <section aria-labelledby="housing-heading" className="nmbm-card nmbm-card--dense mt-6">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <h2 id="housing-heading" className="text-sm font-semibold uppercase tracking-wide text-nmbm-ink/50">
+        <h2 id="housing-heading" className="ds-section-heading">
           Housing
         </h2>
-        <span className="text-sm text-nmbm-ink">
+        <span className="text-sm text-ds-ink">
           {data.current ? (
             <>
               {HOUSING_SITUATION_LABELS[data.current.situation]}
-              <span className="text-nmbm-ink/50"> · since {data.current.effectiveDate}</span>
+              <span className="text-ds-muted"> · since {data.current.effectiveDate}</span>
             </>
           ) : (
-            <span className="text-nmbm-ink/50">Housing situation not recorded</span>
+            <span className="text-ds-muted">Housing situation not recorded</span>
           )}
         </span>
       </div>
@@ -139,13 +139,13 @@ export function HousingSection({
           </button>
         )}
         {data.statuses.length > 1 && (
-          <details className="text-xs text-nmbm-ink/70">
+          <details className="text-xs text-ds-secondary">
             <summary className="cursor-pointer">History ({data.statuses.length})</summary>
             <ul className="mt-1 flex flex-col gap-1">
               {data.statuses.map((s) => (
-                <li key={s.id} className={s.voidedAt ? "line-through text-nmbm-ink/40" : ""}>
+                <li key={s.id} className={s.voidedAt ? "line-through text-ds-muted" : ""}>
                   {s.effectiveDate}: {HOUSING_SITUATION_LABELS[s.situation]}
-                  {s.note && ` — ${s.note}`} <span className="text-nmbm-ink/40">({s.recordedByName})</span>
+                  {s.note && ` — ${s.note}`} <span className="text-ds-muted">({s.recordedByName})</span>
                   {s.voidedAt && <span className="no-underline"> · void: {s.voidReason}</span>}
                   {writes && !s.voidedAt && (
                     <button className="ml-2 underline" onClick={() => voidRow(`/api/housing-statuses/${s.id}/void`, "housing situation")}>
@@ -181,19 +181,19 @@ export function HousingSection({
           />
         )}
         {data.authorizations.length === 0 ? (
-          <p className="mt-2 text-sm text-nmbm-ink/50">None recorded.</p>
+          <p className="mt-2 text-sm text-ds-muted">None recorded.</p>
         ) : (
-          <ul className="mt-2 divide-y divide-nmbm-ink/5 rounded border border-nmbm-ink/10">
+          <ul className="ds-list mt-2">
             {data.authorizations.map((a) => (
               <li key={a.id} className="px-3 py-2 text-sm">
                 <div className="flex flex-wrap items-center justify-between gap-2">
-                  <span className={a.state === "void" ? "text-nmbm-ink/40 line-through" : "font-medium text-nmbm-ink"}>
+                  <span className={a.state === "void" ? "text-ds-muted line-through" : "font-medium text-ds-ink"}>
                     {CS_SERVICE_LABELS[a.service]}
-                    {a.authorizationNumber && <span className="font-normal text-nmbm-ink/60"> · {a.authorizationNumber}</span>}
+                    {a.authorizationNumber && <span className="font-normal text-ds-muted"> · {a.authorizationNumber}</span>}
                   </span>
                   <Pill tone={STATE_PILL[a.state].tone}>{STATE_PILL[a.state].label}</Pill>
                 </div>
-                <p className="mt-0.5 text-xs text-nmbm-ink/60">
+                <p className="mt-0.5 text-xs text-ds-muted">
                   {a.startDate ? `${a.startDate} to ${a.lastCoveredDay}` : `Requested ${a.requestedDate}`}
                   {a.endedDate && ` (ended early: ${a.endedReason})`}
                   {a.unitType && ` · ${a.unitsUsed} of ${a.unitsAuthorized} ${CS_UNIT_LABELS[a.unitType]} used`}
@@ -252,7 +252,7 @@ export function HousingSection({
           )}
         </div>
         {writes && isOpen && usable("time").length === 0 && (
-          <p className="mt-1 text-xs text-nmbm-ink/50">
+          <p className="mt-1 text-xs text-ds-muted">
             Work is logged against an active Navigation or Tenancy and Sustaining authorization. Until one is
             approved, record contacts as notes.
           </p>
@@ -267,19 +267,19 @@ export function HousingSection({
           />
         )}
         {data.services.length === 0 ? (
-          <p className="mt-2 text-sm text-nmbm-ink/50">None logged.</p>
+          <p className="mt-2 text-sm text-ds-muted">None logged.</p>
         ) : (
-          <ul className="mt-2 divide-y divide-nmbm-ink/5 rounded border border-nmbm-ink/10">
+          <ul className="ds-list mt-2">
             {data.services.slice(0, 15).map((s) => (
-              <li key={s.id} className={`px-3 py-2 text-sm ${s.voidedAt ? "text-nmbm-ink/40" : ""}`}>
+              <li key={s.id} className={`px-3 py-2 text-sm ${s.voidedAt ? "text-ds-muted" : ""}`}>
                 <div className="flex flex-wrap justify-between gap-2">
                   <span className={s.voidedAt ? "line-through" : ""}>
                     {HOUSING_ACTIVITY_LABELS[s.activity]} · {s.minutes} min · {SERVICE_CONTACT_METHOD_LABELS[s.contactMethod]}
                   </span>
-                  <span className="text-xs text-nmbm-ink/50">{s.serviceDate}</span>
+                  <span className="text-xs text-ds-muted">{s.serviceDate}</span>
                 </div>
-                <p className="mt-0.5 whitespace-pre-wrap text-xs text-nmbm-ink/70">{s.note}</p>
-                <p className="mt-0.5 text-xs text-nmbm-ink/40">
+                <p className="mt-0.5 whitespace-pre-wrap text-xs text-ds-secondary">{s.note}</p>
+                <p className="mt-0.5 text-xs text-ds-muted">
                   {nameOf(s.authorizationId)} · {s.authorName}
                   {s.voidedAt && ` · void: ${s.voidReason}`}
                   {writes && !s.voidedAt && (
@@ -308,12 +308,12 @@ export function HousingSection({
           <TenancyForm busy={busy} onCancel={() => setOpen(null)} onSubmit={(b) => send(`/api/participants/${record.id}/tenancies`, b, "Move-in recorded.")} />
         )}
         {current ? (
-          <div className="mt-2 rounded border border-nmbm-ink/10 px-3 py-2 text-sm">
-            <p className="font-medium text-nmbm-ink">
+          <div className="ds-row mt-2">
+            <p className="font-medium text-ds-ink">
               {current.addressLine1}
               {current.addressLine2 && `, ${current.addressLine2}`}, {current.city}, {current.state} {current.postalCode}
             </p>
-            <p className="mt-0.5 text-xs text-nmbm-ink/60">
+            <p className="mt-0.5 text-xs text-ds-muted">
               Moved in {current.moveInDate} · {SUBSIDY_LABELS[current.subsidy]}
               {current.monthlyRent && ` · rent ${money(current.monthlyRent)}`}
               {current.tenantPortion && `, they pay ${money(current.tenantPortion)}`}
@@ -341,10 +341,10 @@ export function HousingSection({
             )}
           </div>
         ) : (
-          !open?.startsWith("home") && <p className="mt-2 text-sm text-nmbm-ink/50">No current home on file.</p>
+          !open?.startsWith("home") && <p className="mt-2 text-sm text-ds-muted">No current home on file.</p>
         )}
         {data.tenancies.filter((t) => t !== current).length > 0 && (
-          <ul className="mt-2 text-xs text-nmbm-ink/60">
+          <ul className="mt-2 text-xs text-ds-muted">
             {data.tenancies
               .filter((t) => t !== current)
               .map((t) => (
@@ -377,7 +377,7 @@ export function HousingSection({
               onSubmit={(b) => send(`/api/participants/${record.id}/housing-deposits`, b, "Deposit requested.")}
             />
           )}
-          <ul className="mt-2 divide-y divide-nmbm-ink/5 rounded border border-nmbm-ink/10">
+          <ul className="ds-list mt-2">
             {data.deposits.map((d) => (
               <DepositItem
                 key={d.id}
@@ -392,7 +392,7 @@ export function HousingSection({
                 voidRow={voidRow}
               />
             ))}
-            {data.deposits.length === 0 && <li className="px-3 py-2 text-sm text-nmbm-ink/50">None asked for.</li>}
+            {data.deposits.length === 0 && <li className="px-3 py-2 text-sm text-ds-muted">None asked for.</li>}
           </ul>
         </div>
       )}
@@ -426,14 +426,14 @@ function DepositItem({
   const tone = { requested: "warn", approved: "ok", declined: "alert", paid: "muted" } as const;
   const mine = d.requestedById === me.id;
   return (
-    <li className={`px-3 py-2 text-sm ${d.voidedAt ? "text-nmbm-ink/40" : ""}`}>
+    <li className={`px-3 py-2 text-sm ${d.voidedAt ? "text-ds-muted" : ""}`}>
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <span className={d.voidedAt ? "line-through" : "text-nmbm-ink"}>
+        <span className={d.voidedAt ? "line-through" : "text-ds-ink"}>
           {money(d.amount)} to {d.payee} · {DEPOSIT_PURPOSE_LABELS[d.purpose]}
         </span>
         {d.voidedAt ? <Pill tone="muted">void</Pill> : <Pill tone={tone[d.status]}>{d.status}</Pill>}
       </div>
-      <p className="mt-0.5 text-xs text-nmbm-ink/60">
+      <p className="mt-0.5 text-xs text-ds-muted">
         Asked for by {d.requestedByName} {new Date(d.requestedAt).toLocaleDateString()}
         {d.decidedByName && ` · ${d.status === "declined" ? "declined" : "approved"} by ${d.decidedByName}`}
         {d.decisionNote && `: ${d.decisionNote}`}
@@ -459,7 +459,7 @@ function DepositItem({
               </button>
             </>
           )}
-          {approves && d.status === "requested" && mine && <span className="text-xs text-nmbm-ink/50">Somebody else decides your request.</span>}
+          {approves && d.status === "requested" && mine && <span className="text-xs text-ds-muted">Somebody else decides your request.</span>}
           {approves && d.status === "approved" && open !== `paid:${d.id}` && (
             <button className={small} onClick={() => setOpen(`paid:${d.id}`)}>
               Record payment
@@ -503,7 +503,7 @@ function DepositItem({
 function FormShell({ children, busy, onCancel, onSubmit }: { children: React.ReactNode; busy: boolean; onCancel: () => void; onSubmit: () => void }) {
   return (
     <form
-      className="mt-2 flex flex-wrap items-end gap-3 rounded border border-nmbm-ink/10 bg-nmbm-ink/[0.02] p-3"
+      className="ds-inset mt-2 flex flex-wrap items-end gap-3"
       onSubmit={(e) => {
         e.preventDefault();
         onSubmit();
@@ -892,7 +892,7 @@ function DepositForm({ auths, busy, onCancel, onSubmit }: { auths: CsAuthorizati
         <input className={field} value={note} onChange={(e) => setNote(e.target.value)} />
       </label>
       {chosen && (
-        <p className="w-full text-xs text-nmbm-ink/50">
+        <p className="w-full text-xs text-ds-muted">
           {money(chosen.amountCommitted)} of {money(chosen.amountAuthorized)} already asked for on this authorization.
         </p>
       )}

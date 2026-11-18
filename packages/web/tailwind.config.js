@@ -1,36 +1,59 @@
 /** @type {import('tailwindcss').Config} */
+// Every color, face and corner here is a token from the NMBM design system
+// (src/design/tokens.css, generated from design-system/tokens.json), so a
+// utility class follows the light, dark and high-contrast themes.
+const token = (name) => `rgb(var(--${name}-rgb) / <alpha-value>)`;
+
 export default {
   content: ["./index.html", "./src/**/*.{ts,tsx}"],
   theme: {
     extend: {
       colors: {
-        // From the NMBM mark: black-on-white primary lockup, a gold
-        // (foil) variant for emphasis. Approximated from the logo
-        // images shared in chat — swap for exact hex once the source
-        // files are available (see public/branding/README.md).
-        nmbm: {
-          ink: "#0a0a0a",
-          gold: {
-            DEFAULT: "#b8860b",
-            light: "#f5d576",
-            dark: "#8a6508",
-          },
-          paper: "#ffffff",
+        // Semantic: what components and pages use.
+        ds: {
+          surface: token("surface"),
+          raised: token("surface-raised"),
+          subtle: token("surface-subtle"),
+          ink: token("ink"),
+          secondary: token("ink-secondary"),
+          muted: token("ink-muted"),
+          accent: token("accent-text"),
+          border: token("border"),
+          control: token("border-control"),
         },
-        // Functional, not brand. The logo is a two-color mark and
-        // inventing brand colors to signal "overdue" would misrepresent
-        // it — docs/BRANDING.md says to keep state colors separate.
+        // Brand: the logo's own colors, the same in every theme.
+        nmbm: {
+          ink: token("ink"),
+          paper: token("surface"),
+          gold: { DEFAULT: token("gold"), light: token("gold-light"), dark: token("accent-text") },
+        },
+        // Functional, not brand: case state only, never decoration.
         state: {
-          alert: "#b91c1c",
-          "alert-bg": "#fef2f2",
-          warn: "#b45309",
-          "warn-bg": "#fffbeb",
-          ok: "#15803d",
-          "ok-bg": "#f0fdf4",
+          alert: token("state-alert"),
+          "alert-bg": token("state-alert-bg"),
+          warn: token("state-warn"),
+          "warn-bg": token("state-warn-bg"),
+          ok: token("state-ok"),
+          "ok-bg": token("state-ok-bg"),
         },
       },
       fontFamily: {
-        display: ["'Segoe UI'", "system-ui", "sans-serif"],
+        sans: ["var(--font-sans)"],
+        serif: ["var(--font-serif)"],
+        mono: ["var(--font-mono)"],
+        display: ["var(--font-serif)"],
+      },
+      borderRadius: {
+        sm: "var(--radius-sm)",
+        DEFAULT: "var(--radius-md)",
+        md: "var(--radius-md)",
+        lg: "var(--radius-lg)",
+        full: "var(--radius-full)",
+      },
+      boxShadow: {
+        sm: "var(--shadow-sm)",
+        md: "var(--shadow-md)",
+        lg: "var(--shadow-lg)",
       },
     },
   },

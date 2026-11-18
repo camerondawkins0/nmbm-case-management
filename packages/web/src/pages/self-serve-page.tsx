@@ -162,23 +162,23 @@ export default function SelfServePage() {
   }
 
   return (
-    <div className="min-h-screen bg-nmbm-paper px-4 py-8">
+    <div className="min-h-screen bg-ds-surface px-4 py-8">
       <div className="mx-auto max-w-2xl">
         <div className="flex items-center gap-3">
           <BrandMark size={40} />
-          <span className="text-lg font-semibold text-nmbm-ink">NMBM</span>
+          <span className="text-lg font-semibold text-ds-ink">NMBM</span>
         </div>
 
-        {screen === "loading" && <p className="mt-10 text-sm text-nmbm-ink/50">Loading…</p>}
+        {screen === "loading" && <p className="mt-10 text-sm text-ds-muted">Loading…</p>}
 
         {screen === "passcode" && (
           <form onSubmit={unlock} className="mt-10 max-w-sm">
-            <h1 className="text-xl font-semibold text-nmbm-ink">Enter your passcode</h1>
-            <p className="mt-2 text-sm text-nmbm-ink/70">
+            <h1 className="ds-display">Enter your passcode</h1>
+            <p className="mt-2 text-sm text-ds-secondary">
               Your case manager gave you a {SELF_SERVE_PASSCODE_LENGTH}-digit passcode with this
               link.
             </p>
-            <label htmlFor="passcode" className="mt-5 block text-sm font-medium text-nmbm-ink">
+            <label htmlFor="passcode" className="mt-5 block text-sm font-medium text-ds-ink">
               Passcode
             </label>
             <input
@@ -188,13 +188,13 @@ export default function SelfServePage() {
               maxLength={SELF_SERVE_PASSCODE_LENGTH}
               value={passcode}
               onChange={(e) => setPasscode(e.target.value.replace(/\D/g, ""))}
-              className="mt-1 w-40 rounded border border-nmbm-ink/30 px-3 py-2 text-lg tracking-[0.3em]"
+              className="nmbm-control mt-1 w-40 text-lg tracking-[0.3em]"
             />
             {message && <p className="mt-3 text-sm text-state-alert">{message}</p>}
             <button
               type="submit"
               disabled={busy || passcode.length !== SELF_SERVE_PASSCODE_LENGTH}
-              className="mt-5 block rounded bg-nmbm-ink px-5 py-2 text-sm font-medium text-nmbm-paper disabled:opacity-50"
+              className="nmbm-btn nmbm-btn--primary nmbm-btn--md mt-5 block"
             >
               Continue
             </button>
@@ -203,15 +203,15 @@ export default function SelfServePage() {
 
         {screen === "gone" && (
           <div className="mt-10">
-            <h1 className="text-xl font-semibold text-nmbm-ink">This link can't be used</h1>
-            <p className="mt-2 text-sm text-nmbm-ink/70">{message}</p>
+            <h1 className="ds-display">This link can't be used</h1>
+            <p className="mt-2 text-sm text-ds-secondary">{message}</p>
           </div>
         )}
 
         {screen === "offline" && (
           <div className="mt-10">
-            <h1 className="text-xl font-semibold text-nmbm-ink">We can't reach the form right now</h1>
-            <p className="mt-2 text-sm text-nmbm-ink/70">
+            <h1 className="ds-display">We can't reach the form right now</h1>
+            <p className="mt-2 text-sm text-ds-secondary">
               Check your internet connection and try again. Anything you've already answered has
               been saved.
             </p>
@@ -220,7 +220,7 @@ export default function SelfServePage() {
                 setScreen("loading");
                 load();
               }}
-              className="mt-4 rounded border border-nmbm-ink/30 px-4 py-2 text-sm"
+              className="nmbm-btn nmbm-btn--secondary nmbm-btn--md mt-4"
             >
               Try again
             </button>
@@ -229,8 +229,8 @@ export default function SelfServePage() {
 
         {screen === "done" && (
           <div className="mt-10">
-            <h1 className="text-xl font-semibold text-nmbm-ink">Thank you</h1>
-            <p className="mt-2 text-sm text-nmbm-ink/70">
+            <h1 className="ds-display">Thank you</h1>
+            <p className="mt-2 text-sm text-ds-secondary">
               Your answers have been sent to your case manager. You can close this page now.
             </p>
           </div>
@@ -238,8 +238,8 @@ export default function SelfServePage() {
 
         {screen === "form" && view && (
           <form onSubmit={submit} className="mt-8">
-            <h1 className="text-2xl font-semibold text-nmbm-ink">{view.formName}</h1>
-            <p className="mt-1 text-sm text-nmbm-ink/60">
+            <h1 className="ds-display">{view.formName}</h1>
+            <p className="mt-1 text-sm text-ds-muted">
               Your answers save as you go, so you can stop and come back with the same link and
               passcode. Questions marked <span className="text-state-alert">*</span> need an
               answer.
@@ -247,9 +247,9 @@ export default function SelfServePage() {
             <div className="mt-6 flex flex-col gap-6">
               {bySection(view.questions.filter((q) => visibleQuestionIds(view.questions, answers).has(q.stableId))).map(
                 (group, i) => (
-                  <fieldset key={i} className="rounded border border-nmbm-ink/10 p-4">
+                  <fieldset key={i} className="nmbm-card nmbm-card--dense">
                     {group.section && (
-                      <legend className="px-1 text-sm font-semibold uppercase tracking-wide text-nmbm-ink/50">
+                      <legend className="ds-section-heading px-1">
                         {group.section}
                       </legend>
                     )}
@@ -268,7 +268,7 @@ export default function SelfServePage() {
               )}
             </div>
             {message && (
-              <p className="mt-4 rounded border border-state-alert/20 bg-state-alert-bg px-3 py-2 text-sm text-state-alert">
+              <p className="nmbm-alert nmbm-alert--alert mt-4">
                 {message}
               </p>
             )}
@@ -276,15 +276,15 @@ export default function SelfServePage() {
               <button
                 type="submit"
                 disabled={busy}
-                className="rounded bg-nmbm-ink px-5 py-2 text-sm font-medium text-nmbm-paper disabled:opacity-50"
+                className="nmbm-btn nmbm-btn--primary nmbm-btn--md"
               >
                 Send my answers
               </button>
-              <span className="text-xs text-nmbm-ink/50" aria-live="polite">
+              <span className="text-xs text-ds-muted" aria-live="polite">
                 {saving === "saving" ? "Saving…" : saving === "unsaved" ? "Not saved yet" : "Saved"}
               </span>
             </div>
-            <p className="mt-6 text-xs text-nmbm-ink/50">
+            <p className="mt-6 text-xs text-ds-muted">
               On a shared phone or tablet, close this page when you've finished.
             </p>
           </form>

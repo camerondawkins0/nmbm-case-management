@@ -90,41 +90,39 @@ export default function LoginPage({ expired = false }: { expired?: boolean }) {
     : "/auth/google/login";
 
   return (
-    <div className="flex min-h-screen flex-col bg-nmbm-paper">
+    <div className="flex min-h-screen flex-col bg-ds-surface">
       <main className="flex flex-1 flex-col items-center justify-center px-4 py-12">
         <div className="flex flex-col items-center text-center">
-          <BrandMark size={84} />
-          <p className="mt-4 text-2xl font-semibold tracking-[0.12em] text-nmbm-ink">NMBM</p>
-          <p className="mt-1 text-[11px] uppercase tracking-[0.24em] text-nmbm-gold-dark">
-            Make Your Next Move Your Best Move
-          </p>
+          {/* The mark carries the wordmark and the line beneath it, so
+              nothing is set in type here to repeat them. */}
+          <BrandMark size={128} />
         </div>
 
         <section
           aria-labelledby="sign-in-heading"
-          className="mt-10 w-full max-w-sm rounded-lg border border-nmbm-ink/15 bg-nmbm-paper shadow-[0_1px_2px_rgba(10,10,10,0.04),0_8px_24px_-12px_rgba(10,10,10,0.18)]"
+          className="nmbm-card nmbm-card--elevated mt-8 w-full max-w-sm !p-0"
         >
           <div className="px-7 pb-6 pt-7">
-            <h1 id="sign-in-heading" className="text-lg font-semibold text-nmbm-ink">
+            <h1 id="sign-in-heading" className="ds-display">
               Sign in
             </h1>
-            <p className="mt-1 text-sm text-nmbm-ink/60">Case management for NMBM staff.</p>
+            <p className="mt-1 text-sm text-ds-muted">Case management for NMBM staff.</p>
 
             {notice && <NoticeBanner notice={notice} />}
 
             <a
               href={googleHref}
-              className="mt-6 flex w-full items-center justify-center gap-3 rounded-md border border-[#dadce0] bg-white px-4 py-2.5 text-sm font-medium text-[#1f1f1f] transition hover:bg-[#f8f9fa] focus:outline-none focus-visible:ring-2 focus-visible:ring-nmbm-gold focus-visible:ring-offset-2"
+              className="ds-google mt-6"
             >
               <GoogleG />
               Sign in with Google
             </a>
-            <p className="mt-3 text-xs leading-relaxed text-nmbm-ink/55">
+            <p className="mt-3 text-xs leading-relaxed text-ds-muted">
               Use your NMBM Google Workspace account — the one you use for NMBM email.
             </p>
           </div>
 
-          <div className="flex gap-2.5 border-t border-nmbm-ink/10 bg-nmbm-ink/[0.025] px-7 py-4 text-xs leading-relaxed text-nmbm-ink/60">
+          <div className="flex gap-2.5 border-t border-ds-border bg-ds-subtle px-7 py-4 text-xs leading-relaxed text-ds-muted">
             <LockIcon />
             <p>
               This system holds confidential client information. Access is limited to authorized
@@ -136,7 +134,7 @@ export default function LoginPage({ expired = false }: { expired?: boolean }) {
         <DevSignIn returnTo={returnTo} />
       </main>
 
-      <footer className="px-4 pb-6 text-center text-xs text-nmbm-ink/45">
+      <footer className="px-4 pb-6 text-center text-xs text-ds-muted">
         Trouble signing in? Ask your supervisor or NMBM's system administrator.
       </footer>
     </div>
@@ -144,14 +142,13 @@ export default function LoginPage({ expired = false }: { expired?: boolean }) {
 }
 
 function NoticeBanner({ notice }: { notice: Notice }) {
-  const styles =
-    notice.tone === "alert"
-      ? "border-state-alert/25 bg-state-alert-bg text-state-alert"
-      : "border-nmbm-ink/15 bg-nmbm-ink/[0.03] text-nmbm-ink";
   return (
-    <div role={notice.tone === "alert" ? "alert" : "status"} className={`mt-5 rounded-md border px-3.5 py-3 text-sm ${styles}`}>
-      <p className="font-medium">{notice.title}</p>
-      <p className={`mt-0.5 ${notice.tone === "alert" ? "" : "text-nmbm-ink/65"}`}>{notice.body}</p>
+    <div
+      role={notice.tone === "alert" ? "alert" : "status"}
+      className={`nmbm-alert ${notice.tone === "alert" ? "nmbm-alert--alert" : "nmbm-alert--info"} mt-5 flex-col !gap-0.5`}
+    >
+      <p className="font-semibold">{notice.title}</p>
+      <p>{notice.body}</p>
     </div>
   );
 }
@@ -176,12 +173,12 @@ function DevSignIn({ returnTo }: { returnTo: string | null }) {
   return (
     <section
       aria-labelledby="dev-sign-in-heading"
-      className="mt-6 w-full max-w-sm rounded-lg border border-dashed border-state-warn/50 bg-state-warn-bg/60 px-5 py-4"
+      className="nmbm-alert nmbm-alert--warn mt-6 w-full max-w-sm flex-col !items-stretch border-dashed"
     >
-      <h2 id="dev-sign-in-heading" className="text-xs font-semibold uppercase tracking-wide text-state-warn">
+      <h2 id="dev-sign-in-heading" className="nmbm-label">
         Development sign-in
       </h2>
-      <p className="mt-1 text-xs text-state-warn/90">
+      <p className="mt-1 text-xs">
         Invented demo staff. Skips Google, and doesn't exist in production.
       </p>
       <ul className="mt-3 flex flex-col gap-1">
@@ -192,10 +189,10 @@ function DevSignIn({ returnTo }: { returnTo: string | null }) {
             <li key={account.email}>
               <a
                 href={`/auth/dev-login?${query.toString()}`}
-                className="flex items-baseline justify-between gap-3 rounded px-2 py-1.5 text-sm text-nmbm-ink hover:bg-nmbm-paper"
+                className="flex items-baseline justify-between gap-3 rounded px-2 py-1.5 text-sm text-ds-ink hover:bg-ds-surface"
               >
                 <span className="font-medium">{account.displayName}</span>
-                <span className="truncate text-xs text-nmbm-ink/55">
+                <span className="truncate text-xs text-ds-muted">
                   {account.roles.join(", ") || "No role"}
                 </span>
               </a>

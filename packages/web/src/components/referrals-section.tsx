@@ -67,15 +67,15 @@ export function ReferralsSection({
   }
 
   return (
-    <section className="mt-6 rounded border border-nmbm-ink/10 p-4">
+    <section className="nmbm-card nmbm-card--dense mt-6">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <h2 className="text-sm font-semibold uppercase tracking-wide text-nmbm-ink/50">
+        <h2 className="ds-section-heading">
           Referrals out
         </h2>
         {writable && !adding && (
           <button
             onClick={() => setAdding(true)}
-            className="rounded border border-nmbm-ink/30 px-3 py-1 text-sm"
+            className="nmbm-btn nmbm-btn--secondary nmbm-btn--sm"
           >
             Refer out
           </button>
@@ -85,39 +85,39 @@ export function ReferralsSection({
       {/* Saying so up front beats letting someone fill in a form that
           the server is going to refuse. The server still decides. */}
       {writable && !hasUsableRelease && (
-        <p className="mt-3 rounded border border-state-warn/25 bg-state-warn-bg px-3 py-2 text-sm text-state-warn">
+        <p className="nmbm-alert nmbm-alert--warn mt-3">
           No current release of information on file — a referral can't be sent until one is
           recorded above.
         </p>
       )}
 
       {record.referrals.length === 0 && !adding && (
-        <p className="mt-3 text-sm text-nmbm-ink/60">None sent.</p>
+        <p className="mt-3 text-sm text-ds-muted">None sent.</p>
       )}
 
       <ul className="mt-3 flex flex-col gap-2">
         {record.referrals.map((referral) => (
-          <li key={referral.id} className="rounded border border-nmbm-ink/10 px-3 py-2 text-sm">
+          <li key={referral.id} className="ds-row">
             <div className="flex flex-wrap items-center justify-between gap-2">
-              <span className="font-medium text-nmbm-ink">
+              <span className="font-medium text-ds-ink">
                 {referral.serviceType} — {referral.partnerName}
               </span>
               <Pill tone={tone(referral.status)}>{referral.status.replace("_", " ")}</Pill>
             </div>
-            <p className="mt-0.5 text-xs text-nmbm-ink/50">
+            <p className="mt-0.5 text-xs text-ds-muted">
               sent {new Date(referral.referredAt).toLocaleDateString()} by{" "}
               {referral.referredByName}
               {referral.outcomeRecordedAt &&
                 ` · outcome ${new Date(referral.outcomeRecordedAt).toLocaleDateString()}`}
             </p>
             {referral.outcomeNote && (
-              <p className="mt-1 text-xs text-nmbm-ink/70">{referral.outcomeNote}</p>
+              <p className="mt-1 text-xs text-ds-secondary">{referral.outcomeNote}</p>
             )}
 
             {writable && outcomeFor !== referral.id && (
               <button
                 onClick={() => setOutcomeFor(referral.id)}
-                className="mt-1 text-xs text-nmbm-gold-dark underline-offset-2 hover:underline"
+                className="mt-1 text-xs text-ds-accent underline-offset-2 hover:underline"
               >
                 Record what happened
               </button>
@@ -128,7 +128,7 @@ export function ReferralsSection({
                 <select
                   value={outcomeStatus}
                   onChange={(e) => setOutcomeStatus(e.target.value as ReferralStatus)}
-                  className="rounded border border-nmbm-ink/20 px-2 py-1 text-sm"
+                  className="nmbm-control nmbm-select"
                 >
                   {OUTCOMES.map((o) => (
                     <option key={o.value} value={o.value}>
@@ -140,7 +140,7 @@ export function ReferralsSection({
                   value={outcomeNote}
                   onChange={(e) => setOutcomeNote(e.target.value)}
                   placeholder="What did the partner say?"
-                  className="min-w-[14rem] flex-1 rounded border border-nmbm-ink/20 px-2 py-1 text-sm"
+                  className="nmbm-control min-w-[14rem] flex-1"
                 />
                 <button
                   disabled={busy}
@@ -157,7 +157,7 @@ export function ReferralsSection({
                       "Outcome recorded.",
                     )
                   }
-                  className="rounded bg-nmbm-ink px-3 py-1 text-sm font-medium text-nmbm-paper disabled:opacity-50"
+                  className="nmbm-btn nmbm-btn--dark nmbm-btn--sm"
                 >
                   Save
                 </button>
@@ -168,7 +168,7 @@ export function ReferralsSection({
       </ul>
 
       {adding && (
-        <div className="mt-3 rounded border border-nmbm-ink/15 p-3">
+        <div className="nmbm-card nmbm-card--dense mt-3">
           <div className="flex flex-col gap-3 sm:flex-row">
             <label className="flex flex-1 flex-col gap-1 text-sm">
               Partner agency
@@ -176,7 +176,7 @@ export function ReferralsSection({
                 value={partnerName}
                 onChange={(e) => setPartnerName(e.target.value)}
                 placeholder="Who are you referring to?"
-                className="rounded border border-nmbm-ink/20 px-2 py-1.5 text-sm"
+                className="nmbm-control"
               />
             </label>
             <label className="flex flex-1 flex-col gap-1 text-sm">
@@ -185,7 +185,7 @@ export function ReferralsSection({
                 value={serviceType}
                 onChange={(e) => setServiceType(e.target.value)}
                 placeholder="What for?"
-                className="rounded border border-nmbm-ink/20 px-2 py-1.5 text-sm"
+                className="nmbm-control"
               />
             </label>
           </div>
@@ -193,7 +193,7 @@ export function ReferralsSection({
             value={reason}
             onChange={(e) => setReason(e.target.value)}
             placeholder="Reason (optional)"
-            className="mt-3 w-full rounded border border-nmbm-ink/20 px-2 py-1.5 text-sm"
+            className="nmbm-control mt-3 w-full"
           />
           <div className="mt-2 flex gap-2">
             <button
@@ -213,13 +213,13 @@ export function ReferralsSection({
                   "Referral sent.",
                 )
               }
-              className="rounded bg-nmbm-ink px-4 py-1.5 text-sm font-medium text-nmbm-paper disabled:opacity-50"
+              className="nmbm-btn nmbm-btn--dark nmbm-btn--md"
             >
               Send referral
             </button>
             <button
               onClick={() => setAdding(false)}
-              className="rounded border border-nmbm-ink/30 px-4 py-1.5 text-sm"
+              className="nmbm-btn nmbm-btn--secondary nmbm-btn--md"
             >
               Cancel
             </button>

@@ -35,29 +35,29 @@ export default function AdminUsersPage() {
     }
   }
 
-  if (!users) return <p className="text-sm text-nmbm-ink/50">Loading…</p>;
+  if (!users) return <p className="text-sm text-ds-muted">Loading…</p>;
 
   return (
     <div className="mx-auto max-w-4xl">
-      <h1 className="text-2xl font-semibold text-nmbm-ink">Staff and roles</h1>
-      <p className="mt-1 text-sm text-nmbm-ink/60">
+      <h1 className="ds-display">Staff and roles</h1>
+      <p className="mt-1 text-sm text-ds-muted">
         Accounts are created the first time someone signs in with Google. Roles decide what
         they can see and do.
       </p>
 
       {error && (
-        <p className="mt-4 rounded border border-state-alert/20 bg-state-alert-bg px-3 py-2 text-sm text-state-alert">
+        <p className="nmbm-alert nmbm-alert--alert mt-4">
           {error}
         </p>
       )}
 
       <ul className="mt-6 flex flex-col gap-3">
         {users.map((user) => (
-          <li key={user.id} className="rounded border border-nmbm-ink/10 p-4">
+          <li key={user.id} className="nmbm-card nmbm-card--dense">
             <div className="flex flex-wrap items-baseline justify-between gap-2">
               <div>
-                <span className="font-medium text-nmbm-ink">{user.displayName}</span>
-                <span className="ml-2 text-sm text-nmbm-ink/50">{user.email}</span>
+                <span className="font-medium text-ds-ink">{user.displayName}</span>
+                <span className="ml-2 text-sm text-ds-muted">{user.email}</span>
               </div>
               {user.active ? (
                 <Pill tone="ok">Active</Pill>
@@ -68,14 +68,14 @@ export default function AdminUsersPage() {
 
             <div className="mt-2 flex flex-wrap items-center gap-1.5">
               {user.roles.length === 0 && (
-                <span className="text-sm text-nmbm-ink/50">
+                <span className="text-sm text-ds-muted">
                   No role — this account can sign in but can't do anything yet.
                 </span>
               )}
               {user.roles.map((role) => (
                 <span
                   key={role.code}
-                  className="inline-flex items-center gap-1 rounded bg-nmbm-ink/5 px-2 py-0.5 text-xs text-nmbm-ink"
+                  className="inline-flex items-center gap-1 rounded bg-ds-subtle px-2 py-0.5 text-xs text-ds-ink"
                 >
                   {role.label}
                   <button
@@ -87,7 +87,7 @@ export default function AdminUsersPage() {
                         }),
                       )
                     }
-                    className="text-nmbm-ink/40 hover:text-state-alert"
+                    className="nmbm-btn nmbm-btn--danger nmbm-btn--md"
                   >
                     ×
                   </button>
@@ -99,7 +99,7 @@ export default function AdminUsersPage() {
               <select
                 value={adding[user.id] ?? ""}
                 onChange={(e) => setAdding({ ...adding, [user.id]: e.target.value })}
-                className="rounded border border-nmbm-ink/20 px-2 py-1 text-sm"
+                className="nmbm-control nmbm-select"
               >
                 <option value="">Add a role…</option>
                 {[true, false].map((builtin) => {
@@ -127,7 +127,7 @@ export default function AdminUsersPage() {
                     }),
                   )
                 }
-                className="rounded border border-nmbm-ink/30 px-3 py-1 text-sm disabled:opacity-40"
+                className="nmbm-btn nmbm-btn--secondary nmbm-btn--sm"
               >
                 Add
               </button>
@@ -137,7 +137,7 @@ export default function AdminUsersPage() {
                   onClick={() =>
                     run(() => api(`/api/admin/users/${user.id}/deactivate`, { method: "POST" }))
                   }
-                  className="ml-auto rounded border border-nmbm-ink/30 px-3 py-1 text-sm text-nmbm-ink/70 hover:border-state-alert hover:text-state-alert"
+                  className="nmbm-btn nmbm-btn--danger nmbm-btn--sm ml-auto"
                 >
                   Deactivate
                 </button>
@@ -146,7 +146,7 @@ export default function AdminUsersPage() {
                   onClick={() =>
                     run(() => api(`/api/admin/users/${user.id}/reactivate`, { method: "POST" }))
                   }
-                  className="ml-auto rounded border border-nmbm-ink/30 px-3 py-1 text-sm"
+                  className="nmbm-btn nmbm-btn--secondary nmbm-btn--sm ml-auto"
                 >
                   Reactivate
                 </button>
@@ -158,21 +158,21 @@ export default function AdminUsersPage() {
 
       {audit.length > 0 && (
         <section className="mt-10">
-          <h2 className="text-sm font-semibold uppercase tracking-wide text-nmbm-ink/50">
+          <h2 className="ds-section-heading">
             Recent activity
           </h2>
-          <p className="mt-1 text-xs text-nmbm-ink/50">
+          <p className="mt-1 text-xs text-ds-muted">
             Append-only. Entries are written by the action itself and can't be edited here.
           </p>
-          <ul className="mt-2 divide-y divide-nmbm-ink/5 rounded border border-nmbm-ink/10 text-sm">
+          <ul className="ds-list mt-2">
             {audit.map((entry) => (
               <li key={entry.id} className="flex flex-wrap justify-between gap-2 px-3 py-2">
-                <span className="text-nmbm-ink">
+                <span className="text-ds-ink">
                   <span className="font-medium">{entry.actorName ?? "Participant (own link)"}</span>{" "}
-                  <span className="text-nmbm-ink/60">{entry.action.replace(/[._]/g, " ")}</span>
-                  {entry.detail && <span className="text-nmbm-ink/50"> — {entry.detail}</span>}
+                  <span className="text-ds-muted">{entry.action.replace(/[._]/g, " ")}</span>
+                  {entry.detail && <span className="text-ds-muted"> — {entry.detail}</span>}
                 </span>
-                <span className="text-xs text-nmbm-ink/40">
+                <span className="text-xs text-ds-muted">
                   {new Date(entry.createdAt).toLocaleString()}
                 </span>
               </li>

@@ -48,9 +48,9 @@ export function ConsentsSection({
   }
 
   return (
-    <section className="mt-6 rounded border border-nmbm-ink/10 p-4">
+    <section className="nmbm-card nmbm-card--dense mt-6">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <h2 className="text-sm font-semibold uppercase tracking-wide text-nmbm-ink/50">
+        <h2 className="ds-section-heading">
           Consent forms
         </h2>
         {/* A form is recorded against an enrollment, so a closed record
@@ -59,7 +59,7 @@ export function ConsentsSection({
         {writable && record.episodeStatus === "open" && !adding && (
           <button
             onClick={() => setAdding(true)}
-            className="rounded border border-nmbm-ink/30 px-3 py-1 text-sm"
+            className="nmbm-btn nmbm-btn--secondary nmbm-btn--sm"
           >
             Record a signed form
           </button>
@@ -67,14 +67,14 @@ export function ConsentsSection({
       </div>
 
       {record.consents.length === 0 && !adding && (
-        <p className="mt-3 text-sm text-nmbm-ink/60">Nothing on file.</p>
+        <p className="mt-3 text-sm text-ds-muted">Nothing on file.</p>
       )}
 
       <ul className="mt-3 flex flex-col gap-2">
         {record.consents.map((consent) => (
-          <li key={consent.id} className="rounded border border-nmbm-ink/10 px-3 py-2 text-sm">
+          <li key={consent.id} className="ds-row">
             <div className="flex flex-wrap items-center justify-between gap-2">
-              <span className="font-medium text-nmbm-ink">{consent.formName}</span>
+              <span className="font-medium text-ds-ink">{consent.formName}</span>
               <Pill
                 tone={
                   consent.status === "active"
@@ -87,7 +87,7 @@ export function ConsentsSection({
                 {consent.status}
               </Pill>
             </div>
-            <p className="mt-0.5 text-xs text-nmbm-ink/50">
+            <p className="mt-0.5 text-xs text-ds-muted">
               {TYPE_LABELS[consent.type]} · signed {consent.signedDate} · expires{" "}
               {consent.expiresDate}
               {consent.recordedByName && ` · recorded by ${consent.recordedByName}`}
@@ -110,7 +110,7 @@ export function ConsentsSection({
                     "Consent revoked.",
                   );
                 }}
-                className="mt-1 text-xs text-nmbm-ink/50 underline-offset-2 hover:text-state-alert hover:underline"
+                className="nmbm-btn nmbm-btn--danger nmbm-btn--sm mt-1"
               >
                 Revoke
               </button>
@@ -120,14 +120,14 @@ export function ConsentsSection({
       </ul>
 
       {adding && (
-        <div className="mt-3 rounded border border-nmbm-ink/15 p-3">
+        <div className="nmbm-card nmbm-card--dense mt-3">
           <div className="flex flex-col gap-3 sm:flex-row">
             <label className="flex flex-1 flex-col gap-1 text-sm">
               Form type
               <select
                 value={type}
                 onChange={(e) => setType(e.target.value as ConsentType)}
-                className="rounded border border-nmbm-ink/20 px-2 py-1.5 text-sm"
+                className="nmbm-control nmbm-select"
               >
                 {Object.entries(TYPE_LABELS).map(([value, label]) => (
                   <option key={value} value={value}>
@@ -141,7 +141,7 @@ export function ConsentsSection({
               <input
                 value={formName}
                 onChange={(e) => setFormName(e.target.value)}
-                className="rounded border border-nmbm-ink/20 px-2 py-1.5 text-sm"
+                className="nmbm-control"
               />
             </label>
             <label className="flex flex-col gap-1 text-sm">
@@ -150,11 +150,11 @@ export function ConsentsSection({
                 type="date"
                 value={signedDate}
                 onChange={(e) => setSignedDate(e.target.value)}
-                className="rounded border border-nmbm-ink/20 px-2 py-1.5 text-sm"
+                className="nmbm-control"
               />
             </label>
           </div>
-          <p className="mt-2 text-xs text-nmbm-ink/50">
+          <p className="mt-2 text-xs text-ds-muted">
             Expiry is set to one year from enrollment, per NMBM's rule — not from the signature
             date.
           </p>
@@ -176,13 +176,13 @@ export function ConsentsSection({
                   "Consent recorded.",
                 )
               }
-              className="rounded bg-nmbm-ink px-4 py-1.5 text-sm font-medium text-nmbm-paper disabled:opacity-50"
+              className="nmbm-btn nmbm-btn--dark nmbm-btn--md"
             >
               Save
             </button>
             <button
               onClick={() => setAdding(false)}
-              className="rounded border border-nmbm-ink/30 px-4 py-1.5 text-sm"
+              className="nmbm-btn nmbm-btn--secondary nmbm-btn--md"
             >
               Cancel
             </button>

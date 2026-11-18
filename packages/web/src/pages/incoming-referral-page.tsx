@@ -7,7 +7,7 @@ import type { IncomingReferralDetail } from "../lib/types.js";
 import { Pill } from "../components/flags.js";
 import { useParticipantSearch } from "../components/participant-search.js";
 
-const inputClass = "rounded border border-nmbm-ink/20 px-2 py-1.5 text-sm";
+const inputClass = "nmbm-control";
 
 export default function IncomingReferralPage() {
   const { id } = useParams();
@@ -53,21 +53,21 @@ export default function IncomingReferralPage() {
   }
 
   if (error && !r) return <p className="text-sm text-state-alert">{error}</p>;
-  if (!r) return <p className="text-sm text-nmbm-ink/50">Loading…</p>;
+  if (!r) return <p className="text-sm text-ds-muted">Loading…</p>;
 
   const payer = PAYER_OPTIONS.find((p) => p.value === r.payer)?.label;
 
   return (
     <div className="mx-auto max-w-3xl">
-      <Link to="/referrals-in" className="text-sm text-nmbm-ink/60 underline-offset-2 hover:underline">
+      <Link to="/referrals-in" className="text-sm text-ds-muted underline-offset-2 hover:underline">
         ← Referrals in
       </Link>
       <div className="mt-2 flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-semibold text-nmbm-ink">
+          <h1 className="ds-display">
             {r.firstName} {r.lastName}
           </h1>
-          <p className="mt-1 text-sm text-nmbm-ink/60">
+          <p className="mt-1 text-sm text-ds-muted">
             Referred by {r.sourceName || REFERRAL_SOURCE_LABELS[r.sourceType]}
             {r.sourceName && ` (${REFERRAL_SOURCE_LABELS[r.sourceType].toLowerCase()})`} · received{" "}
             {r.receivedDate} · recorded by {r.recordedByName}
@@ -79,65 +79,65 @@ export default function IncomingReferralPage() {
       </div>
 
       {notice && (
-        <p className="mt-4 rounded border border-state-ok/20 bg-state-ok-bg px-3 py-2 text-sm text-state-ok">{notice}</p>
+        <p className="nmbm-alert nmbm-alert--ok mt-4">{notice}</p>
       )}
       {error && (
-        <p className="mt-4 rounded border border-state-alert/20 bg-state-alert-bg px-3 py-2 text-sm text-state-alert">
+        <p className="nmbm-alert nmbm-alert--alert mt-4">
           {error}
         </p>
       )}
 
-      <section className="mt-6 rounded border border-nmbm-ink/10 p-4 text-sm">
+      <section className="nmbm-card nmbm-card--dense mt-6">
         <dl className="grid gap-x-6 gap-y-2 sm:grid-cols-2">
           <div>
-            <dt className="text-xs text-nmbm-ink/50">Date of birth</dt>
+            <dt className="text-xs text-ds-muted">Date of birth</dt>
             <dd>{r.dateOfBirth ?? "Not given"}</dd>
           </div>
           <div>
-            <dt className="text-xs text-nmbm-ink/50">Phone</dt>
+            <dt className="text-xs text-ds-muted">Phone</dt>
             <dd>{r.phone ?? "Not given"}</dd>
           </div>
           <div>
-            <dt className="text-xs text-nmbm-ink/50">Payer</dt>
+            <dt className="text-xs text-ds-muted">Payer</dt>
             <dd>{payer ?? "Not known"}</dd>
           </div>
           <div>
-            <dt className="text-xs text-nmbm-ink/50">Referrer's contact</dt>
+            <dt className="text-xs text-ds-muted">Referrer's contact</dt>
             <dd>{r.sourceContact ?? "—"}</dd>
           </div>
           <div className="sm:col-span-2">
-            <dt className="text-xs text-nmbm-ink/50">Why they were referred</dt>
+            <dt className="text-xs text-ds-muted">Why they were referred</dt>
             <dd className="whitespace-pre-wrap">{r.reason}</dd>
           </div>
         </dl>
       </section>
 
       {r.status === "admitted" && r.participantId && (
-        <p className="mt-4 text-sm text-nmbm-ink/70">
+        <p className="mt-4 text-sm text-ds-secondary">
           Admitted {r.admittedAt?.slice(0, 10)} by {r.admittedByName}.{" "}
-          <Link to={`/participants/${r.participantId}`} className="font-medium text-nmbm-ink underline underline-offset-2">
+          <Link to={`/participants/${r.participantId}`} className="font-medium text-ds-ink underline underline-offset-2">
             Open the record
           </Link>{" "}
           (if they're on a caseload you can see).
         </p>
       )}
       {r.status === "closed" && r.closeReason && (
-        <p className="mt-4 text-sm text-nmbm-ink/70">
+        <p className="mt-4 text-sm text-ds-secondary">
           Closed {r.closedAt?.slice(0, 10)} by {r.closedByName}: {REFERRAL_CLOSE_LABELS[r.closeReason]}
           {r.closeNote && ` — ${r.closeNote}`}
         </p>
       )}
 
       {(r.outcomeOwed || r.outcomeReportedAt) && (
-        <section className="mt-4 rounded border border-nmbm-ink/10 px-4 py-3 text-sm">
+        <section className="ds-row mt-4">
           {r.outcomeReportedAt ? (
-            <p className="text-nmbm-ink/70">
+            <p className="text-ds-secondary">
               {r.sourceName || "The referrer"} was told the outcome on {r.outcomeReportedAt.slice(0, 10)} by{" "}
               {r.outcomeReportedByName}.
             </p>
           ) : (
             <div className="flex flex-wrap items-center justify-between gap-2">
-              <p className="text-nmbm-ink/80">
+              <p className="text-ds-secondary">
                 Let {r.sourceName || "the referrer"} know what happened
                 {r.sourceContact ? ` (${r.sourceContact})` : ""}, then mark it done.
               </p>
@@ -146,7 +146,7 @@ export default function IncomingReferralPage() {
                 onClick={() =>
                   run(() => api(`/api/incoming-referrals/${r.id}/outcome-reported`, { method: "POST" }), "Recorded that the referrer was told.")
                 }
-                className="rounded border border-nmbm-ink/30 px-3 py-1 text-sm"
+                className="nmbm-btn nmbm-btn--secondary nmbm-btn--sm"
               >
                 Referrer told
               </button>
@@ -156,13 +156,13 @@ export default function IncomingReferralPage() {
       )}
 
       <section className="mt-6">
-        <h2 className="text-sm font-semibold uppercase tracking-wide text-nmbm-ink/50">Contact attempts and notes</h2>
-        {r.notes.length === 0 && <p className="mt-2 text-sm text-nmbm-ink/60">None yet.</p>}
+        <h2 className="ds-section-heading">Contact attempts and notes</h2>
+        {r.notes.length === 0 && <p className="mt-2 text-sm text-ds-muted">None yet.</p>}
         <ul className="mt-2 flex flex-col gap-2">
           {r.notes.map((n) => (
-            <li key={n.id} className="rounded border border-nmbm-ink/10 px-3 py-2 text-sm">
+            <li key={n.id} className="ds-row">
               <p className="whitespace-pre-wrap">{n.body}</p>
-              <p className="mt-0.5 text-xs text-nmbm-ink/50">
+              <p className="mt-0.5 text-xs text-ds-muted">
                 {n.createdByName} · {new Date(n.createdAt).toLocaleString()}
               </p>
             </li>
@@ -186,7 +186,7 @@ export default function IncomingReferralPage() {
               aria-label="Add a note"
               className={`${inputClass} flex-1`}
             />
-            <button disabled={busy || !note.trim()} className="rounded border border-nmbm-ink/30 px-3 text-sm disabled:opacity-40">
+            <button disabled={busy || !note.trim()} className="nmbm-btn nmbm-btn--secondary nmbm-btn--md">
               Add
             </button>
           </form>
@@ -194,20 +194,20 @@ export default function IncomingReferralPage() {
       </section>
 
       {open && (
-        <section className="mt-8 rounded border border-nmbm-ink/15 p-4">
-          <h2 className="text-sm font-semibold text-nmbm-ink">What happens next</h2>
+        <section className="nmbm-card nmbm-card--dense mt-8">
+          <h2 className="text-sm font-semibold text-ds-ink">What happens next</h2>
 
           {matches && matches.length > 0 && (
             <div className="mt-3">
-              <p className="text-sm text-nmbm-ink/70">Already known to NMBM? Records that match:</p>
-              <ul className="mt-2 divide-y divide-nmbm-ink/5 rounded border border-nmbm-ink/10">
+              <p className="text-sm text-ds-secondary">Already known to NMBM? Records that match:</p>
+              <ul className="ds-list mt-2">
                 {matches.map((m) => (
                   <li key={m.id} className="flex flex-wrap items-center justify-between gap-2 px-3 py-2 text-sm">
                     <span>
                       <span className="font-medium">
                         {m.firstName} {m.lastName}
                       </span>
-                      <span className="ml-2 text-xs text-nmbm-ink/50">born {m.dateOfBirth}</span>
+                      <span className="ml-2 text-xs text-ds-muted">born {m.dateOfBirth}</span>
                     </span>
                     {m.active ? (
                       <button
@@ -222,14 +222,14 @@ export default function IncomingReferralPage() {
                             "Added to their current stay.",
                           )
                         }
-                        className="rounded border border-nmbm-ink/30 px-3 py-1 text-xs"
+                        className="nmbm-btn nmbm-btn--secondary nmbm-btn--sm"
                       >
                         Add to their current stay
                       </button>
                     ) : (
                       <button
                         onClick={() => navigate(`/participants/${m.id}?referral=${r.id}`)}
-                        className="rounded border border-nmbm-ink/30 px-3 py-1 text-xs"
+                        className="nmbm-btn nmbm-btn--secondary nmbm-btn--sm"
                       >
                         Readmit from this referral
                       </button>
@@ -243,12 +243,12 @@ export default function IncomingReferralPage() {
           <div className="mt-4 flex flex-wrap gap-2">
             <button
               onClick={() => navigate(`/participants/new?referral=${r.id}`)}
-              className="rounded bg-nmbm-ink px-4 py-1.5 text-sm font-medium text-nmbm-paper"
+              className="nmbm-btn nmbm-btn--primary nmbm-btn--md"
             >
               Admit as a new client
             </button>
             {!closing && (
-              <button onClick={() => setClosing(true)} className="rounded border border-nmbm-ink/30 px-4 py-1.5 text-sm">
+              <button onClick={() => setClosing(true)} className="nmbm-btn nmbm-btn--secondary nmbm-btn--md">
                 Close without admitting
               </button>
             )}
@@ -287,7 +287,7 @@ export default function IncomingReferralPage() {
                 Note (optional)
                 <input value={closeNote} onChange={(e) => setCloseNote(e.target.value)} className={inputClass} />
               </label>
-              <button disabled={busy} className="rounded bg-nmbm-ink px-4 py-1.5 text-sm font-medium text-nmbm-paper">
+              <button disabled={busy} className="nmbm-btn nmbm-btn--dark nmbm-btn--md">
                 Close
               </button>
             </form>

@@ -1,7 +1,7 @@
 import { YES_NO_OPTIONS, type AnswerValue } from "@nmbm/shared";
 import type { FormQuestion } from "../lib/types.js";
 
-const inputClass = "rounded border border-nmbm-ink/20 px-2 py-1.5 text-sm";
+const inputClass = "nmbm-control";
 
 // One question as the person filling the form sees it. The same
 // component renders the staff page, the builder's preview, and — when
@@ -92,7 +92,7 @@ export function QuestionField({
             <button
               type="button"
               onClick={() => onChange(null)}
-              className="self-start text-xs text-nmbm-ink/50 underline-offset-2 hover:underline"
+              className="self-start text-xs text-ds-muted underline-offset-2 hover:underline"
             >
               Clear
             </button>
@@ -139,15 +139,15 @@ export function QuestionField({
       {/* A group of radios or boxes has no single input to point a
           <label> at; the group names itself from this heading instead. */}
       {grouped ? (
-        <span id={`${id}-label`} className="text-sm font-medium text-nmbm-ink">
+        <span id={`${id}-label`} className="text-sm font-medium text-ds-ink">
           {prompt}
         </span>
       ) : (
-        <label id={`${id}-label`} htmlFor={id} className="text-sm font-medium text-nmbm-ink">
+        <label id={`${id}-label`} htmlFor={id} className="text-sm font-medium text-ds-ink">
           {prompt}
         </label>
       )}
-      {question.helpText && <p className="text-xs text-nmbm-ink/60">{question.helpText}</p>}
+      {question.helpText && <p className="text-xs text-ds-muted">{question.helpText}</p>}
       {control}
     </div>
   );

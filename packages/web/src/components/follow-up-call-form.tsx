@@ -51,12 +51,12 @@ export function FollowUpCallForm({
     }
   }
 
-  const field = "w-full rounded border border-nmbm-ink/20 bg-nmbm-paper px-3 py-1.5 text-sm";
+  const field = "nmbm-control";
 
   return (
-    <form onSubmit={submit} className="mt-3 flex flex-col gap-3 rounded border border-nmbm-ink/10 bg-nmbm-ink/[0.02] p-3">
+    <form onSubmit={submit} className="ds-inset mt-3 flex flex-col gap-3">
       {error && <p className="text-sm text-state-alert">{error}</p>}
-      <label className="flex flex-col gap-1 text-xs text-nmbm-ink/60">
+      <label className="flex flex-col gap-1 text-xs text-ds-muted">
         How did the call go?
         <select value={outcome} onChange={(e) => setOutcome(e.target.value as FollowUpOutcome)} className={field}>
           {FOLLOW_UP_OUTCOMES.map((o) => (
@@ -66,7 +66,7 @@ export function FollowUpCallForm({
           ))}
         </select>
       </label>
-      <label className="flex flex-col gap-1 text-xs text-nmbm-ink/60">
+      <label className="flex flex-col gap-1 text-xs text-ds-muted">
         {reached ? "How are they doing?" : "Note (optional)"}
         <textarea
           value={note}
@@ -77,7 +77,7 @@ export function FollowUpCallForm({
         />
       </label>
       {reached && (
-        <label className="flex flex-col gap-1 text-xs text-nmbm-ink/60">
+        <label className="flex flex-col gap-1 text-xs text-ds-muted">
           How were NMBM's services received? (optional)
           <textarea value={feedback} onChange={(e) => setFeedback(e.target.value)} rows={2} className={field} />
         </label>
@@ -86,12 +86,12 @@ export function FollowUpCallForm({
         <button
           type="submit"
           disabled={saving}
-          className="rounded bg-nmbm-ink px-4 py-1.5 text-sm font-medium text-nmbm-paper disabled:opacity-50"
+          className="nmbm-btn nmbm-btn--dark nmbm-btn--md"
         >
           {saving ? "Saving…" : "Save call"}
         </button>
         {onCancel && (
-          <button type="button" onClick={onCancel} className="text-sm text-nmbm-ink/60 hover:underline">
+          <button type="button" onClick={onCancel} className="text-sm text-ds-muted hover:underline">
             Cancel
           </button>
         )}

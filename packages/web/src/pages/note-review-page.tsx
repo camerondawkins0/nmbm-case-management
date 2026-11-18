@@ -33,32 +33,32 @@ export default function NoteReviewPage() {
     }
   }
 
-  if (!notes) return <p className="text-sm text-nmbm-ink/50">Loading…</p>;
+  if (!notes) return <p className="text-sm text-ds-muted">Loading…</p>;
 
   return (
     <div className="mx-auto max-w-3xl">
-      <h1 className="text-2xl font-semibold text-nmbm-ink">Notes awaiting review</h1>
-      <p className="mt-1 text-sm text-nmbm-ink/60">
+      <h1 className="ds-display">Notes awaiting review</h1>
+      <p className="mt-1 text-sm text-ds-muted">
         {notes.length === 0 ? "Nothing waiting." : `${notes.length} waiting for a decision.`}
       </p>
 
       {error && (
-        <p className="mt-4 rounded border border-state-alert/20 bg-state-alert-bg px-3 py-2 text-sm text-state-alert">
+        <p className="nmbm-alert nmbm-alert--alert mt-4">
           {error}
         </p>
       )}
 
       <ul className="mt-6 flex flex-col gap-3">
         {notes.map((note) => (
-          <li key={note.id} className="rounded border border-nmbm-ink/10 p-4">
+          <li key={note.id} className="nmbm-card nmbm-card--dense">
             <div className="flex flex-wrap items-baseline justify-between gap-2">
               <Link
                 to={`/participants/${note.participantId}`}
-                className="font-medium text-nmbm-ink hover:underline"
+                className="ds-person hover:underline"
               >
                 {note.firstName} {note.lastName}
               </Link>
-              <span className="flex items-center gap-2 text-xs text-nmbm-ink/50">
+              <span className="flex items-center gap-2 text-xs text-ds-muted">
                 <Pill tone={note.contactResult === "contacted" ? "ok" : "warn"}>
                   {note.contactResult === "contacted" ? "Reached" : "No contact"}
                 </Pill>
@@ -66,12 +66,12 @@ export default function NoteReviewPage() {
                 {note.authorName} · {note.contactResult === "contacted" ? "contact" : "attempt"} on {note.serviceDate}
               </span>
             </div>
-            <p className="mt-2 whitespace-pre-wrap text-sm text-nmbm-ink/80">{note.body}</p>
+            <p className="mt-2 whitespace-pre-wrap text-sm text-ds-secondary">{note.body}</p>
 
             <div className="mt-3 flex flex-wrap items-center gap-2">
               <button
                 onClick={() => act(note.id, "approve")}
-                className="rounded bg-nmbm-ink px-4 py-1.5 text-sm font-medium text-nmbm-paper hover:bg-nmbm-ink/85"
+                className="nmbm-btn nmbm-btn--dark nmbm-btn--md"
               >
                 Approve
               </button>
@@ -79,11 +79,11 @@ export default function NoteReviewPage() {
                 value={reasons[note.id] ?? ""}
                 onChange={(e) => setReasons({ ...reasons, [note.id]: e.target.value })}
                 placeholder="Reason for returning"
-                className="min-w-[14rem] flex-1 rounded border border-nmbm-ink/20 px-3 py-1.5 text-sm"
+                className="nmbm-control min-w-[14rem] flex-1"
               />
               <button
                 onClick={() => act(note.id, "return")}
-                className="rounded border border-nmbm-ink/30 px-4 py-1.5 text-sm font-medium text-nmbm-ink hover:bg-nmbm-ink/5"
+                className="nmbm-btn nmbm-btn--secondary nmbm-btn--md"
               >
                 Return
               </button>

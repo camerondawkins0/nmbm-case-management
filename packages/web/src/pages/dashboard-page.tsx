@@ -23,7 +23,7 @@ export default function DashboardPage({ me }: { me: Me }) {
     api<ReturnedNote[]>("/api/notes/returned").then(setReturned).catch(() => setReturned([]));
   }, [me]);
 
-  if (!data) return <p className="text-sm text-nmbm-ink/50">Loading…</p>;
+  if (!data) return <p className="text-sm text-ds-muted">Loading…</p>;
 
   const firstName = me.displayName.split(" ")[0];
   const nothingDue =
@@ -39,13 +39,13 @@ export default function DashboardPage({ me }: { me: Me }) {
 
   return (
     <div className="mx-auto max-w-4xl">
-      <h1 className="text-2xl font-semibold text-nmbm-ink">Good morning, {firstName}</h1>
-      <p className="mt-1 text-sm text-nmbm-ink/60">
+      <h1 className="ds-display">Good morning, {firstName}</h1>
+      <p className="mt-1 text-sm text-ds-muted">
         {data.caseloadSize} on your caseload · {data.needsAttention} need attention
       </p>
 
       {nothingDue && (
-        <p className="mt-8 rounded border border-state-ok/20 bg-state-ok-bg px-4 py-3 text-sm text-state-ok">
+        <p className="nmbm-alert nmbm-alert--ok mt-8">
           Nothing needs attention today.
         </p>
       )}
@@ -55,9 +55,9 @@ export default function DashboardPage({ me }: { me: Me }) {
       {((data.followUps && data.followUps.overdue + data.followUps.due > 0) || !!data.reEnrollmentRequests) && (
         <div className="mt-8 grid gap-3 sm:grid-cols-2">
           {data.followUps && data.followUps.overdue + data.followUps.due > 0 && (
-            <Link to="/follow-ups" className="rounded border border-nmbm-ink/10 p-4 hover:border-nmbm-ink/40">
-              <p className="text-sm font-semibold uppercase tracking-wide text-nmbm-ink/50">Follow-up calls</p>
-              <p className="mt-1 text-sm text-nmbm-ink">
+            <Link to="/follow-ups" className="nmbm-btn nmbm-btn--secondary nmbm-btn--md">
+              <p className="ds-section-heading">Follow-up calls</p>
+              <p className="mt-1 text-sm text-ds-ink">
                 {data.followUps.overdue > 0 && <span className="text-state-alert">{data.followUps.overdue} overdue</span>}
                 {data.followUps.overdue > 0 && data.followUps.due > 0 && " · "}
                 {data.followUps.due > 0 && <span>{data.followUps.due} due now</span>}
@@ -65,9 +65,9 @@ export default function DashboardPage({ me }: { me: Me }) {
             </Link>
           )}
           {!!data.reEnrollmentRequests && (
-            <Link to="/follow-ups" className="rounded border border-state-warn/30 bg-state-warn-bg p-4 hover:border-state-warn">
-              <p className="text-sm font-semibold uppercase tracking-wide text-state-warn">Asked to come back</p>
-              <p className="mt-1 text-sm text-nmbm-ink">
+            <Link to="/follow-ups" className="nmbm-alert nmbm-alert--warn">
+              <p className="ds-section-heading">Asked to come back</p>
+              <p className="mt-1 text-sm text-ds-ink">
                 {data.reEnrollmentRequests} former client{data.reEnrollmentRequests > 1 ? "s" : ""} waiting to be readmitted
               </p>
             </Link>
@@ -77,22 +77,22 @@ export default function DashboardPage({ me }: { me: Me }) {
 
       {returned.length > 0 && (
         <section className="mt-8">
-          <h2 className="text-sm font-semibold uppercase tracking-wide text-nmbm-ink/50">
-            Notes returned to you <span className="text-nmbm-ink/30">({returned.length})</span>
+          <h2 className="ds-section-heading">
+            Notes returned to you <span className="text-ds-muted">({returned.length})</span>
           </h2>
-          <ul className="mt-2 divide-y divide-nmbm-ink/5 rounded border border-nmbm-ink/10">
+          <ul className="ds-list mt-2">
             {returned.map((note) => (
               <li key={note.id} className="px-4 py-3 text-sm">
                 <div className="flex flex-wrap items-center justify-between gap-2">
-                  <Link to={`/participants/${note.participantId}#note-${note.id}`} className="font-medium text-nmbm-ink hover:underline">
+                  <Link to={`/participants/${note.participantId}#note-${note.id}`} className="font-medium text-ds-ink hover:underline">
                     {note.firstName} {note.lastName}
                   </Link>
-                  <span className="text-xs text-nmbm-ink/50">written {new Date(note.createdAt).toLocaleDateString()}</span>
+                  <span className="text-xs text-ds-muted">written {new Date(note.createdAt).toLocaleDateString()}</span>
                 </div>
                 {note.reviewNote && (
                   <p className="mt-1 rounded bg-state-warn-bg px-2 py-1 text-xs text-state-warn">Returned: {note.reviewNote}</p>
                 )}
-                <p className="mt-1 line-clamp-2 text-xs text-nmbm-ink/60">{note.body}</p>
+                <p className="mt-1 line-clamp-2 text-xs text-ds-muted">{note.body}</p>
               </li>
             ))}
           </ul>
@@ -109,11 +109,11 @@ export default function DashboardPage({ me }: { me: Me }) {
           living inside a participant record nobody reopens. */}
       {data.referralsAwaitingOutcome.length > 0 && (
         <section className="mt-8">
-          <h2 className="text-sm font-semibold uppercase tracking-wide text-nmbm-ink/50">
+          <h2 className="ds-section-heading">
             Referrals waiting on an outcome{" "}
-            <span className="text-nmbm-ink/30">({data.referralsAwaitingOutcome.length})</span>
+            <span className="text-ds-muted">({data.referralsAwaitingOutcome.length})</span>
           </h2>
-          <ul className="mt-2 divide-y divide-nmbm-ink/5 rounded border border-nmbm-ink/10">
+          <ul className="ds-list mt-2">
             {data.referralsAwaitingOutcome.map((referral) => (
               <li
                 key={referral.id}
@@ -122,11 +122,11 @@ export default function DashboardPage({ me }: { me: Me }) {
                 <span>
                   <Link
                     to={`/participants/${referral.participantId}`}
-                    className="font-medium text-nmbm-ink hover:underline"
+                    className="ds-person hover:underline"
                   >
                     {referral.firstName} {referral.lastName}
                   </Link>
-                  <span className="text-nmbm-ink/50">
+                  <span className="text-ds-muted">
                     {" "}
                     — {referral.serviceType}, {referral.partnerName}
                   </span>
@@ -144,16 +144,16 @@ export default function DashboardPage({ me }: { me: Me }) {
 
       {data.awaitingReview.length > 0 && (
         <section className="mt-8">
-          <h2 className="text-sm font-semibold uppercase tracking-wide text-nmbm-ink/50">
+          <h2 className="ds-section-heading">
             Waiting for your approval
           </h2>
-          <ul className="mt-2 divide-y divide-nmbm-ink/5 rounded border border-nmbm-ink/10">
+          <ul className="ds-list mt-2">
             {data.awaitingReview.map((plan) => (
               <li key={plan.id} className="flex items-center justify-between px-4 py-3 text-sm">
-                <span className="font-medium text-nmbm-ink">
+                <span className="font-medium text-ds-ink">
                   {plan.firstName} {plan.lastName}
                 </span>
-                <a href="/care-plans/review" className="text-nmbm-gold-dark hover:underline">
+                <a href="/care-plans/review" className="text-ds-accent hover:underline">
                   Review plan
                 </a>
               </li>
@@ -183,10 +183,10 @@ function Section({
   if (rows.length === 0) return null;
   return (
     <section className="mt-8">
-      <h2 className="text-sm font-semibold uppercase tracking-wide text-nmbm-ink/50">
-        {title} <span className="text-nmbm-ink/30">({rows.length})</span>
+      <h2 className="ds-section-heading">
+        {title} <span className="text-ds-muted">({rows.length})</span>
       </h2>
-      <ul className="mt-2 divide-y divide-nmbm-ink/5 rounded border border-nmbm-ink/10">
+      <ul className="ds-list mt-2">
         {rows.map((row) => (
           <li
             key={row.id}

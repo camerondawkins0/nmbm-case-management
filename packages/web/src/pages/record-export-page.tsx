@@ -30,8 +30,8 @@ const day = (iso: string | null) => (iso ? iso.slice(0, 10) : "—");
 function Section({ title, empty, children }: { title: string; empty: boolean; children: React.ReactNode }) {
   return (
     <section className="mt-8 break-inside-avoid-page">
-      <h2 className="border-b border-nmbm-ink/20 pb-1 text-base font-semibold text-nmbm-ink">{title}</h2>
-      {empty ? <p className="mt-2 text-sm text-nmbm-ink/50">None on record.</p> : <div className="mt-2">{children}</div>}
+      <h2 className="border-b border-ds-control pb-1 text-base font-semibold text-ds-ink">{title}</h2>
+      {empty ? <p className="mt-2 text-sm text-ds-muted">None on record.</p> : <div className="mt-2">{children}</div>}
     </section>
   );
 }
@@ -80,23 +80,23 @@ export default function RecordExportPage() {
   if (!doc) {
     return (
       <div className="mx-auto max-w-xl">
-        <Link to={`/participants/${id}`} className="text-sm text-nmbm-ink/60 underline-offset-2 hover:underline">
+        <Link to={`/participants/${id}`} className="text-sm text-ds-muted underline-offset-2 hover:underline">
           ← Back to the record
         </Link>
-        <h1 className="mt-2 text-2xl font-semibold text-nmbm-ink">Export the full record</h1>
-        <p className="mt-1 text-sm text-nmbm-ink/60">
+        <h1 className="ds-display mt-2">Export the full record</h1>
+        <p className="mt-1 text-sm text-ds-muted">
           Everything on this person's record, as one document to print, save as a PDF or send on.
           Sending a whole record outside NMBM is a disclosure: the export is logged with your name
           and the reason below.
         </p>
         {error && (
-          <p className="mt-4 rounded border border-state-alert/20 bg-state-alert-bg px-3 py-2 text-sm text-state-alert">
+          <p className="nmbm-alert nmbm-alert--alert mt-4">
             {error}
           </p>
         )}
         <form onSubmit={create} className="mt-6 flex flex-col gap-3">
           <fieldset className="flex flex-col gap-1.5">
-            <legend className="mb-1 text-sm font-medium text-nmbm-ink">What is it for?</legend>
+            <legend className="mb-1 text-sm font-medium text-ds-ink">What is it for?</legend>
             {RECORD_EXPORT_PURPOSES.map((p) => (
               <label key={p} className="flex items-center gap-2 text-sm">
                 <input type="radio" name="purpose" checked={purpose === p} onChange={() => setPurpose(p)} />
@@ -111,12 +111,12 @@ export default function RecordExportPage() {
               required={purpose === "other"}
               onChange={(e) => setNote(e.target.value)}
               placeholder={purpose === "legal_request" ? "e.g. case or subpoena number" : ""}
-              className="rounded border border-nmbm-ink/20 px-2 py-1.5 text-sm"
+              className="nmbm-control"
             />
           </label>
           <button
             disabled={busy}
-            className="self-start rounded bg-nmbm-ink px-4 py-1.5 text-sm font-medium text-nmbm-paper disabled:opacity-50"
+            className="nmbm-btn nmbm-btn--dark nmbm-btn--md self-start"
           >
             {busy ? "Preparing…" : "Create the export"}
           </button>
@@ -129,31 +129,31 @@ export default function RecordExportPage() {
   const payer = PAYER_OPTIONS.find((o) => o.value === p.payer)?.label ?? "Not recorded";
 
   return (
-    <div className="mx-auto max-w-3xl text-nmbm-ink">
+    <div className="mx-auto max-w-3xl text-ds-ink">
       <div className="flex flex-wrap items-center justify-between gap-2 print:hidden">
-        <Link to={`/participants/${id}`} className="text-sm text-nmbm-ink/60 underline-offset-2 hover:underline">
+        <Link to={`/participants/${id}`} className="text-sm text-ds-muted underline-offset-2 hover:underline">
           ← Back to the record
         </Link>
         <div className="flex gap-2">
-          <button onClick={() => window.print()} className="rounded bg-nmbm-ink px-4 py-1.5 text-sm font-medium text-nmbm-paper">
+          <button onClick={() => window.print()} className="nmbm-btn nmbm-btn--dark nmbm-btn--md">
             Print or save as PDF
           </button>
-          <button onClick={download} className="rounded border border-nmbm-ink/30 px-4 py-1.5 text-sm">
+          <button onClick={download} className="nmbm-btn nmbm-btn--secondary nmbm-btn--md">
             Download as data
           </button>
         </div>
       </div>
 
       <header className="mt-4 border-b-2 border-nmbm-ink pb-3">
-        <p className="text-xs uppercase tracking-wide text-nmbm-ink/60">NMBM · participant record · confidential</p>
-        <h1 className="mt-1 text-2xl font-semibold">
+        <p className="nmbm-label">NMBM · participant record · confidential</p>
+        <h1 className="ds-display mt-1">
           {p.firstName} {p.lastName}
         </h1>
         <p className="text-sm">
           Born {p.dateOfBirth} · payer {payer} · on file since {day(p.recordCreatedAt)}
         </p>
         <ExportDetails details={p.details} />
-        <p className="mt-2 text-xs text-nmbm-ink/60">
+        <p className="mt-2 text-xs text-ds-muted">
           Exported {new Date(doc.generatedAt).toLocaleString()} by {doc.generatedByName} for:{" "}
           {EXPORT_PURPOSE_LABELS[doc.purpose]}
           {doc.purposeNote && ` (${doc.purposeNote})`}
@@ -196,7 +196,7 @@ export default function RecordExportPage() {
         <ul className="flex flex-col gap-3 text-sm">
           {[...doc.notes].reverse().map((n) => (
             <li key={n.id} className="break-inside-avoid">
-              <p className="text-xs text-nmbm-ink/60">
+              <p className="text-xs text-ds-muted">
                 {n.serviceDate} (written {new Date(n.createdAt).toLocaleString()}) · {n.authorName} ·{" "}
                 {n.contactResult === "contacted" ? "reached" : "no contact"} · {words(n.status)}
               </p>
@@ -210,7 +210,7 @@ export default function RecordExportPage() {
         <ul className="flex flex-col gap-3 text-sm">
           {doc.carePlans.map((c, i) => (
             <li key={i} className="break-inside-avoid">
-              <p className="text-xs text-nmbm-ink/60">
+              <p className="text-xs text-ds-muted">
                 Written {day(c.createdAt)} · {words(c.status)}
                 {c.approvedAt && ` · approved ${day(c.approvedAt)} by ${c.approvedByName}`}
               </p>
@@ -226,18 +226,18 @@ export default function RecordExportPage() {
             <p className="text-sm font-medium">
               {a.formName} (version {a.versionNumber})
             </p>
-            <p className="text-xs text-nmbm-ink/60">
+            <p className="text-xs text-ds-muted">
               {ASSESSMENT_MODE_LABELS[a.mode]} · started {day(a.startedAt)} · {words(a.status)}
               {a.completedAt && ` ${day(a.completedAt)}`}
               {a.voidReason && ` — voided: ${a.voidReason}`}
             </p>
             {a.answers.length === 0 ? (
-              <p className="text-sm text-nmbm-ink/50">No answers.</p>
+              <p className="text-sm text-ds-muted">No answers.</p>
             ) : (
               <dl className="mt-1 text-sm">
                 {a.answers.map((x, i) => (
                   <div key={i} className="mt-1">
-                    <dt className="text-nmbm-ink/70">{x.question}</dt>
+                    <dt className="text-ds-secondary">{x.question}</dt>
                     <dd className="whitespace-pre-wrap pl-3">{x.answer}</dd>
                   </div>
                 ))}
@@ -287,7 +287,7 @@ export default function RecordExportPage() {
                 <li key={v.id} className="break-inside-avoid">
                   {v.serviceDate} · {HOUSING_ACTIVITY_LABELS[v.activity]} · {v.minutes} min · {v.authorName}
                   {v.voidedAt && ` [void: ${v.voidReason}]`}
-                  <span className="block whitespace-pre-wrap text-nmbm-ink/80">{v.note}</span>
+                  <span className="block whitespace-pre-wrap text-ds-secondary">{v.note}</span>
                 </li>
               ))}
             </ul>
@@ -346,7 +346,7 @@ export default function RecordExportPage() {
             <p className="font-medium">
               {g.programName} — {g.cohortName} (from {g.startDate}) · {words(g.status)}
             </p>
-            <p className="text-xs text-nmbm-ink/60">
+            <p className="text-xs text-ds-muted">
               {ATTENDANCE_STATUSES.map((s) => `${g.attendance.filter((x) => x.status === s).length} ${s}`).join(" · ")}
             </p>
             <p className="text-xs">
@@ -379,7 +379,7 @@ export default function RecordExportPage() {
         </ul>
       </Section>
 
-      <section className="mt-8 border-t border-nmbm-ink/20 pt-3 text-xs text-nmbm-ink/60">
+      <section className="mt-8 border-t border-ds-control pt-3 text-xs text-ds-muted">
         <p className="font-medium">Not included in this export</p>
         <ul className="list-disc pl-5">
           {doc.omitted.map((o, i) => (
@@ -396,12 +396,12 @@ function ExportDetails({ details }: { details: RecordExport["participant"]["deta
     PARTICIPANT_DETAIL_LABELS[k],
     k.toLowerCase().includes("phone") ? formatPhone(details[k]) : details[k],
   ]);
-  if (rows.length === 0) return <p className="mt-1 text-sm text-nmbm-ink/60">No contact or insurance details recorded.</p>;
+  if (rows.length === 0) return <p className="mt-1 text-sm text-ds-muted">No contact or insurance details recorded.</p>;
   return (
     <dl className="mt-2 grid grid-cols-[auto_1fr] gap-x-4 text-sm">
       {rows.map(([k, v]) => (
         <div key={k} className="contents">
-          <dt className="text-nmbm-ink/60">{k}</dt>
+          <dt className="text-ds-muted">{k}</dt>
           <dd>{v}</dd>
         </div>
       ))}

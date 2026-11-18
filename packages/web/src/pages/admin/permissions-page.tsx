@@ -103,7 +103,7 @@ export default function PermissionsPage() {
   }, [search, area]);
 
   if (error && !grid) return <p className="text-sm text-state-alert">{error}</p>;
-  if (!grid) return <p className="text-sm text-nmbm-ink/50">Loading…</p>;
+  if (!grid) return <p className="text-sm text-ds-muted">Loading…</p>;
 
   const groups = [...new Set(grid.permissions.map((p) => p.group))];
   const selected = grid.roles.find((r) => r.code === params.get("role")) ?? grid.roles[0];
@@ -116,15 +116,15 @@ export default function PermissionsPage() {
     <div className="mx-auto max-w-6xl">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-semibold text-nmbm-ink">Permissions</h1>
-          <p className="mt-1 max-w-3xl text-sm text-nmbm-ink/60">
+          <h1 className="ds-display">Permissions</h1>
+          <p className="mt-1 max-w-3xl text-sm text-ds-muted">
             What each role can do. Changes apply straight away to everyone with that role, stay in place through updates
             to the system, and are recorded in the audit log.
           </p>
         </div>
         <button
           onClick={() => setCreating((c) => !c)}
-          className="rounded bg-nmbm-ink px-4 py-2 text-sm font-medium text-nmbm-paper"
+          className="nmbm-btn nmbm-btn--dark nmbm-btn--md"
         >
           New role
         </button>
@@ -144,46 +144,46 @@ export default function PermissionsPage() {
       )}
 
       {notice && (
-        <p className="mt-4 rounded border border-state-ok/20 bg-state-ok-bg px-3 py-2 text-sm text-state-ok">
+        <p className="nmbm-alert nmbm-alert--ok mt-4">
           {notice}
         </p>
       )}
       {error && (
-        <p className="mt-4 rounded border border-state-alert/20 bg-state-alert-bg px-3 py-2 text-sm text-state-alert">
+        <p className="nmbm-alert nmbm-alert--alert mt-4">
           {error}
         </p>
       )}
 
-      <div className="mt-6 flex flex-wrap items-end gap-3 border-b border-nmbm-ink/10 pb-4">
-        <div className="inline-flex rounded border border-nmbm-ink/20 p-0.5 text-sm" role="tablist">
+      <div className="mt-6 flex flex-wrap items-end gap-3 border-b border-ds-border pb-4">
+        <div className="inline-flex rounded border border-ds-control p-0.5 text-sm" role="tablist">
           {(["role", "compare"] as const).map((v) => (
             <button
               key={v}
               role="tab"
               aria-selected={view === v}
               onClick={() => setView(v)}
-              className={`rounded px-3 py-1 ${view === v ? "bg-nmbm-ink text-nmbm-paper" : "text-nmbm-ink/70"}`}
+              className={`rounded px-3 py-1 ${view === v ? "bg-nmbm-ink text-nmbm-paper" : "text-ds-secondary"}`}
             >
               {v === "role" ? "By role" : "Compare roles"}
             </button>
           ))}
         </div>
-        <label className="flex flex-col text-xs text-nmbm-ink/60">
+        <label className="flex flex-col text-xs text-ds-muted">
           Search
           <input
             type="search"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="e.g. notes, export"
-            className="mt-1 w-52 rounded border border-nmbm-ink/20 px-2 py-1 text-sm text-nmbm-ink"
+            className="nmbm-control mt-1 w-52"
           />
         </label>
-        <label className="flex flex-col text-xs text-nmbm-ink/60">
+        <label className="flex flex-col text-xs text-ds-muted">
           Area
           <select
             value={area}
             onChange={(e) => setArea(e.target.value)}
-            className="mt-1 rounded border border-nmbm-ink/20 px-2 py-1 text-sm text-nmbm-ink"
+            className="nmbm-control nmbm-select mt-1"
           >
             <option value="">All areas</option>
             {groups.map((g) => (
@@ -191,7 +191,7 @@ export default function PermissionsPage() {
             ))}
           </select>
         </label>
-        <div className="flex flex-wrap gap-x-4 gap-y-1 pb-1 text-sm text-nmbm-ink/70">
+        <div className="flex flex-wrap gap-x-4 gap-y-1 pb-1 text-sm text-ds-secondary">
           {view === "role" && (
             <Check checked={onlyHeld} onChange={setOnlyHeld}>
               Only what it can do
@@ -218,7 +218,7 @@ export default function PermissionsPage() {
               setOnlyChanged(false);
               setOnlyDiffer(false);
             }}
-            className="pb-1 text-sm text-nmbm-ink/60 underline"
+            className="pb-1 text-sm text-ds-muted underline"
           >
             Clear filters
           </button>
@@ -280,7 +280,7 @@ export default function PermissionsPage() {
         />
       )}
 
-      <p className="mt-6 max-w-3xl text-xs text-nmbm-ink/50">
+      <p className="mt-6 max-w-3xl text-xs text-ds-muted">
         The system won't let a change leave nobody active who can manage staff or change permissions, because nobody
         could then undo it from here. Someone who can manage staff but not change permissions can only give out roles
         that do nothing they can't do themselves. A role's staff are assigned on the Staff page.
@@ -337,7 +337,7 @@ function RoleList({
           onClick={() => onSelect(role.code)}
           aria-current={role.code === selected ? "true" : undefined}
           className={`w-full rounded px-3 py-2 text-left ${
-            role.code === selected ? "bg-nmbm-ink text-nmbm-paper" : "text-nmbm-ink hover:bg-nmbm-ink/5"
+            role.code === selected ? "bg-nmbm-ink text-nmbm-paper" : "text-ds-ink hover:bg-ds-subtle"
           }`}
         >
           <span className="flex items-center gap-2 text-sm font-medium">
@@ -346,7 +346,7 @@ function RoleList({
               <span className="h-1.5 w-1.5 rounded-full bg-nmbm-gold" title="Changed from the starting setup" />
             )}
           </span>
-          <span className={`block text-xs ${role.code === selected ? "text-nmbm-paper/70" : "text-nmbm-ink/50"}`}>
+          <span className={`block text-xs ${role.code === selected ? "text-nmbm-paper/70" : "text-ds-muted"}`}>
             {role.people} {role.people === 1 ? "person" : "people"} · {grid.grants[role.code]?.length ?? 0} of{" "}
             {grid.permissions.length}
           </span>
@@ -357,12 +357,12 @@ function RoleList({
   return (
     <>
       {/* On a phone the full list would push the permissions off screen. */}
-      <label className="flex flex-col text-xs text-nmbm-ink/60 md:hidden">
+      <label className="flex flex-col text-xs text-ds-muted md:hidden">
         Role
         <select
           value={selected}
           onChange={(e) => onSelect(e.target.value)}
-          className="mt-1 rounded border border-nmbm-ink/20 px-2 py-1.5 text-sm text-nmbm-ink"
+          className="nmbm-control nmbm-select mt-1"
         >
           <optgroup label="Built-in roles">
             {builtin.map((r) => (
@@ -384,13 +384,13 @@ function RoleList({
       </label>
       <nav aria-label="Roles" className="hidden flex-col gap-4 md:flex">
         <div>
-          <h2 className="px-3 text-xs font-semibold uppercase tracking-wide text-nmbm-ink/50">Built-in roles</h2>
+          <h2 className="nmbm-label px-3">Built-in roles</h2>
           <ul className="mt-1 flex flex-col gap-0.5">{builtin.map(item)}</ul>
         </div>
         <div>
-          <h2 className="px-3 text-xs font-semibold uppercase tracking-wide text-nmbm-ink/50">Added roles</h2>
+          <h2 className="nmbm-label px-3">Added roles</h2>
           {custom.length === 0 ? (
-            <p className="mt-1 px-3 text-xs text-nmbm-ink/50">None yet. "New role" adds one.</p>
+            <p className="mt-1 px-3 text-xs text-ds-muted">None yet. "New role" adds one.</p>
           ) : (
             <ul className="mt-1 flex flex-col gap-0.5">{custom.map(item)}</ul>
           )}
@@ -446,12 +446,12 @@ function RoleDetail({
     <section aria-label={role.label} className="min-w-0">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h2 className="flex items-center gap-2 text-lg font-semibold text-nmbm-ink">
+          <h2 className="flex items-center gap-2 text-lg font-semibold text-ds-ink">
             {role.label}
             <Pill tone="muted">{role.builtin ? "Built-in" : "Custom"}</Pill>
           </h2>
-          {role.description && <p className="mt-0.5 text-sm text-nmbm-ink/70">{role.description}</p>}
-          <p className="mt-0.5 text-xs text-nmbm-ink/50">
+          {role.description && <p className="mt-0.5 text-sm text-ds-secondary">{role.description}</p>}
+          <p className="mt-0.5 text-xs text-ds-muted">
             {role.people} active {role.people === 1 ? "person has" : "people have"} this role · {held.length} of{" "}
             {grid.permissions.length} permissions
             {role.builtin && " · gold dots mark changes from the starting setup"}
@@ -459,14 +459,14 @@ function RoleDetail({
         </div>
         {!role.builtin && !editing && (
           <div className="flex gap-2">
-            <button onClick={() => setEditing(true)} className="rounded border border-nmbm-ink/30 px-3 py-1 text-sm">
+            <button onClick={() => setEditing(true)} className="nmbm-btn nmbm-btn--secondary nmbm-btn--sm">
               Rename
             </button>
             <button
               onClick={retire}
               disabled={role.people > 0}
               title={role.people > 0 ? "Take this role from everyone on the Staff page first" : undefined}
-              className="rounded border border-nmbm-ink/30 px-3 py-1 text-sm text-nmbm-ink/70 hover:border-state-alert hover:text-state-alert disabled:opacity-40 disabled:hover:border-nmbm-ink/30 disabled:hover:text-nmbm-ink/70"
+              className="nmbm-btn nmbm-btn--danger nmbm-btn--sm"
             >
               Retire
             </button>
@@ -491,7 +491,7 @@ function RoleDetail({
       )}
 
       {warnings.length > 0 && (
-        <div className="mt-4 rounded border border-state-warn/20 bg-state-warn-bg px-3 py-2 text-sm text-state-warn">
+        <div className="nmbm-alert nmbm-alert--warn mt-4">
           <p className="font-medium">Some of what this role has won't work on its own:</p>
           <ul className="mt-1 list-disc pl-5">
             {warnings.map((w) => (
@@ -505,14 +505,14 @@ function RoleDetail({
       )}
 
       {rows.length === 0 ? (
-        <p className="mt-6 text-sm text-nmbm-ink/50">No permissions match these filters.</p>
+        <p className="mt-6 text-sm text-ds-muted">No permissions match these filters.</p>
       ) : (
         groups
           .filter((g) => rows.some((p) => p.group === g))
           .map((group) => (
             <fieldset key={group} className="mt-5">
-              <legend className="text-xs font-semibold uppercase tracking-wide text-nmbm-ink/50">{group}</legend>
-              <div className="mt-1 divide-y divide-nmbm-ink/5 rounded border border-nmbm-ink/10">
+              <legend className="nmbm-label">{group}</legend>
+              <div className="ds-list mt-1">
                 {rows
                   .filter((p) => p.group === group)
                   .map((permission) => {
@@ -521,7 +521,7 @@ function RoleDetail({
                     return (
                       <label
                         key={permission.code}
-                        className="flex cursor-pointer items-start gap-3 px-3 py-2 hover:bg-nmbm-ink/[0.02]"
+                        className="flex cursor-pointer items-start gap-3 px-3 py-2 hover:bg-ds-subtle"
                       >
                         <input
                           type="checkbox"
@@ -531,12 +531,12 @@ function RoleDetail({
                           className="mt-0.5 h-4 w-4 shrink-0"
                         />
                         <span className="min-w-0 flex-1">
-                          <span className="flex items-center gap-2 text-sm font-medium text-nmbm-ink">
+                          <span className="flex items-center gap-2 text-sm font-medium text-ds-ink">
                             {permission.label}
                             <ChangedDot change={changeOf(role.code, permission.code)} />
-                            {saving === key && <span className="text-xs font-normal text-nmbm-ink/50">Saving…</span>}
+                            {saving === key && <span className="text-xs font-normal text-ds-muted">Saving…</span>}
                           </span>
-                          <span className="block text-xs text-nmbm-ink/50">{permission.description}</span>
+                          <span className="block text-xs text-ds-muted">{permission.description}</span>
                         </span>
                       </label>
                     );
@@ -582,28 +582,28 @@ function CompareView({
   return (
     <div className="mt-4">
       <div className="flex flex-wrap items-center gap-1.5 text-sm">
-        <span className="mr-1 text-xs text-nmbm-ink/60">Roles shown:</span>
+        <span className="mr-1 text-xs text-ds-muted">Roles shown:</span>
         {grid.roles.map((r) => (
           <button
             key={r.code}
             onClick={() => flip(r.code)}
             aria-pressed={!hidden.has(r.code)}
             className={`rounded-full border px-2.5 py-0.5 text-xs ${
-              hidden.has(r.code) ? "border-nmbm-ink/20 text-nmbm-ink/50" : "border-nmbm-ink bg-nmbm-ink text-nmbm-paper"
+              hidden.has(r.code) ? "border-ds-control text-ds-muted" : "border-nmbm-ink bg-nmbm-ink text-nmbm-paper"
             }`}
           >
             {r.label}
           </button>
         ))}
         {hidden.size > 0 && (
-          <button onClick={() => setHidden(new Set())} className="ml-1 text-xs text-nmbm-ink/60 underline">
+          <button onClick={() => setHidden(new Set())} className="ml-1 text-xs text-ds-muted underline">
             Show all
           </button>
         )}
         {hidden.size === 0 && grid.roles.length > 2 && (
           <button
             onClick={() => setHidden(new Set(grid.roles.map((r) => r.code)))}
-            className="ml-1 text-xs text-nmbm-ink/60 underline"
+            className="ml-1 text-xs text-ds-muted underline"
           >
             Hide all
           </button>
@@ -611,21 +611,21 @@ function CompareView({
       </div>
 
       {shown.length === 0 ? (
-        <p className="mt-6 text-sm text-nmbm-ink/50">Pick the roles to compare.</p>
+        <p className="mt-6 text-sm text-ds-muted">Pick the roles to compare.</p>
       ) : visible.length === 0 ? (
-        <p className="mt-6 text-sm text-nmbm-ink/50">No permissions match these filters.</p>
+        <p className="mt-6 text-sm text-ds-muted">No permissions match these filters.</p>
       ) : (
-        <div className="mt-3 overflow-x-auto rounded border border-nmbm-ink/10">
+        <div className="mt-3 overflow-x-auto rounded border border-ds-border">
           <table className="w-full border-collapse text-sm">
             <thead>
-              <tr className="border-b border-nmbm-ink/10 align-bottom">
-                <th className="sticky left-0 z-10 min-w-[14rem] bg-nmbm-paper px-3 py-2 text-left text-xs font-semibold uppercase tracking-wide text-nmbm-ink/50">
+              <tr className="border-b border-ds-border align-bottom">
+                <th className="sticky left-0 z-10 min-w-[14rem] bg-ds-surface px-3 py-2 text-left text-xs font-semibold uppercase tracking-wide text-ds-muted">
                   Permission
                 </th>
                 {shown.map((role) => (
                   <th
                     key={role.code}
-                    className="w-24 px-1 py-2 text-center text-xs font-medium leading-tight text-nmbm-ink/70"
+                    className="w-24 px-1 py-2 text-center text-xs font-medium leading-tight text-ds-secondary"
                   >
                     <button onClick={() => onOpen(role.code)} className="hover:underline" title={`Open ${role.label}`}>
                       {role.label}
@@ -641,7 +641,7 @@ function CompareView({
                   <tr>
                     <th
                       colSpan={shown.length + 1}
-                      className="bg-nmbm-ink/[0.03] px-3 py-1.5 text-left text-xs font-semibold uppercase tracking-wide text-nmbm-ink/50"
+                      className="bg-ds-subtle px-3 py-1.5 text-left text-xs font-semibold uppercase tracking-wide text-ds-muted"
                     >
                       {group}
                     </th>
@@ -649,9 +649,9 @@ function CompareView({
                   {visible
                     .filter((p) => p.group === group)
                     .map((permission) => (
-                      <tr key={permission.code} className="border-t border-nmbm-ink/5">
-                        <td className="sticky left-0 z-10 bg-nmbm-paper px-3 py-2" title={permission.description}>
-                          <span className="font-medium text-nmbm-ink">{permission.label}</span>
+                      <tr key={permission.code} className="border-t border-ds-border">
+                        <td className="sticky left-0 z-10 bg-ds-surface px-3 py-2" title={permission.description}>
+                          <span className="font-medium text-ds-ink">{permission.label}</span>
                         </td>
                         {shown.map((role) => {
                           const granted = grid.grants[role.code]?.includes(permission.code) ?? false;
@@ -704,12 +704,12 @@ function NewRoleForm({
       submitLabel="Create role"
       onCancel={onCancel}
       extra={
-        <label className="flex flex-col text-xs text-nmbm-ink/60">
+        <label className="flex flex-col text-xs text-ds-muted">
           Start from
           <select
             value={copyFrom}
             onChange={(e) => setCopyFrom(e.target.value)}
-            className="mt-1 rounded border border-nmbm-ink/20 px-2 py-1 text-sm text-nmbm-ink"
+            className="nmbm-control nmbm-select mt-1"
           >
             <option value="">Nothing — I'll choose each permission</option>
             {roles.map((r) => (
@@ -770,10 +770,10 @@ function RoleNameForm({
   }
 
   return (
-    <form onSubmit={submit} className="mt-4 rounded border border-nmbm-ink/15 bg-nmbm-ink/[0.02] p-4">
-      {title && <h2 className="text-sm font-semibold text-nmbm-ink">{title}</h2>}
+    <form onSubmit={submit} className="ds-inset mt-4">
+      {title && <h2 className="text-sm font-semibold text-ds-ink">{title}</h2>}
       <div className="mt-2 flex flex-wrap items-end gap-3">
-        <label className="flex flex-col text-xs text-nmbm-ink/60">
+        <label className="flex flex-col text-xs text-ds-muted">
           Name
           <input
             value={label}
@@ -782,16 +782,16 @@ function RoleNameForm({
             minLength={2}
             maxLength={80}
             autoFocus
-            className="mt-1 w-56 rounded border border-nmbm-ink/20 px-2 py-1 text-sm text-nmbm-ink"
+            className="nmbm-control mt-1 w-56"
           />
         </label>
-        <label className="flex min-w-[16rem] flex-1 flex-col text-xs text-nmbm-ink/60">
+        <label className="flex min-w-[16rem] flex-1 flex-col text-xs text-ds-muted">
           What it's for (optional)
           <input
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             maxLength={300}
-            className="mt-1 rounded border border-nmbm-ink/20 px-2 py-1 text-sm text-nmbm-ink"
+            className="nmbm-control mt-1"
           />
         </label>
         {extra}
@@ -799,11 +799,11 @@ function RoleNameForm({
           <button
             type="submit"
             disabled={busy || label.trim().length < 2}
-            className="rounded bg-nmbm-ink px-4 py-1.5 text-sm font-medium text-nmbm-paper disabled:opacity-50"
+            className="nmbm-btn nmbm-btn--dark nmbm-btn--md"
           >
             {submitLabel}
           </button>
-          <button type="button" onClick={onCancel} className="rounded border border-nmbm-ink/30 px-3 py-1.5 text-sm">
+          <button type="button" onClick={onCancel} className="nmbm-btn nmbm-btn--secondary nmbm-btn--md">
             Cancel
           </button>
         </div>

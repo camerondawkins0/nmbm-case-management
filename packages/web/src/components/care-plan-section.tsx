@@ -38,9 +38,9 @@ export function CarePlanSection({
   }
 
   return (
-    <section className="mt-6 rounded border border-nmbm-ink/10 p-4">
+    <section className="nmbm-card nmbm-card--dense mt-6">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <h2 className="text-sm font-semibold uppercase tracking-wide text-nmbm-ink/50">
+        <h2 className="ds-section-heading">
           Care plan
         </h2>
         <div className="flex items-center gap-1.5">
@@ -70,7 +70,7 @@ export function CarePlanSection({
       {/* U6: the reason it bounced belongs where the author is fixing
           it, not in a notification they've already dismissed. */}
       {carePlan.needsRevision && record.carePlanReviewNote && (
-        <p className="mt-3 rounded border border-state-warn/25 bg-state-warn-bg px-3 py-2 text-sm text-state-warn">
+        <p className="nmbm-alert nmbm-alert--warn mt-3">
           <span className="font-medium">Returned:</span> {record.carePlanReviewNote}
         </p>
       )}
@@ -78,13 +78,13 @@ export function CarePlanSection({
       {error && <p className="mt-3 text-sm text-state-alert">{error}</p>}
 
       {locked && (
-        <p className="mt-3 text-sm text-nmbm-ink/60">
+        <p className="mt-3 text-sm text-ds-muted">
           With the Clinical Director for review — it can't be edited until they respond.
         </p>
       )}
 
       {!writable && !locked && (
-        <p className="mt-3 whitespace-pre-wrap text-sm text-nmbm-ink/80">
+        <p className="mt-3 whitespace-pre-wrap text-sm text-ds-secondary">
           {record.carePlanGoals ??
             (record.episodeStatus === "open"
               ? "No care plan written yet."
@@ -99,7 +99,7 @@ export function CarePlanSection({
             onChange={(e) => setGoals(e.target.value)}
             rows={5}
             placeholder="Goals for this participant — what you're working on, and how you'll know it worked."
-            className="mt-3 w-full rounded border border-nmbm-ink/20 px-3 py-2 text-sm"
+            className="nmbm-control nmbm-textarea mt-3 w-full"
           />
           <div className="mt-2 flex flex-wrap gap-2">
             {carePlan.missing ? (
@@ -119,7 +119,7 @@ export function CarePlanSection({
                     "Care plan created.",
                   )
                 }
-                className="rounded bg-nmbm-ink px-5 py-1.5 text-sm font-medium text-nmbm-paper disabled:opacity-50"
+                className="nmbm-btn nmbm-btn--dark nmbm-btn--md"
               >
                 Create plan
               </button>
@@ -137,7 +137,7 @@ export function CarePlanSection({
                       "Saved.",
                     )
                   }
-                  className="rounded border border-nmbm-ink/30 px-5 py-1.5 text-sm font-medium text-nmbm-ink disabled:opacity-50"
+                  className="nmbm-btn nmbm-btn--secondary nmbm-btn--md"
                 >
                   Save
                 </button>
@@ -150,7 +150,7 @@ export function CarePlanSection({
                       "Sent for review.",
                     )
                   }
-                  className="rounded bg-nmbm-ink px-5 py-1.5 text-sm font-medium text-nmbm-paper disabled:opacity-50"
+                  className="nmbm-btn nmbm-btn--dark nmbm-btn--md"
                 >
                   Submit for review
                 </button>

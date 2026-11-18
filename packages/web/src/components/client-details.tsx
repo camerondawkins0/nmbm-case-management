@@ -8,9 +8,9 @@ export type DetailsForm = Record<keyof ParticipantDetails, string>;
 export const emptyDetails = (): DetailsForm =>
   Object.fromEntries(PARTICIPANT_DETAIL_FIELDS.map((k) => [k, ""])) as DetailsForm;
 
-const field = "w-full rounded border border-nmbm-ink/20 px-3 py-2 text-sm";
-const label = "flex flex-col gap-1 text-sm text-nmbm-ink";
-const legend = "text-xs font-semibold uppercase tracking-wide text-nmbm-ink/50";
+const field = "nmbm-control";
+const label = "ds-field";
+const legend = "ds-section-heading";
 
 // The same boxes at intake and on the record. The browser checks the
 // shape as people type; the server checks again and tidies (phones to
@@ -160,11 +160,11 @@ export function ClientDetailsSection({
   }
 
   return (
-    <section className="mt-6 rounded border border-nmbm-ink/10 p-4">
+    <section className="nmbm-card nmbm-card--dense mt-6">
       <div className="flex items-center justify-between gap-2">
-        <h2 className="text-sm font-semibold uppercase tracking-wide text-nmbm-ink/50">Details</h2>
+        <h2 className="ds-section-heading">Details</h2>
         {canEdit && !editing && (
-          <button onClick={() => setEditing(toForm(details))} className="rounded border border-nmbm-ink/30 px-3 py-1 text-xs">
+          <button onClick={() => setEditing(toForm(details))} className="nmbm-btn nmbm-btn--secondary nmbm-btn--sm">
             Edit
           </button>
         )}
@@ -177,11 +177,11 @@ export function ClientDetailsSection({
             <button
               type="submit"
               disabled={saving}
-              className="rounded bg-nmbm-ink px-4 py-1.5 text-sm font-medium text-nmbm-paper disabled:opacity-50"
+              className="nmbm-btn nmbm-btn--dark nmbm-btn--md"
             >
               {saving ? "Saving…" : "Save details"}
             </button>
-            <button type="button" onClick={() => setEditing(null)} className="rounded border border-nmbm-ink/30 px-3 py-1.5 text-sm">
+            <button type="button" onClick={() => setEditing(null)} className="nmbm-btn nmbm-btn--secondary nmbm-btn--md">
               Cancel
             </button>
           </div>
@@ -191,13 +191,13 @@ export function ClientDetailsSection({
           <dl className="mt-3 grid gap-x-6 gap-y-2 text-sm sm:grid-cols-2">
             {rows.map(([name, v]) => (
               <div key={name}>
-                <dt className="text-xs text-nmbm-ink/50">{name}</dt>
-                <dd className={v ? "text-nmbm-ink" : "text-nmbm-ink/40"}>{v || "Not recorded"}</dd>
+                <dt className="text-xs text-ds-muted">{name}</dt>
+                <dd className={v ? "text-ds-ink" : "text-ds-muted"}>{v || "Not recorded"}</dd>
               </div>
             ))}
           </dl>
           {details.updatedAt && (
-            <p className="mt-3 text-xs text-nmbm-ink/40">Last changed {new Date(details.updatedAt).toLocaleDateString()}</p>
+            <p className="mt-3 text-xs text-ds-muted">Last changed {new Date(details.updatedAt).toLocaleDateString()}</p>
           )}
         </>
       )}

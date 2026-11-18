@@ -113,25 +113,25 @@ export default function IntakePage() {
     }
   }
 
-  const field = "w-full rounded border border-nmbm-ink/20 px-3 py-2 text-sm";
-  const label = "flex flex-col gap-1 text-sm text-nmbm-ink";
+  const field = "nmbm-control";
+  const label = "ds-field";
 
   return (
     <div className="mx-auto max-w-xl">
-      <h1 className="text-2xl font-semibold text-nmbm-ink">New {PARTICIPANT_LABEL.toLowerCase()}</h1>
-      <p className="mt-1 text-sm text-nmbm-ink/60">
+      <h1 className="ds-display">New {PARTICIPANT_LABEL.toLowerCase()}</h1>
+      <p className="mt-1 text-sm text-ds-muted">
         Opens an episode and starts the 30-day care plan countdown.
       </p>
 
       {referral && (
-        <p className="mt-4 rounded border border-nmbm-ink/10 bg-nmbm-ink/[0.03] px-3 py-2 text-sm text-nmbm-ink/80">
+        <p className="nmbm-alert nmbm-alert--info mt-4">
           Admitting from the referral by {referral.sourceName || "a referrer"} received {referral.receivedDate}.
           Admitting closes the referral.
         </p>
       )}
 
       {error && (
-        <p className="mt-4 rounded border border-state-alert/20 bg-state-alert-bg px-3 py-2 text-sm text-state-alert">
+        <p className="nmbm-alert nmbm-alert--alert mt-4">
           {error}
         </p>
       )}
@@ -196,13 +196,13 @@ export default function IntakePage() {
             ))}
           </select>
           {form.payer === "molina" && (
-            <span className="text-xs text-nmbm-ink/50">
+            <span className="text-xs text-ds-muted">
               Molina cases require a warning letter before a no-contact disenrollment.
             </span>
           )}
         </label>
 
-        <div className="border-t border-nmbm-ink/10 pt-4">
+        <div className="border-t border-ds-border pt-4">
           <DetailsFields value={details} onChange={setDetails} />
         </div>
 
@@ -224,22 +224,22 @@ export default function IntakePage() {
         </label>
 
         {returning && returning.length > 0 && (
-          <div className="rounded border border-state-warn/30 bg-state-warn-bg p-4">
+          <div className="nmbm-alert nmbm-alert--warn">
             <p className="text-sm font-medium text-state-warn">Has this person been with NMBM before?</p>
-            <p className="mt-1 text-sm text-nmbm-ink/70">
+            <p className="mt-1 text-sm text-ds-secondary">
               These records match. If one is them, open it and readmit rather than starting a new
               record — their history stays together that way.
             </p>
-            <div className="mt-3 bg-nmbm-paper">
+            <div className="mt-3 bg-ds-surface">
               <SearchResults results={returning} compact />
             </div>
           </div>
         )}
 
         {possibleDuplicate && (
-          <div className="rounded border border-state-alert/25 bg-state-alert-bg p-4 text-sm text-state-alert">
+          <div className="nmbm-alert nmbm-alert--alert">
             <p>{possibleDuplicate}</p>
-            <label className="mt-3 flex items-center gap-2 text-nmbm-ink">
+            <label className="mt-3 flex items-center gap-2 text-ds-ink">
               <input
                 type="checkbox"
                 checked={confirmedDifferent}
@@ -253,7 +253,7 @@ export default function IntakePage() {
         <button
           type="submit"
           disabled={saving || (possibleDuplicate !== null && !confirmedDifferent)}
-          className="self-start rounded bg-nmbm-ink px-6 py-2 text-sm font-medium text-nmbm-paper disabled:opacity-50"
+          className="nmbm-btn nmbm-btn--primary nmbm-btn--md self-start"
         >
           {saving ? "Saving…" : "Complete intake"}
         </button>

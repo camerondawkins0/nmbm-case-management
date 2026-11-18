@@ -113,7 +113,7 @@ export default function AssessmentPage({ me }: { me: Me }) {
   }
 
   if (error && !assessment) return <p className="text-sm text-state-alert">{error}</p>;
-  if (!assessment) return <p className="text-sm text-nmbm-ink/50">Loading…</p>;
+  if (!assessment) return <p className="text-sm text-ds-muted">Loading…</p>;
 
   const { form } = assessment;
   // A participant's own form is theirs to fill in; staff see it, but
@@ -128,22 +128,22 @@ export default function AssessmentPage({ me }: { me: Me }) {
       <div className="print:hidden">
         <Link
           to={`/participants/${assessment.participantId}`}
-          className="text-sm text-nmbm-ink/60 underline-offset-2 hover:underline"
+          className="text-sm text-ds-muted underline-offset-2 hover:underline"
         >
           ← {name || "Back to the record"}
         </Link>
       </div>
       <div className="mt-2 flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-semibold text-nmbm-ink">{form.formName}</h1>
-          <p className="mt-1 text-sm text-nmbm-ink/60">
+          <h1 className="ds-display">{form.formName}</h1>
+          <p className="mt-1 text-sm text-ds-muted">
             {name && `${name} · `}version {form.versionNumber} ·{" "}
             {ASSESSMENT_MODE_LABELS[assessment.mode].toLowerCase()} · started{" "}
             {assessment.startedAt.slice(0, 10)}
             {assessment.startedByName && ` by ${assessment.startedByName}`}
           </p>
           {assessment.completedAt && (
-            <p className="text-sm text-nmbm-ink/60">
+            <p className="text-sm text-ds-muted">
               Completed {assessment.completedAt.slice(0, 10)}
               {assessment.completedByName && ` by ${assessment.completedByName}`}
             </p>
@@ -153,7 +153,7 @@ export default function AssessmentPage({ me }: { me: Me }) {
           {assessment.status === "completed" && <Pill tone="ok">completed</Pill>}
           {assessment.status === "voided" && <Pill tone="alert">voided</Pill>}
           {editable && (
-            <span className="text-xs text-nmbm-ink/50" aria-live="polite">
+            <span className="text-xs text-ds-muted" aria-live="polite">
               {saveState === "saving"
                 ? "Saving…"
                 : saveState === "unsaved"
@@ -166,7 +166,7 @@ export default function AssessmentPage({ me }: { me: Me }) {
           {assessment.status !== "in_progress" && (
             <button
               onClick={() => window.print()}
-              className="rounded border border-nmbm-ink/30 px-3 py-1 text-sm"
+              className="nmbm-btn nmbm-btn--secondary nmbm-btn--sm"
             >
               Print
             </button>
@@ -175,7 +175,7 @@ export default function AssessmentPage({ me }: { me: Me }) {
       </div>
 
       {assessment.mode === "self" && assessment.status === "in_progress" && (
-        <div className="mt-4 rounded border border-nmbm-ink/10 bg-nmbm-ink/[0.03] px-4 py-3 text-sm text-nmbm-ink/70 print:hidden">
+        <div className="nmbm-alert nmbm-alert--info mt-4 print:hidden">
           The participant is filling this in from their own link. Their answers so far are below and
           appear here as they save them.
           {assessment.link && (
@@ -195,12 +195,12 @@ export default function AssessmentPage({ me }: { me: Me }) {
         </div>
       )}
       {assessment.voidReason && (
-        <p className="mt-4 rounded border border-state-alert/20 bg-state-alert-bg px-3 py-2 text-sm text-state-alert">
+        <p className="nmbm-alert nmbm-alert--alert mt-4">
           Voided: {assessment.voidReason}
         </p>
       )}
       {error && (
-        <p className="mt-4 rounded border border-state-alert/20 bg-state-alert-bg px-3 py-2 text-sm text-state-alert print:hidden">
+        <p className="nmbm-alert nmbm-alert--alert mt-4 print:hidden">
           {error}
         </p>
       )}
@@ -214,9 +214,9 @@ export default function AssessmentPage({ me }: { me: Me }) {
           }}
         >
           {bySection(shown).map((group, i) => (
-            <fieldset key={i} className="rounded border border-nmbm-ink/10 p-4">
+            <fieldset key={i} className="nmbm-card nmbm-card--dense">
               {group.section && (
-                <legend className="px-1 text-sm font-semibold uppercase tracking-wide text-nmbm-ink/50">
+                <legend className="ds-section-heading px-1">
                   {group.section}
                 </legend>
               )}
@@ -236,7 +236,7 @@ export default function AssessmentPage({ me }: { me: Me }) {
             <button
               type="submit"
               disabled={busy}
-              className="rounded bg-nmbm-ink px-4 py-2 text-sm font-medium text-nmbm-paper disabled:opacity-50"
+              className="nmbm-btn nmbm-btn--primary nmbm-btn--md"
             >
               Complete
             </button>
@@ -244,12 +244,12 @@ export default function AssessmentPage({ me }: { me: Me }) {
               type="button"
               disabled={busy}
               onClick={voidIt}
-              className="rounded border border-nmbm-ink/30 px-4 py-2 text-sm"
+              className="nmbm-btn nmbm-btn--secondary nmbm-btn--md"
             >
               Void
             </button>
           </div>
-          <p className="text-xs text-nmbm-ink/50">
+          <p className="text-xs text-ds-muted">
             Answers save as you go; you can leave and come back. Questions marked * are required
             when they're shown.
           </p>
@@ -257,19 +257,19 @@ export default function AssessmentPage({ me }: { me: Me }) {
       ) : (
         <div className="mt-6 flex flex-col gap-6">
           {bySection(shown).map((group, i) => (
-            <section key={i} className="rounded border border-nmbm-ink/10 p-4 print:border-0 print:p-0">
+            <section key={i} className="nmbm-card nmbm-card--dense print:border-0 print:p-0">
               {group.section && (
-                <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-nmbm-ink/50">
+                <h2 className="ds-section-heading mb-3">
                   {group.section}
                 </h2>
               )}
               <dl className="flex flex-col gap-3">
                 {group.questions.map((q) => (
                   <div key={q.stableId}>
-                    <dt className="text-sm font-medium text-nmbm-ink">{q.prompt}</dt>
-                    <dd className="mt-0.5 whitespace-pre-wrap text-sm text-nmbm-ink/80">
+                    <dt className="text-sm font-medium text-ds-ink">{q.prompt}</dt>
+                    <dd className="mt-0.5 whitespace-pre-wrap text-sm text-ds-secondary">
                       {answerText(q, answers[q.stableId]) ?? (
-                        <span className="text-nmbm-ink/40">Not answered</span>
+                        <span className="text-ds-muted">Not answered</span>
                       )}
                     </dd>
                   </div>
@@ -283,11 +283,11 @@ export default function AssessmentPage({ me }: { me: Me }) {
               <button
                 disabled={busy}
                 onClick={voidIt}
-                className="text-sm text-nmbm-ink/50 underline-offset-2 hover:text-state-alert hover:underline"
+                className="nmbm-btn nmbm-btn--danger nmbm-btn--md"
               >
                 Void this assessment
               </button>
-              <p className="mt-1 text-xs text-nmbm-ink/50">
+              <p className="mt-1 text-xs text-ds-muted">
                 {assessment.status === "completed"
                   ? "A completed assessment can't be edited. To correct one, void it and start a new one."
                   : "Voiding stops the participant's link working. Answers so far stay on the record."}

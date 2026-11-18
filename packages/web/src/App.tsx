@@ -47,7 +47,7 @@ function StaffApp() {
   const location = useLocation();
 
   if (session.status === "loading") {
-    return <p className="p-6 text-sm text-nmbm-ink/50">Loading…</p>;
+    return <p className="p-6 text-sm text-ds-muted">Loading…</p>;
   }
 
   if (session.status === "unavailable") {

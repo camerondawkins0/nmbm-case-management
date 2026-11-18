@@ -1,0 +1,202 @@
+/* Component styles from the NMBM design system (components/bundle.css in
+   the "NMBM" Design System artifact), then the app's own classes built on
+   the same tokens. Every color is a semantic token, so all of it follows
+   [data-theme]. */
+
+
+.nmbm-sr{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
+.nmbm-eyebrow,.nmbm-label{margin:0 0 var(--space-1);font-family:var(--font-sans);font-size:12px;line-height:16px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-muted)}
+.nmbm-person{font-family:var(--font-serif);font-weight:600;letter-spacing:-.005em}
+
+/* StatusPill */
+.nmbm-pill{display:inline-flex;align-items:center;gap:var(--space-1);padding:2px var(--space-2);border-radius:var(--radius-full);font-family:var(--font-sans);font-size:12px;line-height:16px;font-weight:500;white-space:nowrap;font-variant-numeric:tabular-nums}
+.nmbm-pill--alert{background:var(--state-alert-bg);color:var(--state-alert)}
+.nmbm-pill--warn{background:var(--state-warn-bg);color:var(--state-warn)}
+.nmbm-pill--ok{background:var(--state-ok-bg);color:var(--state-ok)}
+.nmbm-pill--muted{background:var(--surface-subtle);color:var(--ink-secondary)}
+.nmbm-pill--gold{background:#c5a963;color:#000000}
+
+/* Button: raised, not flat. A 1px edge, a soft drop shadow and a top highlight give each
+   variant depth; it presses down 1px on click. */
+.nmbm-btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;border:1px solid transparent;border-radius:var(--radius-md);font-family:var(--font-sans);font-weight:600;letter-spacing:-.005em;cursor:pointer;white-space:nowrap;text-decoration:none;transition:background-color .12s,border-color .12s,box-shadow .12s,color .12s,transform .06s}
+.nmbm-btn--md{min-height:32px;padding:6px 14px;font-size:13px;line-height:18px}
+.nmbm-btn--sm{min-height:28px;padding:4px 10px;font-size:13px;line-height:18px}
+.nmbm-btn:active:not(:disabled){transform:translateY(1px)}
+.nmbm-btn:focus-visible{outline:none;box-shadow:var(--focus-ring)!important}
+.nmbm-btn--primary{background:var(--gold);color:#000000;border-color:color-mix(in srgb,var(--gold-dark) 45%,var(--gold));box-shadow:inset 0 1px 0 rgba(255,255,255,.4),0 1px 2px rgba(0,0,0,.16)}
+.nmbm-btn--primary:hover:not(:disabled){background:color-mix(in srgb,var(--gold) 82%,var(--gold-light))}
+.nmbm-btn--primary:active:not(:disabled){box-shadow:inset 0 1px 2px rgba(0,0,0,.18)}
+.nmbm-btn--dark{background:var(--action);color:var(--on-action);border-color:var(--action);box-shadow:inset 0 1px 0 rgba(255,255,255,.16),0 1px 2px rgba(0,0,0,.24)}
+.nmbm-btn--dark:hover:not(:disabled){background:var(--action-hover);border-color:var(--action-hover)}
+.nmbm-btn--secondary{background:var(--surface-raised);color:var(--ink);border-color:color-mix(in srgb,var(--border-control) 60%,var(--surface-raised));box-shadow:0 1px 2px rgba(0,0,0,.07)}
+.nmbm-btn--secondary:hover:not(:disabled){border-color:var(--border-control);background:color-mix(in srgb,var(--surface-subtle) 50%,var(--surface-raised))}
+.nmbm-btn--quiet{background:transparent;color:var(--ink-secondary);padding-left:8px;padding-right:8px}
+.nmbm-btn--quiet:hover:not(:disabled){background:var(--surface-subtle);color:var(--ink)}
+.nmbm-btn--danger{background:var(--surface-raised);color:var(--state-alert);border-color:color-mix(in srgb,var(--state-alert) 40%,var(--surface-raised));box-shadow:0 1px 2px rgba(0,0,0,.07)}
+.nmbm-btn--danger:hover:not(:disabled){background:var(--state-alert-bg);border-color:var(--state-alert)}
+.nmbm-btn--danger-solid{background:var(--danger);color:var(--on-danger);border-color:var(--danger);box-shadow:inset 0 1px 0 rgba(255,255,255,.18),0 1px 2px rgba(0,0,0,.2)}
+.nmbm-btn--danger-solid:hover:not(:disabled){box-shadow:inset 0 0 0 999px rgba(0,0,0,.14),0 1px 2px rgba(0,0,0,.2)}
+.nmbm-btn:disabled{background:var(--surface-subtle);color:color-mix(in srgb,var(--ink-muted) 75%,var(--surface-subtle));border-color:transparent;box-shadow:none;cursor:not-allowed}
+
+/* Field + controls */
+.nmbm-field{display:flex;flex-direction:column;gap:var(--space-1)}
+.nmbm-field__label{font-family:var(--font-sans);font-size:12px;line-height:16px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-muted)}
+.nmbm-field__req{color:var(--state-alert)}
+.nmbm-field__hint,.nmbm-field__error{margin:0;font-family:var(--font-sans);font-size:12px;line-height:16px}
+.nmbm-field__hint{color:var(--ink-muted)}
+.nmbm-field__error{color:var(--state-alert);font-weight:500}
+.nmbm-control{box-sizing:border-box;width:100%;min-height:32px;padding:6px 10px;border:1px solid var(--border-control);border-radius:var(--radius-md);background:var(--surface-raised);color:var(--ink);font-family:var(--font-sans);font-size:13px;line-height:18px;box-shadow:inset 0 1px 1px rgba(0,0,0,.04)}
+.nmbm-control::placeholder{color:var(--ink-muted)}
+.nmbm-control:hover:not(:disabled){border-color:var(--ink)}
+.nmbm-control:focus-visible{outline:none;border-color:var(--ink);box-shadow:var(--focus-ring)}
+.nmbm-control:disabled{background:var(--surface-subtle);color:var(--ink-muted);border-color:var(--border-disabled);cursor:not-allowed}
+.nmbm-control.is-invalid{border-color:var(--state-alert)}
+.nmbm-select{appearance:none;padding-right:var(--space-8);background-image:linear-gradient(45deg,transparent 50%,var(--ink) 50%),linear-gradient(135deg,var(--ink) 50%,transparent 50%);background-position:calc(100% - 17px) 50%,calc(100% - 12px) 50%;background-size:5px 5px;background-repeat:no-repeat}
+.nmbm-textarea{resize:vertical;min-height:80px}
+
+/* Table */
+.nmbm-table-wrap{overflow-x:auto;border:1px solid var(--border);border-radius:var(--radius-lg);background:var(--surface-raised)}
+.nmbm-table{width:100%;border-collapse:collapse;font-family:var(--font-sans);font-size:14px;line-height:20px;color:var(--ink);font-variant-numeric:tabular-nums}
+.nmbm-table th{padding:var(--space-2) var(--space-3);text-align:left;font-size:12px;line-height:16px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-muted);background:var(--surface-subtle);border-bottom:1px solid var(--border);white-space:nowrap}
+.nmbm-table td{padding:var(--space-2) var(--space-3);border-bottom:1px solid var(--border);vertical-align:middle}
+.nmbm-table tbody tr:last-child td{border-bottom:0}
+.nmbm-table tr.is-clickable{cursor:pointer}
+.nmbm-table tbody tr:hover td{background:var(--surface-subtle)}
+.nmbm-table .is-right{text-align:right}
+.nmbm-table .is-mono{font-family:var(--font-mono);font-size:13px}
+.nmbm-table .is-person{font-family:var(--font-serif);font-size:15px;font-weight:600}
+.nmbm-table__empty{padding:var(--space-8) var(--space-3)!important;text-align:center;color:var(--ink-muted)}
+
+/* Card */
+.nmbm-card{box-sizing:border-box;padding:var(--space-6);border:1px solid var(--border);border-radius:var(--radius-lg);background:var(--surface-raised);color:var(--ink);font-family:var(--font-sans);font-size:14px;line-height:20px}
+.nmbm-card--dense{padding:var(--space-4)}
+.nmbm-card--elevated{box-shadow:var(--shadow-sm)}
+.nmbm-card__head{display:flex;align-items:flex-start;justify-content:space-between;gap:var(--space-4);margin-bottom:var(--space-4)}
+.nmbm-card__title{margin:0;font-family:var(--font-sans);font-size:15px;line-height:20px;font-weight:600}
+.nmbm-card__actions{display:flex;gap:var(--space-2);flex-shrink:0}
+
+/* Alert */
+.nmbm-alert{display:flex;align-items:flex-start;gap:var(--space-4);padding:var(--space-3) var(--space-4);border:1px solid;border-radius:var(--radius-md);font-family:var(--font-sans);font-size:14px;line-height:20px}
+.nmbm-alert__body{flex:1;min-width:0}
+.nmbm-alert__title{margin:0;font-weight:600}
+.nmbm-alert__text{margin-top:2px}
+.nmbm-alert__title + .nmbm-alert__text{color:var(--ink)}
+.nmbm-alert__action{flex-shrink:0}
+.nmbm-alert--alert{background:var(--state-alert-bg);border-color:var(--state-alert);color:var(--state-alert)}
+.nmbm-alert--warn{background:var(--state-warn-bg);border-color:var(--state-warn);color:var(--state-warn)}
+.nmbm-alert--ok{background:var(--state-ok-bg);border-color:var(--state-ok);color:var(--state-ok)}
+.nmbm-alert--info{background:var(--surface-subtle);border-color:var(--border-control);color:var(--ink)}
+
+/* AppShell */
+.nmbm-shell{min-height:100%;background:var(--surface);color:var(--ink);font-family:var(--font-sans)}
+.nmbm-shell__bar{display:flex;flex-wrap:wrap;align-items:center;gap:var(--space-3) var(--space-6);padding:var(--space-2) var(--space-6);border-bottom:1px solid var(--border);background:var(--surface)}
+.nmbm-shell__brand{display:inline-flex;align-items:center;gap:var(--space-3);color:var(--ink);text-decoration:none;border-radius:var(--radius-md)}
+.nmbm-shell__logo{width:40px;height:40px;display:block}
+.nmbm-shell__logo--dark{display:none}
+[data-theme="dark"] .nmbm-shell__logo--light.has-dark{display:none}
+[data-theme="dark"] .nmbm-shell__logo--dark{display:block}
+.nmbm-shell__product{font-family:var(--font-serif);font-size:17px;line-height:24px;font-weight:600}
+.nmbm-shell__nav{display:flex;flex-wrap:wrap;gap:var(--space-1)}
+.nmbm-shell__link{padding:6px var(--space-3);border-radius:var(--radius-md);font-size:13px;line-height:18px;font-weight:500;color:var(--ink-secondary);text-decoration:none}
+.nmbm-shell__link:hover{background:var(--surface-subtle);color:var(--ink)}
+.nmbm-shell__link.is-active{background:var(--nav-active-bg);color:var(--nav-active-text);font-weight:600}
+.nmbm-shell__brand:focus-visible,.nmbm-shell__link:focus-visible{outline:none;box-shadow:var(--focus-ring)}
+.nmbm-shell__end{margin-left:auto;display:flex;align-items:center;gap:var(--space-4);font-size:14px}
+.nmbm-shell__user{display:flex;flex-direction:column;text-align:right}
+.nmbm-shell__name{font-family:var(--font-serif);font-weight:600;font-size:15px;line-height:18px}
+.nmbm-shell__roles{font-size:12px;line-height:16px;color:var(--ink-muted)}
+.nmbm-shell__main{padding:var(--space-8) var(--space-6)}
+
+/* High contrast: nothing relies on a tint alone */
+[data-theme="high-contrast"] .nmbm-pill{box-shadow:inset 0 0 0 1px currentColor}
+[data-theme="high-contrast"] .nmbm-alert{border-width:2px}
+[data-theme="high-contrast"] .nmbm-shell__link:hover,[data-theme="high-contrast"] .nmbm-btn--ghost:hover:not(:disabled){text-decoration:underline}
+[data-theme="high-contrast"] .nmbm-btn:not(:disabled){border-color:var(--ink);box-shadow:none}
+[data-theme="high-contrast"] .nmbm-btn--quiet:not(:disabled){border-color:transparent;text-decoration:underline}
+[data-theme="high-contrast"] .nmbm-btn:disabled{opacity:1;background:var(--surface-subtle);color:var(--ink-muted);border:1px dashed var(--ink)}
+[data-theme="high-contrast"] .nmbm-control:disabled{border-style:dashed;border-color:var(--ink)}
+
+/* Dark: native pickers and scrollbars match */
+[data-theme="dark"] .nmbm-control{color-scheme:dark}
+
+/* ---- The app's additions, from the system's type and spacing rules ---- */
+
+/* Controls set their own type, so a label's uppercase never reaches them. */
+.nmbm-control { letter-spacing: normal; text-transform: none; font-weight: 400; }
+textarea.nmbm-control { min-height: 0; }
+.nmbm-control[type="date"], .nmbm-control.is-mono { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+
+/* display: page titles. */
+.ds-display { margin: 0; font-family: var(--font-serif); font-size: 28px; line-height: 34px; font-weight: 600; letter-spacing: -0.01em; color: var(--ink); }
+/* section-heading: card, panel and section titles. */
+.ds-section-heading { margin: 0; font-family: var(--font-sans); font-size: 15px; line-height: 20px; font-weight: 600; color: var(--ink); }
+/* person-name, wherever a participant (or the signed-in person) is named. */
+.ds-person { font-family: var(--font-serif); font-weight: 600; letter-spacing: -0.005em; }
+/* their-words: a participant's own words, goals, narrative. */
+.ds-their-words { font-family: var(--font-serif); font-size: 15px; line-height: 22px; }
+/* numeric: IDs, dates, amounts, durations. */
+.ds-num { font-family: var(--font-mono); font-size: 0.93em; font-variant-numeric: tabular-nums; }
+.ds-big-number { font-family: var(--font-serif); font-size: 32px; line-height: 36px; font-weight: 600; font-variant-numeric: tabular-nums; }
+
+/* A label wrapping its control: the label style above, the control below. */
+.ds-field { display: flex; flex-direction: column; gap: var(--space-1); font-family: var(--font-sans); font-size: 12px; line-height: 16px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-muted); }
+.ds-field > span, .ds-field > p { text-transform: none; letter-spacing: normal; font-weight: 400; }
+/* A checkbox or radio with its words beside it: control type, not a label. */
+.ds-check { display: inline-flex; align-items: center; gap: var(--space-2); font-size: 13px; line-height: 18px; color: var(--ink); }
+input[type="checkbox"], input[type="radio"] { accent-color: var(--action); width: 16px; height: 16px; }
+
+/* Rows in a bordered container. */
+.ds-list { border: 1px solid var(--border); border-radius: var(--radius-lg); background: var(--surface-raised); overflow: hidden; }
+.ds-list > * + * { border-top: 1px solid var(--border); }
+/* A form opened inside a card: set into it, not a card in a card. */
+.ds-inset { border-radius: var(--radius-md); background: var(--surface-subtle); padding: var(--space-3); }
+
+/* Links in running text. */
+.ds-link { color: var(--accent-text); text-decoration: underline; text-underline-offset: 2px; }
+
+/* Focus: the logo's double ring, on everything you can reach by keyboard. */
+:where(a, button, input, select, textarea, summary, [tabindex]):focus-visible { outline: none; box-shadow: var(--focus-ring); border-radius: var(--radius-sm); }
+
+/* Tabs along the top of a list. */
+.ds-tabs { display: flex; gap: var(--space-1); border-bottom: 1px solid var(--border); }
+.ds-tab { padding: 6px var(--space-3); margin-bottom: -1px; border-bottom: 2px solid transparent; font-size: 13px; line-height: 18px; font-weight: 500; color: var(--ink-secondary); }
+.ds-tab:hover { color: var(--ink); }
+.ds-tab[aria-selected="true"], .ds-tab.is-active { border-bottom-color: var(--ink); color: var(--ink); font-weight: 600; }
+
+/* Print: the light theme, whatever is on screen. */
+
+/* The logo: black on white, gold on black in the dark theme, black in print. */
+.ds-logo { display: inline-block; flex-shrink: 0; }
+.ds-logo img { display: block; }
+.ds-logo__dark { display: none !important; }
+[data-theme="dark"] .ds-logo__light { display: none !important; }
+[data-theme="dark"] .ds-logo__dark { display: block !important; }
+@media print {
+  [data-theme="dark"] .ds-logo__light { display: block !important; }
+  [data-theme="dark"] .ds-logo__dark { display: none !important; }
+}
+
+/* A single bordered row (a list item standing on its own). */
+.ds-row { border: 1px solid var(--border); border-radius: var(--radius-md); background: var(--surface-raised); padding: var(--space-2) var(--space-3); }
+
+/* Class constants put .nmbm-control on selects and textareas alike, so the
+   element picks up the matching treatment without a second class. Controls
+   in a filter row size to their content; a form grid stretches them. */
+select.nmbm-control { appearance: none; padding-right: var(--space-8); background-image: linear-gradient(45deg, transparent 50%, var(--ink) 50%), linear-gradient(135deg, var(--ink) 50%, transparent 50%); background-position: calc(100% - 17px) 50%, calc(100% - 12px) 50%; background-size: 5px 5px; background-repeat: no-repeat; }
+textarea.nmbm-control { resize: vertical; min-height: 80px; }
+.ds-field > .nmbm-control, .ds-field > select, .ds-field > textarea { margin-top: 2px; }
+
+/* Google's sign-in button keeps Google's own colors (their branding terms
+   require it), in the light or dark variant to match the theme. */
+.ds-google { display: flex; width: 100%; align-items: center; justify-content: center; gap: var(--space-3); min-height: 40px; padding: 0 var(--space-4); border: 1px solid #747775; border-radius: var(--radius-md); background: #ffffff; color: #1f1f1f; font: 500 14px/20px var(--font-sans); text-decoration: none; }
+.ds-google:hover { background: #f8f9fa; }
+[data-theme="dark"] .ds-google { background: #131314; border-color: #8e918f; color: #e3e3e3; }
+[data-theme="dark"] .ds-google:hover { background: #1f1f20; }
+[data-theme="high-contrast"] .ds-google { border-width: 2px; border-color: var(--ink); }
+
+/* .nmbm-control fills its column, which is right in a form grid and wrong
+   in a row of filters or an inline "Date of service" label, where it would
+   push its neighbours off the line. */
+:where(.flex:not(.flex-col)) > .nmbm-control,
+:where(.flex:not(.flex-col)) > label > .nmbm-control,
+.nmbm-shell__end .nmbm-control { width: auto; }

@@ -54,7 +54,7 @@ export default function ParticipantDetailPage({ me }: { me: Me }) {
   }, [record]);
 
   if (loadError) return <p className="text-sm text-state-alert">{loadError}</p>;
-  if (!record) return <p className="text-sm text-nmbm-ink/50">Loading…</p>;
+  if (!record) return <p className="text-sm text-ds-muted">Loading…</p>;
 
   const { noContact, carePlan } = record.flags;
   const isOpen = record.episodeStatus === "open";
@@ -80,10 +80,10 @@ export default function ParticipantDetailPage({ me }: { me: Me }) {
     <div className="mx-auto max-w-3xl">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-semibold text-nmbm-ink">
+          <h1 className="ds-display">
             {record.firstName} {record.lastName}
           </h1>
-          <p className="mt-1 text-sm text-nmbm-ink/60">
+          <p className="mt-1 text-sm text-ds-muted">
             Born {record.dateOfBirth}
             {record.workerName && ` · ${record.workerName}`}
             {record.startDate && ` · enrolled ${record.startDate}`}
@@ -91,7 +91,7 @@ export default function ParticipantDetailPage({ me }: { me: Me }) {
           {can(me, "records.export") && (
             <Link
               to={`/participants/${record.id}/export`}
-              className="mt-1 inline-block text-xs text-nmbm-ink/60 underline underline-offset-2 hover:text-nmbm-ink"
+              className="mt-1 inline-block text-xs text-ds-muted underline underline-offset-2 hover:text-ds-ink"
             >
               Export the full record
             </Link>
@@ -113,17 +113,17 @@ export default function ParticipantDetailPage({ me }: { me: Me }) {
       {/* R10: retrievable, but plainly not active — nothing on this page
           is due, and it is on nobody's caseload. */}
       {!isOpen && lastEpisode && (
-        <div className="mt-6 rounded border border-nmbm-ink/15 bg-nmbm-ink/[0.03] px-4 py-3 text-sm text-nmbm-ink">
+        <div className="nmbm-alert nmbm-alert--info mt-6">
           <p className="font-medium">
             Closed {lastEpisode.endDate ?? ""}
             {lastEpisode.closureReason && ` — ${CLOSURE_REASON_LABELS[lastEpisode.closureReason]}`}
           </p>
-          <p className="mt-1 text-nmbm-ink/60">
+          <p className="mt-1 text-ds-muted">
             Not on anyone's caseload. The history below is kept in full; readmitting opens a new
             episode with its own care plan clock and contact count.
           </p>
           {fromReferral && can(me, "episodes.write") && (
-            <p className="mt-2 text-sm text-nmbm-ink/80">
+            <p className="mt-2 text-sm text-ds-secondary">
               Readmitting from a referral — the referral closes when they're readmitted.
             </p>
           )}
@@ -153,12 +153,12 @@ export default function ParticipantDetailPage({ me }: { me: Me }) {
       )}
 
       {notice && (
-        <p className="mt-4 rounded border border-state-ok/20 bg-state-ok-bg px-3 py-2 text-sm text-state-ok">
+        <p className="nmbm-alert nmbm-alert--ok mt-4">
           {notice}
         </p>
       )}
       {actionError && (
-        <p className="mt-4 rounded border border-state-alert/20 bg-state-alert-bg px-3 py-2 text-sm text-state-alert">
+        <p className="nmbm-alert nmbm-alert--alert mt-4">
           {actionError}
         </p>
       )}
@@ -166,7 +166,7 @@ export default function ParticipantDetailPage({ me }: { me: Me }) {
       {/* M6: the prompt appears where the worker already is, rather than
           asking them to remember the rule. */}
       {noContact.warning && record.episodeStatus === "open" && (
-        <div className="mt-6 rounded border border-state-warn/25 bg-state-warn-bg px-4 py-3 text-sm text-state-warn">
+        <div className="nmbm-alert nmbm-alert--warn mt-6">
           <p className="font-medium">
             {noContact.count} failed contact attempts — prepare exit documentation.
           </p>
@@ -189,7 +189,7 @@ export default function ParticipantDetailPage({ me }: { me: Me }) {
                       "Letter recorded.",
                     )
                   }
-                  className="ml-2 rounded border border-state-warn px-2 py-0.5 text-xs font-medium hover:bg-state-warn hover:text-nmbm-paper"
+                  className="nmbm-btn nmbm-btn--secondary nmbm-btn--sm ml-2"
                 >
                   Record letter sent
                 </button>
@@ -233,14 +233,14 @@ export default function ParticipantDetailPage({ me }: { me: Me }) {
       )}
 
       {record.referralsIn.length > 0 && (
-        <section className="mt-6 rounded border border-nmbm-ink/10 p-4">
-          <h2 className="text-sm font-semibold uppercase tracking-wide text-nmbm-ink/50">Referred to NMBM</h2>
+        <section className="nmbm-card nmbm-card--dense mt-6">
+          <h2 className="ds-section-heading">Referred to NMBM</h2>
           <ul className="mt-2 flex flex-col gap-2 text-sm">
             {record.referralsIn.map((r) => (
               <li key={r.id}>
-                <span className="font-medium text-nmbm-ink">{r.sourceName || REFERRAL_SOURCE_LABELS[r.sourceType]}</span>
-                <span className="text-xs text-nmbm-ink/50"> · received {r.receivedDate}</span>
-                <p className="text-nmbm-ink/70">{r.reason}</p>
+                <span className="font-medium text-ds-ink">{r.sourceName || REFERRAL_SOURCE_LABELS[r.sourceType]}</span>
+                <span className="text-xs text-ds-muted"> · received {r.receivedDate}</span>
+                <p className="text-ds-secondary">{r.reason}</p>
               </li>
             ))}
           </ul>
@@ -291,21 +291,21 @@ export default function ParticipantDetailPage({ me }: { me: Me }) {
       />
 
       {record.programs.length > 0 && (
-        <section className="mt-6 rounded border border-nmbm-ink/10 p-4">
-          <h2 className="text-sm font-semibold uppercase tracking-wide text-nmbm-ink/50">
+        <section className="nmbm-card nmbm-card--dense mt-6">
+          <h2 className="ds-section-heading">
             Programs
           </h2>
           <ul className="mt-3 flex flex-col gap-2">
             {record.programs.map((enrollment) => (
               <li
                 key={enrollment.enrollmentId}
-                className="flex flex-wrap items-center justify-between gap-2 rounded border border-nmbm-ink/10 px-3 py-2 text-sm"
+                className="ds-row flex flex-wrap items-center justify-between gap-2"
               >
                 <span>
-                  <Link to={`/cohorts/${enrollment.cohortId}`} className="font-medium text-nmbm-ink hover:underline">
+                  <Link to={`/cohorts/${enrollment.cohortId}`} className="font-medium text-ds-ink hover:underline">
                     {enrollment.programName}
                   </Link>
-                  <span className="block text-xs text-nmbm-ink/50">
+                  <span className="block text-xs text-ds-muted">
                     {enrollment.cohortName} · {enrollment.status}
                   </span>
                 </span>
@@ -313,7 +313,7 @@ export default function ParticipantDetailPage({ me }: { me: Me }) {
                     probation officer, reachable from the case. */}
                 <Link
                   to={`/enrollments/${enrollment.enrollmentId}/participation`}
-                  className="text-xs text-nmbm-gold-dark hover:underline"
+                  className="text-xs text-ds-accent hover:underline"
                 >
                   Proof of participation
                 </Link>
@@ -377,28 +377,28 @@ export default function ParticipantDetailPage({ me }: { me: Me }) {
       <EpisodeHistory episodes={record.episodes} />
 
       <section className="mt-8">
-        <h2 className="text-sm font-semibold uppercase tracking-wide text-nmbm-ink/50">
+        <h2 className="ds-section-heading">
           Contact history
         </h2>
-        <ul className="mt-2 divide-y divide-nmbm-ink/5 rounded border border-nmbm-ink/10">
+        <ul className="ds-list mt-2">
           {record.notes.map((note) => (
             <li key={note.id} id={`note-${note.id}`} className="scroll-mt-6 px-4 py-3 text-sm">
               <div className="flex flex-wrap items-center justify-between gap-2">
-                <span className="text-nmbm-ink">{note.body}</span>
+                <span className="text-ds-ink">{note.body}</span>
                 <Pill tone={note.contactResult === "contacted" ? "ok" : "warn"}>
                   {note.contactResult === "contacted" ? "Reached" : "No contact"}
                 </Pill>
               </div>
-              <p className="mt-1 text-xs text-nmbm-ink/50">
+              <p className="mt-1 text-xs text-ds-muted">
                 {/* After a readmission the old episode's misses are still
                     here, but no longer count — say so, or a run of "No
                     contact" under a fresh episode reads as current. */}
                 {isOpen && note.episodeId !== record.episodeId && (
-                  <span className="mr-1.5 rounded bg-nmbm-ink/5 px-1.5 py-0.5 text-nmbm-ink/60">
+                  <span className="mr-1.5 rounded bg-ds-subtle px-1.5 py-0.5 text-ds-muted">
                     Earlier episode
                   </span>
                 )}
-                <span className="font-medium text-nmbm-ink/70">{day(note.serviceDate)}</span> · {note.authorName}
+                <span className="font-medium text-ds-secondary">{day(note.serviceDate)}</span> · {note.authorName}
                 {/* Written up on a later day: both dates, so the gap is visible. */}
                 {localDay(note.createdAt) !== note.serviceDate && ` · written ${new Date(note.createdAt).toLocaleDateString()}`}
                 {note.clinicalReview && " · clinical"}
@@ -418,7 +418,7 @@ export default function ParticipantDetailPage({ me }: { me: Me }) {
                     setRevision(note.body);
                     setRevisionDate(note.serviceDate);
                   }}
-                  className="mt-2 rounded border border-nmbm-ink/30 px-3 py-1 text-xs"
+                  className="nmbm-btn nmbm-btn--secondary nmbm-btn--sm mt-2"
                 >
                   Revise and resubmit
                 </button>
@@ -443,9 +443,9 @@ export default function ParticipantDetailPage({ me }: { me: Me }) {
                     rows={4}
                     value={revision}
                     onChange={(e) => setRevision(e.target.value)}
-                    className="rounded border border-nmbm-ink/20 px-2 py-1.5 text-sm"
+                    className="nmbm-control nmbm-textarea"
                   />
-                  <label className="flex items-center gap-2 text-xs text-nmbm-ink/70">
+                  <label className="flex items-center gap-2 text-xs text-ds-secondary">
                     Date of service
                     <input
                       type="date"
@@ -453,17 +453,17 @@ export default function ParticipantDetailPage({ me }: { me: Me }) {
                       value={revisionDate}
                       max={todayInOrg()}
                       onChange={(e) => setRevisionDate(e.target.value)}
-                      className="rounded border border-nmbm-ink/20 px-2 py-1 text-sm"
+                      className="nmbm-control"
                     />
                   </label>
                   <div className="flex gap-2">
                     <button
                       disabled={!revision.trim() || (revision === note.body && revisionDate === note.serviceDate)}
-                      className="rounded bg-nmbm-ink px-3 py-1 text-xs font-medium text-nmbm-paper disabled:opacity-40"
+                      className="nmbm-btn nmbm-btn--dark nmbm-btn--sm"
                     >
                       Resubmit for review
                     </button>
-                    <button type="button" onClick={() => setRevising(null)} className="rounded border border-nmbm-ink/30 px-3 py-1 text-xs">
+                    <button type="button" onClick={() => setRevising(null)} className="nmbm-btn nmbm-btn--secondary nmbm-btn--sm">
                       Cancel
                     </button>
                   </div>
@@ -472,7 +472,7 @@ export default function ParticipantDetailPage({ me }: { me: Me }) {
             </li>
           ))}
           {record.notes.length === 0 && (
-            <li className="px-4 py-3 text-sm text-nmbm-ink/50">No contact logged yet.</li>
+            <li className="px-4 py-3 text-sm text-ds-muted">No contact logged yet.</li>
           )}
         </ul>
       </section>
@@ -540,8 +540,8 @@ function NoteForm({
   }
 
   return (
-    <form onSubmit={submit} className="mt-6 rounded border border-nmbm-ink/10 p-4">
-      <h2 className="text-sm font-semibold uppercase tracking-wide text-nmbm-ink/50">
+    <form onSubmit={submit} className="nmbm-card nmbm-card--dense mt-6">
+      <h2 className="ds-section-heading">
         Log a contact attempt
       </h2>
       <div className="mt-3 flex flex-wrap gap-4 text-sm">
@@ -555,7 +555,7 @@ function NoteForm({
             {value === "contacted" ? "Reached them" : "Could not reach"}
           </label>
         ))}
-        <label className="ml-auto flex items-center gap-2 text-nmbm-ink/70">
+        <label className="ml-auto flex items-center gap-2 text-ds-secondary">
           Date of service
           <input
             type="date"
@@ -564,7 +564,7 @@ function NoteForm({
             min={stayStarted ?? undefined}
             max={todayInOrg()}
             onChange={(e) => setServiceDate(e.target.value)}
-            className="rounded border border-nmbm-ink/20 px-2 py-1 text-sm text-nmbm-ink"
+            className="nmbm-control"
           />
         </label>
       </div>
@@ -574,13 +574,13 @@ function NoteForm({
         required
         rows={3}
         placeholder="What happened?"
-        className="mt-3 w-full rounded border border-nmbm-ink/20 px-3 py-2 text-sm"
+        className="nmbm-control nmbm-textarea mt-3 w-full"
       />
       {error && <p className="mt-1 text-sm text-state-alert">{error}</p>}
       <button
         type="submit"
         disabled={saving}
-        className="mt-2 rounded bg-nmbm-ink px-5 py-1.5 text-sm font-medium text-nmbm-paper disabled:opacity-50"
+        className="nmbm-btn nmbm-btn--dark nmbm-btn--md mt-2"
       >
         {saving ? "Saving…" : "Save"}
       </button>
@@ -593,15 +593,15 @@ function CloseEpisodeForm({ onClose }: { onClose: (reason: EpisodeClosureReason)
   const labels = CLOSURE_REASON_LABELS;
 
   return (
-    <div className="mt-6 rounded border border-nmbm-ink/10 p-4">
-      <h2 className="text-sm font-semibold uppercase tracking-wide text-nmbm-ink/50">
+    <div className="nmbm-card nmbm-card--dense mt-6">
+      <h2 className="ds-section-heading">
         Close this episode
       </h2>
       <div className="mt-3 flex flex-wrap items-center gap-3">
         <select
           value={reason}
           onChange={(e) => setReason(e.target.value as EpisodeClosureReason)}
-          className="rounded border border-nmbm-ink/20 px-3 py-1.5 text-sm"
+          className="nmbm-control nmbm-select"
         >
           {Object.entries(labels).map(([value, label]) => (
             <option key={value} value={value}>
@@ -611,7 +611,7 @@ function CloseEpisodeForm({ onClose }: { onClose: (reason: EpisodeClosureReason)
         </select>
         <button
           onClick={() => onClose(reason)}
-          className="rounded border border-nmbm-ink px-4 py-1.5 text-sm font-medium text-nmbm-ink transition hover:bg-nmbm-ink hover:text-nmbm-paper"
+          className="nmbm-btn nmbm-btn--secondary nmbm-btn--md"
         >
           Close episode
         </button>
@@ -660,16 +660,16 @@ function AssignmentControl({
   }
 
   return (
-    <div className="mt-6 rounded border border-nmbm-ink/10 p-4">
-      <h2 className="text-sm font-semibold uppercase tracking-wide text-nmbm-ink/50">
+    <div className="nmbm-card nmbm-card--dense mt-6">
+      <h2 className="ds-section-heading">
         Assigned worker
       </h2>
       <div className="mt-3 flex flex-wrap items-center gap-3 text-sm">
-        <span className="text-nmbm-ink/70">{currentWorker ?? "Nobody assigned"}</span>
+        <span className="text-ds-secondary">{currentWorker ?? "Nobody assigned"}</span>
         <select
           value={workerId}
           onChange={(e) => setWorkerId(e.target.value)}
-          className="rounded border border-nmbm-ink/20 px-3 py-1.5 text-sm"
+          className="nmbm-control nmbm-select"
         >
           <option value="">Reassign to…</option>
           {workers.map((w) => (
@@ -681,7 +681,7 @@ function AssignmentControl({
         <button
           disabled={!workerId || busy}
           onClick={submit}
-          className="rounded border border-nmbm-ink/30 px-4 py-1.5 text-sm font-medium disabled:opacity-40"
+          className="nmbm-btn nmbm-btn--secondary nmbm-btn--md"
         >
           Reassign
         </button>
@@ -695,23 +695,23 @@ function AssignmentControl({
 function EpisodeHistory({ episodes }: { episodes: EpisodeSummary[] }) {
   if (episodes.length < 2 && episodes[0]?.status !== "closed") return null;
   return (
-    <section className="mt-6 rounded border border-nmbm-ink/10 p-4">
-      <h2 className="text-sm font-semibold uppercase tracking-wide text-nmbm-ink/50">
+    <section className="nmbm-card nmbm-card--dense mt-6">
+      <h2 className="ds-section-heading">
         Episodes
       </h2>
       <ol className="mt-3 flex flex-col gap-2 text-sm">
         {episodes.map((episode) => (
           <li
             key={episode.id}
-            className="flex flex-wrap items-center justify-between gap-2 rounded border border-nmbm-ink/10 px-3 py-2"
+            className="ds-row flex flex-wrap items-center justify-between gap-2"
           >
-            <span className="text-nmbm-ink">
+            <span className="text-ds-ink">
               {episode.startDate} – {episode.endDate ?? "present"}
               {episode.readmittedFromEpisodeId && (
-                <span className="ml-2 text-xs text-nmbm-ink/50">readmission</span>
+                <span className="ml-2 text-xs text-ds-muted">readmission</span>
               )}
             </span>
-            <span className="text-xs text-nmbm-ink/60">
+            <span className="text-xs text-ds-muted">
               {episode.status === "open"
                 ? "Open"
                 : episode.closureReason
@@ -776,7 +776,7 @@ function ReadmitForm({
 
   return (
     <form onSubmit={submit} className="mt-3 flex flex-wrap items-end gap-3">
-      <label className="flex flex-col gap-1 text-xs text-nmbm-ink/60">
+      <label className="flex flex-col gap-1 text-xs text-ds-muted">
         Start date
         <input
           type="date"
@@ -784,16 +784,16 @@ function ReadmitForm({
           min={earliest ?? undefined}
           onChange={(e) => setStartDate(e.target.value)}
           required
-          className="rounded border border-nmbm-ink/20 bg-nmbm-paper px-3 py-1.5 text-sm text-nmbm-ink"
+          className="nmbm-control"
         />
       </label>
-      <label className="flex flex-col gap-1 text-xs text-nmbm-ink/60">
+      <label className="flex flex-col gap-1 text-xs text-ds-muted">
         Assign to
         <select
           value={workerId}
           onChange={(e) => setWorkerId(e.target.value)}
           required
-          className="rounded border border-nmbm-ink/20 bg-nmbm-paper px-3 py-1.5 text-sm text-nmbm-ink"
+          className="nmbm-control nmbm-select"
         >
           <option value="">Choose a worker…</option>
           {workers.map((w) => (
@@ -806,7 +806,7 @@ function ReadmitForm({
       <button
         type="submit"
         disabled={!workerId || busy}
-        className="rounded bg-nmbm-ink px-4 py-1.5 text-sm font-medium text-nmbm-paper disabled:opacity-40"
+        className="nmbm-btn nmbm-btn--dark nmbm-btn--md"
       >
         {busy ? "Readmitting…" : "Readmit"}
       </button>
@@ -844,23 +844,23 @@ function FollowUpSection({
 }) {
   const [open, setOpen] = useState<number | null>(null);
   return (
-    <section className="mt-6 rounded border border-nmbm-ink/10 p-4">
-      <h2 className="text-sm font-semibold uppercase tracking-wide text-nmbm-ink/50">Follow-up calls</h2>
-      <p className="mt-1 text-xs text-nmbm-ink/50">Counted from the case closing on {schedule.endDate}.</p>
+    <section className="nmbm-card nmbm-card--dense mt-6">
+      <h2 className="ds-section-heading">Follow-up calls</h2>
+      <p className="mt-1 text-xs text-ds-muted">Counted from the case closing on {schedule.endDate}.</p>
       <ol className="mt-3 flex flex-col gap-2">
         {schedule.milestones.map((m) => (
-          <li key={m.months} className="rounded border border-nmbm-ink/10 px-3 py-2 text-sm">
+          <li key={m.months} className="ds-row">
             <div className="flex flex-wrap items-center justify-between gap-2">
-              <span className="text-nmbm-ink">
+              <span className="text-ds-ink">
                 <span className="font-medium">{m.months}-month call</span>
-                <span className="ml-2 text-xs text-nmbm-ink/50">due {m.dueDate}</span>
+                <span className="ml-2 text-xs text-ds-muted">due {m.dueDate}</span>
               </span>
               <span className="flex items-center gap-2">
                 <Pill tone={MILESTONE_TONE[m.state]}>{MILESTONE_LABEL[m.state]}</Pill>
                 {canRecord && (m.state === "due" || m.state === "overdue") && open !== m.months && (
                   <button
                     onClick={() => setOpen(m.months)}
-                    className="rounded border border-nmbm-ink/30 px-2 py-0.5 text-xs font-medium hover:border-nmbm-ink"
+                    className="nmbm-btn nmbm-btn--secondary nmbm-btn--sm"
                   >
                     Record call
                   </button>
@@ -868,9 +868,9 @@ function FollowUpSection({
               </span>
             </div>
             {m.attempts.map((call) => (
-              <div key={call.id} className="mt-2 border-l-2 border-nmbm-ink/10 pl-3 text-xs text-nmbm-ink/70">
+              <div key={call.id} className="mt-2 border-l-2 border-ds-border pl-3 text-xs text-ds-secondary">
                 <p>
-                  <span className="font-medium text-nmbm-ink">{FOLLOW_UP_OUTCOME_LABELS[call.outcome]}</span> ·{" "}
+                  <span className="font-medium text-ds-ink">{FOLLOW_UP_OUTCOME_LABELS[call.outcome]}</span> ·{" "}
                   {call.calledByName} · {new Date(call.calledAt).toLocaleDateString()}
                 </p>
                 {call.note && <p className="mt-0.5">{call.note}</p>}

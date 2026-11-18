@@ -153,15 +153,15 @@ export function DocumentsSection({
   const voidedCount = (documents ?? []).filter((d) => d.status === "voided").length;
 
   return (
-    <section className="mt-6 rounded border border-nmbm-ink/10 p-4">
+    <section className="nmbm-card nmbm-card--dense mt-6">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <h2 className="text-sm font-semibold uppercase tracking-wide text-nmbm-ink/50">
+        <h2 className="ds-section-heading">
           Documents
         </h2>
         {writable && record.episodeStatus === "open" && !adding && (
           <button
             onClick={() => setAdding(true)}
-            className="rounded border border-nmbm-ink/30 px-3 py-1 text-sm"
+            className="nmbm-btn nmbm-btn--secondary nmbm-btn--sm"
           >
             Upload a document
           </button>
@@ -169,26 +169,26 @@ export function DocumentsSection({
       </div>
 
       {documents && visible.length === 0 && !adding && (
-        <p className="mt-3 text-sm text-nmbm-ink/60">Nothing on file.</p>
+        <p className="mt-3 text-sm text-ds-muted">Nothing on file.</p>
       )}
 
       <ul className="mt-3 flex flex-col gap-2">
         {visible.map((doc) => (
-          <li key={doc.id} className="rounded border border-nmbm-ink/10 px-3 py-2 text-sm">
+          <li key={doc.id} className="ds-row">
             <div className="flex flex-wrap items-center justify-between gap-2">
               {doc.status === "uploaded" ? (
                 <button
                   onClick={() => open(doc)}
-                  className="text-left font-medium text-nmbm-ink underline-offset-2 hover:underline"
+                  className="text-left font-medium text-ds-ink underline-offset-2 hover:underline"
                 >
                   {doc.description}
                 </button>
               ) : (
-                <span className="font-medium text-nmbm-ink/50 line-through">{doc.description}</span>
+                <span className="font-medium text-ds-muted line-through">{doc.description}</span>
               )}
               {doc.status === "voided" && <Pill tone="alert">voided</Pill>}
             </div>
-            <p className="mt-0.5 text-xs text-nmbm-ink/50">
+            <p className="mt-0.5 text-xs text-ds-muted">
               {doc.originalFilename} · {formatSize(doc.sizeBytes)}
               {doc.uploadedAt && ` · uploaded ${doc.uploadedAt.slice(0, 10)}`} by{" "}
               {doc.uploadedByName}
@@ -201,7 +201,7 @@ export function DocumentsSection({
               <button
                 disabled={busy}
                 onClick={() => voidDoc(doc)}
-                className="mt-1 text-xs text-nmbm-ink/50 underline-offset-2 hover:text-state-alert hover:underline"
+                className="nmbm-btn nmbm-btn--danger nmbm-btn--sm mt-1"
               >
                 Void
               </button>
@@ -213,14 +213,14 @@ export function DocumentsSection({
       {voidedCount > 0 && (
         <button
           onClick={() => setShowVoided((v) => !v)}
-          className="mt-2 text-xs text-nmbm-ink/50 underline-offset-2 hover:underline"
+          className="mt-2 text-xs text-ds-muted underline-offset-2 hover:underline"
         >
           {showVoided ? "Hide voided" : `Show voided (${voidedCount})`}
         </button>
       )}
 
       {adding && (
-        <div className="mt-3 rounded border border-nmbm-ink/15 p-3">
+        <div className="nmbm-card nmbm-card--dense mt-3">
           <div className="flex flex-col gap-3">
             <label className="flex flex-col gap-1 text-sm">
               File
@@ -243,7 +243,7 @@ export function DocumentsSection({
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
                 placeholder="e.g. Photo ID, proof of address"
-                className="rounded border border-nmbm-ink/20 px-2 py-1.5 text-sm"
+                className="nmbm-control"
               />
             </label>
             {record.consents.length > 0 && (
@@ -252,7 +252,7 @@ export function DocumentsSection({
                 <select
                   value={consentId}
                   onChange={(e) => setConsentId(e.target.value)}
-                  className="rounded border border-nmbm-ink/20 px-2 py-1.5 text-sm"
+                  className="nmbm-control nmbm-select"
                 >
                   <option value="">No — a different document</option>
                   {record.consents.map((consent) => (
@@ -263,7 +263,7 @@ export function DocumentsSection({
                 </select>
               </label>
             )}
-            <p className="text-xs text-nmbm-ink/50">
+            <p className="text-xs text-ds-muted">
               PDF or photo, up to 10 MB. Opening a document is recorded in the audit log.
             </p>
           </div>
@@ -271,14 +271,14 @@ export function DocumentsSection({
             <button
               disabled={busy || !file || !!fileProblem || !description.trim()}
               onClick={upload}
-              className="rounded bg-nmbm-ink px-4 py-1.5 text-sm font-medium text-nmbm-paper disabled:opacity-50"
+              className="nmbm-btn nmbm-btn--dark nmbm-btn--md"
             >
               {busy ? "Uploading…" : "Upload"}
             </button>
             <button
               disabled={busy}
               onClick={reset}
-              className="rounded border border-nmbm-ink/30 px-4 py-1.5 text-sm"
+              className="nmbm-btn nmbm-btn--secondary nmbm-btn--md"
             >
               Cancel
             </button>

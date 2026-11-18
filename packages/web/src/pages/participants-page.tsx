@@ -46,25 +46,25 @@ export default function ParticipantsPage({
       .catch(() => setClosed([]));
   }, [view, closed]);
 
-  if (!rows) return <p className="text-sm text-nmbm-ink/50">Loading…</p>;
+  if (!rows) return <p className="text-sm text-ds-muted">Loading…</p>;
 
   const visible = onlyAttention ? rows.filter((r) => r.needsAttention) : rows;
 
   return (
     <div className="mx-auto max-w-5xl">
       <div className="flex flex-wrap items-baseline justify-between gap-3">
-        <h1 className="text-2xl font-semibold text-nmbm-ink">{PARTICIPANT_LABEL_PLURAL}</h1>
+        <h1 className="ds-display">{PARTICIPANT_LABEL_PLURAL}</h1>
         <div className="flex flex-wrap items-center gap-4">
           {canAdmit && (
             <Link
               to="/participants/new"
-              className="rounded bg-nmbm-ink px-4 py-1.5 text-sm font-medium text-nmbm-paper"
+              className="nmbm-btn nmbm-btn--primary nmbm-btn--md"
             >
               New intake
             </Link>
           )}
           {view === "active" && (
-            <label className="flex items-center gap-2 text-sm text-nmbm-ink/70">
+            <label className="flex items-center gap-2 text-sm text-ds-secondary">
               <input
                 type="checkbox"
                 checked={onlyAttention}
@@ -77,7 +77,7 @@ export default function ParticipantsPage({
       </div>
 
       {notice && (
-        <p className="mt-4 rounded border border-state-ok/20 bg-state-ok-bg px-3 py-2 text-sm text-state-ok">
+        <p className="nmbm-alert nmbm-alert--ok mt-4">
           {notice}
         </p>
       )}
@@ -88,16 +88,16 @@ export default function ParticipantsPage({
         onChange={(e) => setSearchText(e.target.value)}
         placeholder="Find by name or date of birth (4/3/1981)"
         aria-label="Find a client by name or date of birth"
-        className="mt-4 w-full max-w-md rounded border border-nmbm-ink/20 px-3 py-2 text-sm"
+        className="nmbm-control mt-4 w-full max-w-md"
       />
 
       {searchQuery ? (
         <div className="mt-4">
-          {searchResults ? <SearchResults results={searchResults} /> : <p className="text-sm text-nmbm-ink/50">Searching…</p>}
+          {searchResults ? <SearchResults results={searchResults} /> : <p className="text-sm text-ds-muted">Searching…</p>}
         </div>
       ) : (
       <>
-      <div role="tablist" className="mt-4 flex gap-1 border-b border-nmbm-ink/10 text-sm">
+      <div role="tablist" className="mt-4 flex gap-1 border-b border-ds-border text-sm">
         {(["active", "closed"] as View[]).map((v) => (
           <button
             key={v}
@@ -106,8 +106,8 @@ export default function ParticipantsPage({
             onClick={() => setView(v)}
             className={`-mb-px border-b-2 px-3 py-2 font-medium ${
               view === v
-                ? "border-nmbm-gold text-nmbm-ink"
-                : "border-transparent text-nmbm-ink/50 hover:text-nmbm-ink"
+                ? "border-nmbm-gold text-ds-ink"
+                : "border-transparent text-ds-muted hover:text-ds-ink"
             }`}
           >
             {v === "active" ? `Active (${rows.length})` : seesAllClosed ? "Closed" : "Recently closed"}
@@ -119,7 +119,7 @@ export default function ParticipantsPage({
         <div className="mt-4 overflow-x-auto">
           <table className="w-full min-w-[720px] border-collapse text-sm">
             <thead>
-              <tr className="border-b border-nmbm-ink/10 text-left text-xs uppercase tracking-wide text-nmbm-ink/50">
+              <tr className="border-b border-ds-border text-left text-xs uppercase tracking-wide text-ds-muted">
                 <th className="py-2 pr-4 font-semibold">Name</th>
                 <th className="py-2 pr-4 font-semibold">Plan</th>
                 <th className="py-2 pr-4 font-semibold">Enrolled</th>
@@ -128,14 +128,14 @@ export default function ParticipantsPage({
             </thead>
             <tbody>
               {visible.map((row) => (
-                <tr key={row.id} className="border-b border-nmbm-ink/5">
+                <tr key={row.id} className="border-b border-ds-border">
                   <td className="py-3 pr-4">
                     <ParticipantLink id={row.id} firstName={row.firstName} lastName={row.lastName} />
                   </td>
-                  <td className="py-3 pr-4 text-nmbm-ink/70">
+                  <td className="py-3 pr-4 text-ds-secondary">
                     {row.payer ? (PAYER_LABELS[row.payer] ?? row.payer) : "—"}
                   </td>
-                  <td className="py-3 pr-4 text-nmbm-ink/70">{row.startDate ?? "—"}</td>
+                  <td className="py-3 pr-4 text-ds-secondary">{row.startDate ?? "—"}</td>
                   <td className="py-3 pr-4">
                     <div className="flex flex-wrap items-center gap-1.5">
                       <MolinaLetterPill flags={row.flags.noContact} />
@@ -147,7 +147,7 @@ export default function ParticipantsPage({
               ))}
             </tbody>
           </table>
-          {visible.length === 0 && <p className="py-6 text-sm text-nmbm-ink/50">Nothing to show.</p>}
+          {visible.length === 0 && <p className="py-6 text-sm text-ds-muted">Nothing to show.</p>}
         </div>
       ) : (
         <ClosedTable rows={closed} seesAll={seesAllClosed} />
@@ -159,17 +159,17 @@ export default function ParticipantsPage({
 }
 
 function ClosedTable({ rows, seesAll }: { rows: ClosedParticipantRow[] | null; seesAll: boolean }) {
-  if (!rows) return <p className="mt-4 text-sm text-nmbm-ink/50">Loading…</p>;
+  if (!rows) return <p className="mt-4 text-sm text-ds-muted">Loading…</p>;
   return (
     <div className="mt-4 overflow-x-auto">
-      <p className="mb-3 text-sm text-nmbm-ink/60">
+      <p className="mb-3 text-sm text-ds-muted">
         {seesAll
           ? `Former ${PARTICIPANT_LABEL_PLURAL.toLowerCase()}, most recently closed first. Nothing here counts toward anyone's caseload; open a record to see its history or readmit.`
           : `${PARTICIPANT_LABEL_PLURAL} whose case closed while you were their worker. You can still open their records, read-only, until the date shown.`}
       </p>
       <table className="w-full min-w-[720px] border-collapse text-sm">
         <thead>
-          <tr className="border-b border-nmbm-ink/10 text-left text-xs uppercase tracking-wide text-nmbm-ink/50">
+          <tr className="border-b border-ds-border text-left text-xs uppercase tracking-wide text-ds-muted">
             <th className="py-2 pr-4 font-semibold">Name</th>
             <th className="py-2 pr-4 font-semibold">Born</th>
             <th className="py-2 pr-4 font-semibold">Enrolled</th>
@@ -180,22 +180,22 @@ function ClosedTable({ rows, seesAll }: { rows: ClosedParticipantRow[] | null; s
         </thead>
         <tbody>
           {rows.map((row) => (
-            <tr key={row.id} className="border-b border-nmbm-ink/5">
+            <tr key={row.id} className="border-b border-ds-border">
               <td className="py-3 pr-4">
                 <ParticipantLink id={row.id} firstName={row.firstName} lastName={row.lastName} />
               </td>
-              <td className="py-3 pr-4 text-nmbm-ink/70">{row.dateOfBirth}</td>
-              <td className="py-3 pr-4 text-nmbm-ink/70">{row.startDate}</td>
-              <td className="py-3 pr-4 text-nmbm-ink/70">{row.endDate ?? "—"}</td>
-              <td className="py-3 pr-4 text-nmbm-ink/70">
+              <td className="py-3 pr-4 text-ds-secondary">{row.dateOfBirth}</td>
+              <td className="py-3 pr-4 text-ds-secondary">{row.startDate}</td>
+              <td className="py-3 pr-4 text-ds-secondary">{row.endDate ?? "—"}</td>
+              <td className="py-3 pr-4 text-ds-secondary">
                 {row.closureReason ? CLOSURE_REASON_LABELS[row.closureReason] : "—"}
               </td>
-              {!seesAll && <td className="py-3 pr-4 text-nmbm-ink/70">{row.accessUntil}</td>}
+              {!seesAll && <td className="py-3 pr-4 text-ds-secondary">{row.accessUntil}</td>}
             </tr>
           ))}
         </tbody>
       </table>
-      {rows.length === 0 && <p className="py-6 text-sm text-nmbm-ink/50">No closed records.</p>}
+      {rows.length === 0 && <p className="py-6 text-sm text-ds-muted">No closed records.</p>}
     </div>
   );
 }

@@ -1,24 +1,16 @@
 import { Link } from "react-router-dom";
 import type { CarePlanFlags, NoContactFlags } from "../lib/types.js";
 
+// The design system's StatusPill: words carry the meaning, color only
+// reinforces it. "gold" is a rare milestone, never a warning.
 export function Pill({
   tone,
   children,
 }: {
-  tone: "alert" | "warn" | "ok" | "muted";
+  tone: "alert" | "warn" | "ok" | "muted" | "gold";
   children: React.ReactNode;
 }) {
-  const tones = {
-    alert: "bg-state-alert-bg text-state-alert",
-    warn: "bg-state-warn-bg text-state-warn",
-    ok: "bg-state-ok-bg text-state-ok",
-    muted: "bg-nmbm-ink/5 text-nmbm-ink/60",
-  } as const;
-  return (
-    <span className={`inline-block rounded px-2 py-0.5 text-xs font-medium ${tones[tone]}`}>
-      {children}
-    </span>
-  );
+  return <span className={`nmbm-pill nmbm-pill--${tone}`}>{children}</span>;
 }
 
 // M6: the count on its own doesn't tell a worker what to do next, so
@@ -84,7 +76,7 @@ export function ParticipantLink({
   lastName: string;
 }) {
   return (
-    <Link to={`/participants/${id}`} className="font-medium text-nmbm-ink hover:underline">
+    <Link to={`/participants/${id}`} className="ds-person hover:underline">
       {firstName} {lastName}
     </Link>
   );

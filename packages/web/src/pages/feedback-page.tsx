@@ -68,15 +68,15 @@ export default function FeedbackPage() {
 
   return (
     <div className="mx-auto max-w-xl">
-      <h1 className="text-2xl font-semibold text-nmbm-ink">Report an issue or leave feedback</h1>
+      <h1 className="ds-display">Report an issue or leave feedback</h1>
       <div className="mt-6">
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-          <label className="flex flex-col gap-1 text-sm text-nmbm-ink">
+          <label className="flex flex-col gap-1 text-sm text-ds-ink">
             Category
             <select
               value={category}
               onChange={(e) => setCategory(e.target.value as FeedbackCategory)}
-              className="rounded border border-nmbm-ink/20 px-3 py-2"
+              className="nmbm-control nmbm-select"
             >
               {Object.entries(CATEGORY_LABELS).map(([value, label]) => (
                 <option key={value} value={value}>
@@ -86,36 +86,36 @@ export default function FeedbackPage() {
             </select>
           </label>
 
-          <label className="flex flex-col gap-1 text-sm text-nmbm-ink">
+          <label className="flex flex-col gap-1 text-sm text-ds-ink">
             Subject
             <input
               value={subject}
               onChange={(e) => setSubject(e.target.value)}
               required
               maxLength={200}
-              className="rounded border border-nmbm-ink/20 px-3 py-2"
+              className="nmbm-control"
               placeholder="Short summary"
             />
           </label>
 
-          <label className="flex flex-col gap-1 text-sm text-nmbm-ink">
+          <label className="flex flex-col gap-1 text-sm text-ds-ink">
             Details
             <textarea
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               required
               rows={6}
-              className="rounded border border-nmbm-ink/20 px-3 py-2"
+              className="nmbm-control nmbm-textarea"
               placeholder="What happened, or what you'd like to see? Screenshots aren't attachable here yet — describe what you saw."
             />
           </label>
 
-          {error && <p className="text-sm text-red-600">{error}</p>}
+          {error && <p className="text-sm text-state-alert">{error}</p>}
 
           <button
             type="submit"
             disabled={submitting}
-            className="self-start rounded bg-nmbm-ink px-6 py-2 text-sm font-medium text-nmbm-paper transition hover:bg-nmbm-ink/80 disabled:opacity-50"
+            className="nmbm-btn nmbm-btn--primary nmbm-btn--md self-start"
           >
             {submitting ? "Sending…" : "Send"}
           </button>
@@ -123,22 +123,22 @@ export default function FeedbackPage() {
 
         {mine.length > 0 && (
           <section className="mt-10">
-            <h2 className="text-sm font-semibold uppercase tracking-wide text-nmbm-ink/60">
+            <h2 className="ds-section-heading">
               Your reports
             </h2>
             <ul className="mt-3 flex flex-col gap-2">
               {mine.map((item) => (
                 <li
                   key={item.id}
-                  className="rounded border border-nmbm-ink/10 px-3 py-2 text-sm"
+                  className="ds-row"
                 >
                   <div className="flex items-center justify-between">
-                    <span className="font-medium text-nmbm-ink">{item.subject}</span>
-                    <span className="text-xs uppercase tracking-wide text-nmbm-gold-dark">
+                    <span className="font-medium text-ds-ink">{item.subject}</span>
+                    <span className="nmbm-label">
                       {STATUS_LABELS[item.status]}
                     </span>
                   </div>
-                  <span className="text-xs text-nmbm-ink/50">
+                  <span className="text-xs text-ds-muted">
                     {CATEGORY_LABELS[item.category]} ·{" "}
                     {new Date(item.createdAt).toLocaleDateString()}
                   </span>

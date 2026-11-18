@@ -52,14 +52,14 @@ export default function FeedbackAdminPage() {
 
   return (
     <div className="mx-auto max-w-5xl">
-      <h1 className="text-2xl font-semibold text-nmbm-ink">Feedback queue</h1>
+      <h1 className="ds-display">Feedback queue</h1>
       <div className="mt-6">
-        {error && <p className="text-sm text-red-600">{error}</p>}
+        {error && <p className="text-sm text-state-alert">{error}</p>}
 
         <div className="overflow-x-auto">
           <table className="w-full min-w-[640px] border-collapse text-sm">
             <thead>
-              <tr className="border-b border-nmbm-ink/10 text-left text-xs uppercase tracking-wide text-nmbm-ink/50">
+              <tr className="border-b border-ds-border text-left text-xs uppercase tracking-wide text-ds-muted">
                 <th className="py-2 pr-4">Subject</th>
                 <th className="py-2 pr-4">Category</th>
                 <th className="py-2 pr-4">Submitted</th>
@@ -68,10 +68,10 @@ export default function FeedbackAdminPage() {
             </thead>
             <tbody>
               {items.map((item) => (
-                <tr key={item.id} className="border-b border-nmbm-ink/5 align-top">
+                <tr key={item.id} className="border-b border-ds-border align-top">
                   <td className="py-2 pr-4">
-                    <div className="font-medium text-nmbm-ink">{item.subject}</div>
-                    <div className="max-w-md text-nmbm-ink/60">{item.description}</div>
+                    <div className="font-medium text-ds-ink">{item.subject}</div>
+                    <div className="max-w-md text-ds-muted">{item.description}</div>
                   </td>
                   <td className="py-2 pr-4">{item.category}</td>
                   <td className="py-2 pr-4">{new Date(item.createdAt).toLocaleDateString()}</td>
@@ -80,7 +80,7 @@ export default function FeedbackAdminPage() {
                       value={item.status}
                       disabled={savingId === item.id}
                       onChange={(e) => updateStatus(item.id, e.target.value as FeedbackStatus)}
-                      className="rounded border border-nmbm-ink/20 px-2 py-1"
+                      className="nmbm-control nmbm-select"
                     >
                       {STATUS_OPTIONS.map((status) => (
                         <option key={status} value={status}>

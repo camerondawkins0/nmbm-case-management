@@ -63,7 +63,7 @@ export default function CohortPage({ me }: { me: Me }) {
   };
 
   if (error && !data) return <p className="text-sm text-state-alert">{error}</p>;
-  if (!data) return <p className="text-sm text-nmbm-ink/50">Loading…</p>;
+  if (!data) return <p className="text-sm text-ds-muted">Loading…</p>;
 
   const markFor = (sessionId: string, enrollmentId: string) =>
     data.marks.find((m) => m.sessionId === sessionId && m.enrollmentId === enrollmentId);
@@ -112,24 +112,24 @@ export default function CohortPage({ me }: { me: Me }) {
 
   return (
     <div className="mx-auto max-w-5xl">
-      <Link to="/programs" className="text-sm text-nmbm-ink/60 underline-offset-2 hover:underline">
+      <Link to="/programs" className="text-sm text-ds-muted underline-offset-2 hover:underline">
         ← Programs
       </Link>
       <div className="mt-2 flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-semibold text-nmbm-ink">{data.cohort.name}</h1>
-          <p className="mt-1 text-sm text-nmbm-ink/60">
+          <h1 className="ds-display">{data.cohort.name}</h1>
+          <p className="mt-1 text-sm text-ds-muted">
             {data.cohort.programName} · {data.cohort.status === "planned" ? "starts" : "started"}{" "}
             {data.cohort.startDate} · {data.sessions.length} class date(s)
             {data.cohort.requiredSessions && ` · ${data.cohort.requiredSessions} needed to complete`}
           </p>
-          <p className="text-xs text-nmbm-ink/50">
+          <p className="text-xs text-ds-muted">
             Counted as attending: {data.countedStatuses.join(", ")} (set on the program)
           </p>
           {manage && !editingDetails && (
             <button
               onClick={() => setEditingDetails(true)}
-              className="mt-1 text-xs text-nmbm-ink/60 underline underline-offset-2 hover:text-nmbm-ink"
+              className="mt-1 text-xs text-ds-muted underline underline-offset-2 hover:text-ds-ink"
             >
               Edit details
             </button>
@@ -148,12 +148,12 @@ export default function CohortPage({ me }: { me: Me }) {
       )}
 
       {notice && (
-        <p className="mt-4 rounded border border-state-ok/20 bg-state-ok-bg px-3 py-2 text-sm text-state-ok">
+        <p className="nmbm-alert nmbm-alert--ok mt-4">
           {notice}
         </p>
       )}
       {error && (
-        <p className="mt-4 rounded border border-state-alert/20 bg-state-alert-bg px-3 py-2 text-sm text-state-alert">
+        <p className="nmbm-alert nmbm-alert--alert mt-4">
           {error}
         </p>
       )}
@@ -161,7 +161,7 @@ export default function CohortPage({ me }: { me: Me }) {
       <div className="mt-6 overflow-x-auto">
         <table className="w-full min-w-[640px] border-collapse text-sm">
           <thead>
-            <tr className="border-b border-nmbm-ink/10 text-xs uppercase tracking-wide text-nmbm-ink/50">
+            <tr className="border-b border-ds-border text-xs uppercase tracking-wide text-ds-muted">
               <th className="py-2 pr-4 text-left font-semibold">Name</th>
               {data.sessions.map((session) => (
                 <th key={session.id} className="px-2 py-2 text-center font-semibold" title={session.topic ?? ""}>
@@ -173,11 +173,11 @@ export default function CohortPage({ me }: { me: Me }) {
           </thead>
           <tbody>
             {data.roster.map((person) => (
-              <tr key={person.enrollmentId} className="border-b border-nmbm-ink/5">
+              <tr key={person.enrollmentId} className="border-b border-ds-border">
                 <td className="py-2 pr-4">
                   <Link
                     to={`/participants/${person.participantId}`}
-                    className="font-medium text-nmbm-ink hover:underline"
+                    className="ds-person hover:underline"
                   >
                     {person.firstName} {person.lastName}
                   </Link>
@@ -207,7 +207,7 @@ export default function CohortPage({ me }: { me: Me }) {
                           {shortFor(mark.status)}
                         </span>
                       ) : (
-                        <span className="text-nmbm-ink/20">·</span>
+                        <span className="text-ds-muted">·</span>
                       )}
                     </td>
                   );
@@ -215,7 +215,7 @@ export default function CohortPage({ me }: { me: Me }) {
                 <td className="py-2 pl-4 text-right">
                   <Link
                     to={`/enrollments/${person.enrollmentId}/participation`}
-                    className="text-nmbm-gold-dark hover:underline"
+                    className="text-ds-accent hover:underline"
                   >
                     {person.attended}
                     {data.cohort.requiredSessions ? `/${data.cohort.requiredSessions}` : ""}
@@ -228,17 +228,17 @@ export default function CohortPage({ me }: { me: Me }) {
       </div>
 
       {data.roster.length === 0 && (
-        <p className="mt-3 text-sm text-nmbm-ink/50">Nobody is on the roster yet.</p>
+        <p className="mt-3 text-sm text-ds-muted">Nobody is on the roster yet.</p>
       )}
 
       {manage && open && (
-        <section className="mt-8 grid gap-6 rounded border border-nmbm-ink/10 p-4 sm:grid-cols-2">
+        <section className="nmbm-card nmbm-card--dense mt-8 grid gap-6 sm:grid-cols-2">
           <div>
-            <h2 className="text-sm font-semibold uppercase tracking-wide text-nmbm-ink/50">Add a class date</h2>
+            <h2 className="ds-section-heading">Add a class date</h2>
             <AddClassDate cohortId={data.cohort.id} act={act} />
           </div>
           <div>
-            <h2 className="text-sm font-semibold uppercase tracking-wide text-nmbm-ink/50">Add someone to the roster</h2>
+            <h2 className="ds-section-heading">Add someone to the roster</h2>
             <EnrollPanel
               cohortId={data.cohort.id}
               rosterIds={new Set(data.roster.map((p) => p.participantId))}
@@ -249,8 +249,8 @@ export default function CohortPage({ me }: { me: Me }) {
       )}
 
       {can(me, "attendance.record") && (
-        <section className="mt-8 rounded border border-nmbm-ink/10 p-4">
-          <h2 className="text-sm font-semibold uppercase tracking-wide text-nmbm-ink/50">
+        <section className="nmbm-card nmbm-card--dense mt-8">
+          <h2 className="ds-section-heading">
             Take attendance
           </h2>
 
@@ -260,20 +260,20 @@ export default function CohortPage({ me }: { me: Me }) {
                 <button
                   key={session.id}
                   onClick={() => startTaking(session.id)}
-                  className="rounded border border-nmbm-ink/30 px-3 py-1.5 text-sm hover:bg-nmbm-ink/5"
+                  className="nmbm-btn nmbm-btn--secondary nmbm-btn--md"
                 >
                   {session.sessionDate}
                 </button>
               ))}
               {data.sessions.length === 0 && (
-                <p className="text-sm text-nmbm-ink/50">No sessions scheduled yet.</p>
+                <p className="text-sm text-ds-muted">No sessions scheduled yet.</p>
               )}
             </div>
           )}
 
           {takingFor && (
             <>
-              <p className="mt-3 text-sm text-nmbm-ink/60">
+              <p className="mt-3 text-sm text-ds-muted">
                 {data.sessions.find((s) => s.id === takingFor)?.sessionDate} — everyone starts
                 present; change the exceptions.
               </p>
@@ -283,7 +283,7 @@ export default function CohortPage({ me }: { me: Me }) {
                     key={person.enrollmentId}
                     className="flex flex-wrap items-center justify-between gap-2 text-sm"
                   >
-                    <span className="text-nmbm-ink">
+                    <span className="text-ds-ink">
                       {person.firstName} {person.lastName}
                       <ServicesEndedFlag on={person.servicesEndedOn} />
                     </span>
@@ -299,7 +299,7 @@ export default function CohortPage({ me }: { me: Me }) {
                             className={`rounded px-3 py-1 text-xs font-medium transition ${
                               selected
                                 ? "bg-nmbm-ink text-nmbm-paper"
-                                : "border border-nmbm-ink/20 text-nmbm-ink/60 hover:bg-nmbm-ink/5"
+                                : "border border-ds-control text-ds-muted hover:bg-ds-subtle"
                             }`}
                           >
                             {mark.label}
@@ -314,13 +314,13 @@ export default function CohortPage({ me }: { me: Me }) {
                 <button
                   disabled={busy}
                   onClick={save}
-                  className="rounded bg-nmbm-ink px-5 py-1.5 text-sm font-medium text-nmbm-paper disabled:opacity-50"
+                  className="nmbm-btn nmbm-btn--dark nmbm-btn--md"
                 >
                   {busy ? "Saving…" : `Save all ${activeRoster.length}`}
                 </button>
                 <button
                   onClick={() => setTakingFor(null)}
-                  className="rounded border border-nmbm-ink/30 px-4 py-1.5 text-sm"
+                  className="nmbm-btn nmbm-btn--secondary nmbm-btn--md"
                 >
                   Cancel
                 </button>
@@ -330,7 +330,7 @@ export default function CohortPage({ me }: { me: Me }) {
         </section>
       )}
 
-      <p className="mt-6 text-xs text-nmbm-ink/50">
+      <p className="mt-6 text-xs text-ds-muted">
         <Pill tone="ok">P</Pill> present · <Pill tone="ok">L</Pill> late ·{" "}
         <Pill tone="warn">E</Pill> excused · <Pill tone="alert">A</Pill> absent. Hover a mark to
         see who recorded it.

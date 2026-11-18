@@ -51,19 +51,19 @@ export function useParticipantSearch(query: { q?: string; dob?: string } | null)
 
 export function SearchResults({ results, compact = false }: { results: SearchResult[]; compact?: boolean }) {
   if (results.length === 0) {
-    return <p className="py-3 text-sm text-nmbm-ink/50">No matching records you can open.</p>;
+    return <p className="py-3 text-sm text-ds-muted">No matching records you can open.</p>;
   }
   return (
-    <ul className="divide-y divide-nmbm-ink/5 rounded border border-nmbm-ink/10">
+    <ul className="ds-list">
       {results.map((r) => (
         <li key={r.id} className={`flex flex-wrap items-center justify-between gap-2 px-4 ${compact ? "py-2" : "py-3"} text-sm`}>
           <span>
-            <Link to={`/participants/${r.id}`} className="font-medium text-nmbm-ink hover:underline">
+            <Link to={`/participants/${r.id}`} className="ds-person hover:underline">
               {r.firstName} {r.lastName}
             </Link>
-            <span className="ml-2 text-xs text-nmbm-ink/50">born {r.dateOfBirth}</span>
+            <span className="ml-2 text-xs text-ds-muted">born {r.dateOfBirth}</span>
           </span>
-          <span className="text-xs text-nmbm-ink/60">
+          <span className="text-xs text-ds-muted">
             {r.active
               ? `Active${r.workerName ? ` · ${r.workerName}` : ""}`
               : `Closed ${r.lastEndDate ?? ""} · open to readmit`}
