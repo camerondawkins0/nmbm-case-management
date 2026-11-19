@@ -116,7 +116,7 @@ first is behind the session check.
 | `/referrals-in` | `incoming-referrals-page.tsx` | Intake's queue of people referred to NMBM: to deal with, referrer still to be told, all |
 | `/referrals-in/:id` | `incoming-referral-page.tsx` | One referral: notes, matching records, admit / readmit / add to current stay / close, referrer told |
 | `/notes/review` | `note-review-page.tsx` | The U6 queue: each case manager with notes awaiting approval, how many, and the oldest (closed cases last) |
-| `/notes/review/:caseManagerId` | `note-review-page.tsx` (`CaseManagerNotesPage`) | One case manager's notes (`none` for closed cases): approve, or return with a reason |
+| `/notes/review/:caseManagerId` | `note-review-page.tsx` (`CaseManagerNotesPage`) | One case manager's notes (`none` for closed cases), a row each; a row opens the note in a dialog to approve or return (the reason box appears on Return), and the dialog moves on to the next note after each decision |
 | `/care-plans/review` | `care-plan-review-page.tsx` | The same, for care plans |
 | `/programs` | `programs-page.tsx` | Programs and their cohorts; for `programs.manage`, new program and add a cohort |
 | `/housing` | `housing-page.tsx` | Housing across the caseload: authorizations awaiting a decision or ending soon, deposits to approve or pay, authorized clients with no situation recorded, recent move-ins; the service-log CSV for `housing.export` |

@@ -323,3 +323,28 @@ textarea.nmbm-control { resize: vertical; min-height: 80px; }
   .ds-record .ds-tabs { display: none; }
   .ds-record .ds-tabpanel[hidden] { display: block; }
 }
+
+/* A note awaiting review, as one row: who, when, the outcome and the first
+   line of what was written. The whole row opens the note. On a narrow
+   screen the preview drops to its own line rather than squeezing. */
+.ds-note-row { display: grid; grid-template-columns: minmax(9rem, 12rem) 6.5rem 6.5rem minmax(0, 1fr); align-items: center; gap: var(--space-3); width: 100%; padding: 10px var(--space-4); border: 0; background: none; color: inherit; font: inherit; text-align: left; cursor: pointer; }
+.ds-note-row:hover { background: var(--surface-subtle); }
+.ds-note-row:focus-visible { outline: 2px solid var(--ink); outline-offset: -3px; border-radius: var(--radius-lg); }
+.ds-note-row__who, .ds-note-row__preview { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+@media (max-width: 767px) {
+  .ds-note-row { grid-template-columns: minmax(0, 1fr) auto; row-gap: 2px; }
+  .ds-note-row__date { grid-column: 2; grid-row: 1; justify-self: end; }
+  .ds-note-row__result { grid-column: 1; grid-row: 2; }
+  .ds-note-row__preview { grid-column: 1 / -1; grid-row: 3; }
+}
+
+/* A modal dialog. The design system doesn't define one yet; this is its
+   card on its large shadow, over a dimmed page. */
+.ds-dialog { width: min(640px, calc(100vw - 32px)); max-height: calc(100dvh - 48px); padding: 0; border: 1px solid var(--border); border-radius: var(--radius-lg); background: var(--surface-raised); color: var(--ink); box-shadow: var(--shadow-lg); }
+.ds-dialog::backdrop { background: rgb(0 0 0 / 0.45); }
+.ds-dialog__box { display: flex; flex-direction: column; max-height: calc(100dvh - 50px); padding: var(--space-5) var(--space-6); }
+.ds-dialog__head { display: flex; align-items: flex-start; justify-content: space-between; gap: var(--space-3); }
+/* A long note scrolls inside the dialog; the decision stays in view. */
+.ds-dialog__body { overflow-y: auto; min-height: 3em; }
+.ds-dialog__foot { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--space-3); margin-top: var(--space-5); padding-top: var(--space-4); border-top: 1px solid var(--border); }
+[data-theme="high-contrast"] .ds-dialog { border-width: 2px; border-color: var(--ink); }

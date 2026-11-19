@@ -1,9 +1,10 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { api, ApiError } from "../lib/api.js";
 import type { PendingNote } from "../lib/types.js";
 import { Pill } from "../components/flags.js";
 import { DateText } from "../components/dates.js";
+import { NavIcon } from "../components/nav-icons.js";
 
 // U6: "CHW supervisor/Program Manager can either approve CHW notes or
 // return them for revision." The permission was granted from the start;
@@ -102,12 +103,14 @@ export default function NoteReviewPage() {
   );
 }
 
-// One case manager's notes, to approve or return.
+// One case manager's notes, to approve or return. Each is a single row
+// (client, date, outcome, the first line of the note) so a long queue reads
+// at a glance; opening one shows it whole, with the decision, in a dialog.
+// The reason box only appears once Return is chosen.
 export function CaseManagerNotesPage() {
   const { caseManagerId = "" } = useParams<{ caseManagerId: string }>();
   const { notes, error, load } = useQueue();
-  const [reasons, setReasons] = useState<Record<string, string>>({});
-  const [actionError, setActionError] = useState<string | null>(null);
+  const [openId, setOpenId] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   // Kept once known, so the heading still names the person after their
   // last note is approved and the list is empty.
@@ -118,32 +121,25 @@ export function CaseManagerNotesPage() {
     if (theirs.length > 0 && !name) setName(theirs[0].caseManagerName ?? NO_CASE_MANAGER_NAME);
   }, [theirs, name]);
 
-  async function act(note: PendingNote, action: "approve" | "return") {
-    setActionError(null);
+  const index = theirs.findIndex((n) => n.id === openId);
+  const open = index >= 0 ? theirs[index] : null;
+
+  // After a decision the dialog moves on to the note that took this one's
+  // place, so the queue can be worked without going back to the list;
+  // after the last one it closes and says so.
+  async function decided(note: PendingNote, message: string) {
+    const position = theirs.findIndex((n) => n.id === note.id);
+    const remaining = theirs.filter((n) => n.id !== note.id);
+    await load();
+    setNotice(message);
+    const next = remaining[Math.min(position, remaining.length - 1)];
+    setOpenId(next ? next.id : null);
+  }
+
+  // Moving by hand clears the last decision's message; it was about another note.
+  function go(id: string) {
     setNotice(null);
-    // The server refuses a return with no reason too, but in words meant
-    // for a developer; say here what the reviewer needs to do.
-    if (action === "return" && !(reasons[note.id] ?? "").trim()) {
-      setActionError(`Say why the note on ${note.firstName} ${note.lastName} is going back, so ${note.authorName} knows what to fix.`);
-      document.getElementById(`reason-${note.id}`)?.focus();
-      return;
-    }
-    try {
-      await api(`/api/notes/${note.id}/${action}`, {
-        method: "POST",
-        body: action === "return" ? JSON.stringify({ reviewNote: reasons[note.id] ?? "" }) : undefined,
-      });
-      // The list is refreshed first, so the message and the note leaving
-      // the list arrive together.
-      await load();
-      setNotice(
-        action === "approve"
-          ? `Approved the note on ${note.firstName} ${note.lastName}.`
-          : `Returned the note on ${note.firstName} ${note.lastName} to ${note.authorName}.`,
-      );
-    } catch (e) {
-      setActionError(e instanceof ApiError ? e.message : "Action failed");
-    }
+    setOpenId(id);
   }
 
   if (error) return <p className="nmbm-alert nmbm-alert--alert">{error}</p>;
@@ -152,7 +148,7 @@ export function CaseManagerNotesPage() {
   const heading = name ?? (caseManagerId === NO_CASE_MANAGER ? NO_CASE_MANAGER_NAME : "This case manager");
 
   return (
-    <div className="mx-auto max-w-3xl">
+    <div className="mx-auto max-w-4xl">
       <Link to="/notes/review" className="ds-link text-sm">
         ← All case managers
       </Link>
@@ -162,15 +158,14 @@ export function CaseManagerNotesPage() {
           ? "Nothing waiting for review here."
           : `${plural(theirs.length, "note", "notes")} awaiting approval${
               caseManagerId === NO_CASE_MANAGER ? ", on clients whose case has closed" : ` on ${heading}'s caseload`
-            }.`}
+            }. Open one to approve it or send it back.`}
       </p>
 
-      {notice && (
+      {notice && !open && (
         <p className="nmbm-alert nmbm-alert--ok mt-4" role="status">
           {notice}
         </p>
       )}
-      {actionError && <p className="nmbm-alert nmbm-alert--alert mt-4">{actionError}</p>}
 
       {theirs.length === 0 ? (
         <p className="mt-6">
@@ -179,43 +174,168 @@ export function CaseManagerNotesPage() {
           </Link>
         </p>
       ) : (
-        <ul className="mt-6 flex flex-col gap-3">
+        <ul className="ds-list mt-6" aria-label={`Notes awaiting approval on ${heading}'s caseload`}>
           {theirs.map((note) => (
-            <NoteCard
-              key={note.id}
-              note={note}
-              reason={reasons[note.id] ?? ""}
-              onReason={(v) => setReasons({ ...reasons, [note.id]: v })}
-              onAct={(action) => act(note, action)}
-            />
+            <li key={note.id}>
+              <button
+                type="button"
+                className="ds-note-row"
+                data-note={note.id}
+                onClick={() => {
+                  setNotice(null);
+                  setOpenId(note.id);
+                }}
+                aria-haspopup="dialog"
+              >
+                <span className="ds-note-row__who ds-person">
+                  {note.firstName} {note.lastName}
+                </span>
+                <span className="ds-note-row__date text-xs text-ds-muted">
+                  <DateText value={note.serviceDate} />
+                </span>
+                <span className="ds-note-row__result">
+                  <Pill tone={note.contactResult === "contacted" ? "ok" : "warn"}>
+                    {note.contactResult === "contacted" ? "Reached" : "No contact"}
+                  </Pill>
+                </span>
+                <span className="ds-note-row__preview text-sm text-ds-secondary">{note.body}</span>
+              </button>
+            </li>
           ))}
         </ul>
+      )}
+
+      {open && (
+        <NoteDialog
+          key={open.id}
+          note={open}
+          position={index + 1}
+          total={theirs.length}
+          notice={notice}
+          onPrevious={index > 0 ? () => go(theirs[index - 1].id) : null}
+          onNext={index < theirs.length - 1 ? () => go(theirs[index + 1].id) : null}
+          onClose={() => {
+            // Back to the row of the note that was open, or the one now in
+            // its place: the dialog is rebuilt per note, so the browser's own
+            // "return focus" would point at a button that no longer exists.
+            const at = index;
+            setNotice(null);
+            setOpenId(null);
+            requestAnimationFrame(() => {
+              const list = [...document.querySelectorAll<HTMLButtonElement>(".ds-note-row")];
+              (list.find((r) => r.dataset.note === open.id) ?? list[Math.min(at, list.length - 1)])?.focus();
+            });
+          }}
+          onDecided={decided}
+        />
       )}
     </div>
   );
 }
 
-function NoteCard({
+// The note, whole, and the decision on it. A native modal dialog, so focus
+// stays inside it, Escape closes it, and the page behind can't be clicked.
+function NoteDialog({
   note,
-  reason,
-  onReason,
-  onAct,
+  position,
+  total,
+  notice,
+  onPrevious,
+  onNext,
+  onClose,
+  onDecided,
 }: {
   note: PendingNote;
-  reason: string;
-  onReason: (v: string) => void;
-  onAct: (action: "approve" | "return") => void;
+  position: number;
+  total: number;
+  notice: string | null;
+  onPrevious: (() => void) | null;
+  onNext: (() => void) | null;
+  onClose: () => void;
+  onDecided: (note: PendingNote, message: string) => Promise<void>;
 }) {
+  const dialog = useRef<HTMLDialogElement>(null);
+  const reasonBox = useRef<HTMLTextAreaElement>(null);
+  const [returning, setReturning] = useState(false);
+  const [reason, setReason] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [problem, setProblem] = useState<string | null>(null);
   // The author is said only when it isn't the case manager the page is
   // already about: an intern, or someone covering.
   const byOther = note.authorName !== note.caseManagerName;
+  const client = `${note.firstName} ${note.lastName}`;
+
+  useEffect(() => {
+    const d = dialog.current;
+    if (d && !d.open) d.showModal();
+  }, []);
+  useEffect(() => {
+    if (returning) reasonBox.current?.focus();
+  }, [returning]);
+
+  async function send(action: "approve" | "return") {
+    setProblem(null);
+    // The server refuses a return with no reason too, but in words meant for
+    // a developer; say here what the reviewer needs to do.
+    if (action === "return" && !reason.trim()) {
+      setProblem(`Say why it's going back, so ${note.authorName} knows what to fix.`);
+      reasonBox.current?.focus();
+      return;
+    }
+    setBusy(true);
+    try {
+      await api(`/api/notes/${note.id}/${action}`, {
+        method: "POST",
+        body: action === "return" ? JSON.stringify({ reviewNote: reason.trim() }) : undefined,
+      });
+      await onDecided(
+        note,
+        action === "approve"
+          ? `Approved the note on ${client}.`
+          : `Returned the note on ${client} to ${note.authorName}.`,
+      );
+    } catch (e) {
+      setProblem(e instanceof ApiError ? e.message : "That didn't go through. Nothing was changed.");
+      setBusy(false);
+    }
+  }
+
   return (
-    <li className="nmbm-card nmbm-card--dense">
-      <div className="flex flex-wrap items-baseline justify-between gap-2">
-        <Link to={`/participants/${note.participantId}`} className="ds-person hover:underline">
-          {note.firstName} {note.lastName}
-        </Link>
-        <span className="flex flex-wrap items-center gap-2 text-xs text-ds-muted">
+    <dialog
+      ref={dialog}
+      className="ds-dialog"
+      aria-labelledby="note-dialog-title"
+      onClose={onClose}
+      // A click on the backdrop (the dialog element itself, outside its box) closes it.
+      onClick={(e) => {
+        if (e.target === dialog.current) dialog.current?.close();
+      }}
+    >
+      <div className="ds-dialog__box">
+        <div className="ds-dialog__head">
+          <div className="min-w-0">
+            <p className="text-xs text-ds-muted">
+              Note <span className="ds-num">{position}</span> of <span className="ds-num">{total}</span>
+            </p>
+            <h2 id="note-dialog-title" className="ds-person text-lg">
+              <Link to={`/participants/${note.participantId}`} className="hover:underline">
+                {client}
+              </Link>
+            </h2>
+          </div>
+          <button type="button" className="ds-side__button" onClick={() => dialog.current?.close()}>
+            <NavIcon name="close" />
+            <span className="nmbm-sr">Close</span>
+          </button>
+        </div>
+
+        {notice && (
+          <p className="nmbm-alert nmbm-alert--ok mt-3" role="status">
+            {notice}
+          </p>
+        )}
+
+        <p className="mt-3 flex flex-wrap items-center gap-2 text-xs text-ds-muted">
           <Pill tone={note.contactResult === "contacted" ? "ok" : "warn"}>
             {note.contactResult === "contacted" ? "Reached" : "No contact"}
           </Pill>
@@ -224,26 +344,61 @@ function NoteCard({
             {note.contactResult === "contacted" ? "Contact" : "Attempt"} on <DateText value={note.serviceDate} />
             {byOther && ` · written by ${note.authorName}`}
           </span>
-        </span>
-      </div>
-      <p className="mt-2 whitespace-pre-wrap text-sm text-ds-secondary">{note.body}</p>
+        </p>
+        <p className="ds-dialog__body mt-3 whitespace-pre-wrap text-sm text-ds-ink">{note.body}</p>
 
-      <div className="mt-3 flex flex-wrap items-center gap-2">
-        <button onClick={() => onAct("approve")} className="nmbm-btn nmbm-btn--dark nmbm-btn--md">
-          Approve
-        </button>
-        <input
-          id={`reason-${note.id}`}
-          value={reason}
-          onChange={(e) => onReason(e.target.value)}
-          placeholder="Reason for returning"
-          aria-label={`Reason for returning the note on ${note.firstName} ${note.lastName}`}
-          className="nmbm-control min-w-[14rem] flex-1"
-        />
-        <button onClick={() => onAct("return")} className="nmbm-btn nmbm-btn--secondary nmbm-btn--md">
-          Return
-        </button>
+        {returning && (
+          <label className="ds-field mt-4">
+            Why it's going back
+            <textarea
+              ref={reasonBox}
+              value={reason}
+              onChange={(e) => setReason(e.target.value)}
+              rows={3}
+              aria-invalid={problem ? true : undefined}
+              placeholder={`What ${note.authorName} should add or change`}
+              className="nmbm-control"
+            />
+          </label>
+        )}
+        {problem && (
+          <p className="mt-2 text-sm text-state-alert" role="alert">
+            {problem}
+          </p>
+        )}
+
+        <div className="ds-dialog__foot">
+          <div className="flex gap-2">
+            <button type="button" disabled={!onPrevious || busy} onClick={onPrevious ?? undefined} className="nmbm-btn nmbm-btn--quiet nmbm-btn--sm">
+              ← Previous
+            </button>
+            <button type="button" disabled={!onNext || busy} onClick={onNext ?? undefined} className="nmbm-btn nmbm-btn--quiet nmbm-btn--sm">
+              Next →
+            </button>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {returning ? (
+              <>
+                <button type="button" disabled={busy} onClick={() => setReturning(false)} className="nmbm-btn nmbm-btn--quiet nmbm-btn--md">
+                  Cancel
+                </button>
+                <button type="button" disabled={busy} onClick={() => send("return")} className="nmbm-btn nmbm-btn--dark nmbm-btn--md">
+                  {busy ? "Sending…" : `Send back to ${note.authorName}`}
+                </button>
+              </>
+            ) : (
+              <>
+                <button type="button" disabled={busy} onClick={() => setReturning(true)} className="nmbm-btn nmbm-btn--secondary nmbm-btn--md">
+                  Return for revision
+                </button>
+                <button type="button" disabled={busy} onClick={() => send("approve")} className="nmbm-btn nmbm-btn--dark nmbm-btn--md">
+                  {busy ? "Approving…" : "Approve"}
+                </button>
+              </>
+            )}
+          </div>
+        </div>
       </div>
-    </li>
+    </dialog>
   );
 }
