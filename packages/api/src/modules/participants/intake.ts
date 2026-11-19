@@ -2,17 +2,13 @@ import type { Db } from "@nmbm/db";
 import { participants, assignments, episodes, users } from "@nmbm/db";
 import { eq, and, isNull } from "drizzle-orm";
 import type { Intake } from "@nmbm/shared";
-import { CARE_PLAN_COMPLETION_DAYS, PARTICIPANT_DETAIL_FIELDS } from "@nmbm/shared";
+import { addDays, CARE_PLAN_COMPLETION_DAYS, PARTICIPANT_DETAIL_FIELDS } from "@nmbm/shared";
 import { AppError, conflict } from "../../plugins/errors.js";
 import { possibleDuplicates } from "./repository.js";
 import { CIN_IN_USE, isCinConflict } from "./service.js";
 import { writeAudit } from "../../plugins/audit.js";
 import { markAdmitted } from "../incoming-referrals/service.js";
 import { assertCaseloadWorker } from "../../lib/caseload.js";
-
-function isoDate(d: Date) {
-  return d.toISOString().slice(0, 10);
-}
 
 // Intake is one act, not three screens: the record, the episode that
 // starts the M9 clock, and the named worker (M4) all land together, so
@@ -34,8 +30,7 @@ export async function admitParticipant(db: Db, input: Intake, actorId: string) {
     );
   }
 
-  const carePlanDue = new Date(input.startDate);
-  carePlanDue.setDate(carePlanDue.getDate() + CARE_PLAN_COMPLETION_DAYS);
+  const carePlanDue = addDays(input.startDate, CARE_PLAN_COMPLETION_DAYS);
 
   const details = Object.fromEntries(PARTICIPANT_DETAIL_FIELDS.map((k) => [k, input[k] ?? null]));
   try {
@@ -56,7 +51,7 @@ export async function admitParticipant(db: Db, input: Intake, actorId: string) {
         .values({
           participantId: participant.id,
           startDate: input.startDate,
-          carePlanDueDate: isoDate(carePlanDue),
+          carePlanDueDate: carePlanDue,
         })
         .returning();
 

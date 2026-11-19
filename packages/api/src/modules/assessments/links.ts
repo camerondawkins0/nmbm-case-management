@@ -4,6 +4,7 @@ import type { Db } from "@nmbm/db";
 import { assessmentForms, assessmentFormVersions, assessmentLinks, assessments, episodes } from "@nmbm/db";
 import { and, desc, eq, inArray, isNull, sql } from "drizzle-orm";
 import {
+  todayInOrg,
   SELF_SERVE_IDLE_MINUTES,
   SELF_SERVE_MAX_ATTEMPTS,
   SELF_SERVE_PASSCODE_LENGTH,
@@ -76,7 +77,7 @@ export async function sendToParticipant(db: Db, participantId: string, formId: s
       action: "assessment.link_issued",
       entityType: "participant",
       entityId: participantId,
-      detail: `expires ${link.expiresAt.toISOString().slice(0, 10)}`,
+      detail: `expires ${todayInOrg(link.expiresAt)}`,
     });
     return link;
   });
@@ -98,7 +99,7 @@ export async function reissue(db: Db, assessmentId: string, actorId: string) {
       action: "assessment.link_reissued",
       entityType: "participant",
       entityId: row.participantId,
-      detail: `expires ${link.expiresAt.toISOString().slice(0, 10)}`,
+      detail: `expires ${todayInOrg(link.expiresAt)}`,
     });
     return link;
   });

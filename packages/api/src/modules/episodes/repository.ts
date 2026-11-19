@@ -2,7 +2,7 @@ import type { Db } from "@nmbm/db";
 import { episodes } from "@nmbm/db";
 import { eq } from "drizzle-orm";
 import type { EpisodeClose } from "@nmbm/shared";
-import { CARE_PLAN_COMPLETION_DAYS } from "@nmbm/shared";
+import { addDays, CARE_PLAN_COMPLETION_DAYS, todayInOrg } from "@nmbm/shared";
 
 export async function insert(
   db: Db,
@@ -11,8 +11,6 @@ export async function insert(
   // M9: the 30-day care-plan completion countdown starts at enrollment,
   // so it's stamped here rather than computed at read time — the
   // deadline shouldn't move if the rule changes later.
-  const carePlanDueDate = new Date(input.startDate);
-  carePlanDueDate.setDate(carePlanDueDate.getDate() + CARE_PLAN_COMPLETION_DAYS);
 
   const [row] = await db
     .insert(episodes)
@@ -20,7 +18,7 @@ export async function insert(
       participantId: input.participantId,
       startDate: input.startDate,
       readmittedFromEpisodeId: input.readmittedFromEpisodeId,
-      carePlanDueDate: carePlanDueDate.toISOString().slice(0, 10),
+      carePlanDueDate: addDays(input.startDate, CARE_PLAN_COMPLETION_DAYS),
     })
     .returning();
   return row;
@@ -36,7 +34,9 @@ export async function close(db: Db, id: string, input: EpisodeClose) {
     .update(episodes)
     .set({
       status: "closed",
-      endDate: new Date().toISOString().slice(0, 10),
+      // Long Beach's day: from 4pm there UTC is already tomorrow, and a case
+      // closed then was dated tomorrow, so readmitting the same day failed.
+      endDate: todayInOrg(),
       closureReason: input.closureReason,
       closureNote: input.closureNote ?? null,
     })

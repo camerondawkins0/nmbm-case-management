@@ -1,4 +1,6 @@
 import {
+  addDays,
+  todayInOrg,
   FOLLOW_UP_MONTHS,
   FOLLOW_UP_COMPLETING,
   FOLLOW_UP_EARLY_DAYS,
@@ -32,9 +34,8 @@ export type Milestone = {
   attempts: CallRecord[];
 };
 
-function todayIso() {
-  return new Date().toISOString().slice(0, 10);
-}
+// Long Beach's day: in UTC a call due today read as overdue from 4pm.
+const todayIso = () => todayInOrg();
 
 // Calendar months, clamped to the end of a short month: a case closed on
 // 31 August has its 3-month call on 30 November, not 1 December.
@@ -44,12 +45,6 @@ export function addMonths(iso: string, months: number): string {
   const lastDay = new Date(Date.UTC(target.getUTCFullYear(), target.getUTCMonth() + 1, 0)).getUTCDate();
   target.setUTCDate(Math.min(d, lastDay));
   return target.toISOString().slice(0, 10);
-}
-
-function addDays(iso: string, days: number): string {
-  const date = new Date(`${iso}T00:00:00Z`);
-  date.setUTCDate(date.getUTCDate() + days);
-  return date.toISOString().slice(0, 10);
 }
 
 // M12's schedule for one closed episode, worked out from its end date

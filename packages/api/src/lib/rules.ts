@@ -1,4 +1,5 @@
 import {
+  todayInOrg,
   NO_CONTACT_WARNING_THRESHOLD,
   NO_CONTACT_DISENROLLMENT_THRESHOLD,
   type Payer,
@@ -53,9 +54,9 @@ export type CarePlanState = {
   needsRevision: boolean;
 };
 
-function today(): string {
-  return new Date().toISOString().slice(0, 10);
-}
+// Long Beach's day, which is the day the deadlines are counted in. In UTC
+// a care plan due today showed as overdue from 4pm.
+const today = (): string => todayInOrg();
 
 function daysBetween(fromIso: string, toIso: string): number {
   const from = Date.parse(`${fromIso}T00:00:00Z`);

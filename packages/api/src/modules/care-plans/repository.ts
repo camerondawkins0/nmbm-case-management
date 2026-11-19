@@ -2,12 +2,12 @@ import type { Db } from "@nmbm/db";
 import { carePlans, participants, episodes, users } from "@nmbm/db";
 import { eq, and, inArray, desc } from "drizzle-orm";
 import type { CarePlanCreate, CarePlanStatus } from "@nmbm/shared";
-import { CARE_PLAN_REVIEW_INTERVAL_DAYS } from "@nmbm/shared";
+import { addDays, CARE_PLAN_REVIEW_INTERVAL_DAYS, todayInOrg } from "@nmbm/shared";
 
+// Counted from the Long Beach day the plan was approved; the UTC day was
+// the next one for anything approved after 4pm.
 export function nextReviewDate(from = new Date()): string {
-  const due = new Date(from);
-  due.setDate(due.getDate() + CARE_PLAN_REVIEW_INTERVAL_DAYS);
-  return due.toISOString().slice(0, 10);
+  return addDays(todayInOrg(from), CARE_PLAN_REVIEW_INTERVAL_DAYS);
 }
 
 export async function insert(db: Db, input: CarePlanCreate) {

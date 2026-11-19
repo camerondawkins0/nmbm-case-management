@@ -239,6 +239,24 @@ holding a caseload.
   count if a contact came after it, and a late-logged earlier contact
   doesn't reset later misses.
 
+## Every date is Long Beach's day
+
+- NMBM works in Pacific time; the server runs on UTC. From 4pm (5pm in
+  summer) UTC is already tomorrow, so any "today" taken from the server's
+  clock is a day ahead every evening.
+- "Today" is `todayInOrg()`. An instant becomes a day with
+  `todayInOrg(instant)`. Day arithmetic is `addDays(day, n)` from
+  `@nmbm/shared` (UTC math on day strings, so daylight saving can't shift
+  it). Never `toISOString().slice(0, 10)` on a timestamp, and never
+  local-time `setDate()` on a date.
+- This covers closing a case, consent status and the signed-date check,
+  the care plan clocks and next review, the follow-up schedule and queue,
+  a former case manager's access end, housing, and the demo seed. The web
+  writes dates through `components/dates.tsx`, which does the same.
+- `test/org-day.test.ts` holds the clock at 02:30 UTC (a Long Beach
+  evening) and checks each of these; tests count days with `isoDaysAgo`,
+  which is Long Beach's.
+
 ## Every consequential action leaves a trail (M30)
 
 `writeAudit` is called by the service that performs the action, inside

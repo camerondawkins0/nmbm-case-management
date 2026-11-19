@@ -10,6 +10,16 @@ export function todayInOrg(now = new Date()): string {
   return new Intl.DateTimeFormat("en-CA", { timeZone: ORG_TIME_ZONE }).format(now);
 }
 
+// A day plus or minus some days, as days: "2026-11-18" + 30. Done in UTC on
+// purpose, where a day is always 24 hours. Local-time setDate() gave the same
+// answer only while the server ran on UTC; in a zone with daylight saving it
+// can land a day off across the change.
+export function addDays(day: string, days: number): string {
+  const d = new Date(`${day}T00:00:00Z`);
+  d.setUTCDate(d.getUTCDate() + days);
+  return d.toISOString().slice(0, 10);
+}
+
 // Empty means "not given", so a cleared box clears the value.
 const blankToNull = (v: unknown) => (typeof v === "string" && v.trim() === "" ? null : v);
 const text = (max: number) => z.preprocess(blankToNull, z.string().trim().max(max).nullish());

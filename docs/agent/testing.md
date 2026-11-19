@@ -26,6 +26,7 @@ dev-login route, and assert on HTTP responses.
 
 | File | Covers |
 |---|---|
+| `org-day.test.ts` | With the clock held at a Long Beach evening (02:30 UTC): closing, consents, care plan clocks and review date, follow-up schedule and queue, former-worker access end and link expiry all use Long Beach's day |
 | `rules.test.ts` | Pure functions, no database: the M6 ladder, M9 clocks, participation outcome, consent status, sign-in return path |
 | `authorization.test.ts` | 401/403, read-all vs read-own, U5 caseload scoping, not-found for another worker's id |
 | `no-contact.test.ts` | M6 close gate, Molina letter, the run resetting on contact, other exits unblocked |

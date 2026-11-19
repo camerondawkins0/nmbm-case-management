@@ -2,14 +2,13 @@ import type { Db } from "@nmbm/db";
 import { canSeeParticipant, keepVisible, type CallerScope } from "../../lib/caseload.js";
 import { followUpCalls, episodes, participants, users } from "@nmbm/db";
 import { and, eq, desc, inArray, sql } from "drizzle-orm";
-import { FOLLOW_UP_FINAL_LAPSE_MONTHS, type FollowUpCall } from "@nmbm/shared";
+import { FOLLOW_UP_FINAL_LAPSE_MONTHS, todayInOrg, type FollowUpCall } from "@nmbm/shared";
 import { followUpSchedule, addMonths, type CallRecord, type Milestone } from "../../lib/follow-ups.js";
 import { conflict, notFound, unprocessable } from "../../plugins/errors.js";
 import { writeAudit } from "../../plugins/audit.js";
 
-function todayIso() {
-  return new Date().toISOString().slice(0, 10);
-}
+// Long Beach's day, as the schedule itself uses (lib/follow-ups.ts).
+const todayIso = () => todayInOrg();
 
 // A closed episode is followed up only while it's the participant's most
 // recent one. Once they're readmitted they're receiving services again,

@@ -37,7 +37,7 @@ import type {
   FollowUpMonths,
   FollowUpOutcome,
 } from "@nmbm/shared";
-import { CARE_PLAN_REVIEW_INTERVAL_DAYS, CONSENT_VALID_DAYS, todayInOrg } from "@nmbm/shared";
+import { addDays, CARE_PLAN_REVIEW_INTERVAL_DAYS, CONSENT_VALID_DAYS, todayInOrg } from "@nmbm/shared";
 import { randomUUID } from "node:crypto";
 
 // Invented staff and participants for local development and demos. No
@@ -70,8 +70,11 @@ function daysAgo(n: number) {
   return d;
 }
 
+// The Long Beach day an instant fell on, so the demo's "today" is NMBM's
+// today: seeded after 4pm Pacific, the UTC day put enrollments and consents
+// a day in the future.
 function isoDate(d: Date) {
-  return d.toISOString().slice(0, 10);
+  return todayInOrg(d);
 }
 
 type Fixture = {
@@ -334,15 +337,13 @@ async function main() {
     });
 
     const startDate = daysAgo(fixture.enrolledDaysAgo);
-    const carePlanDue = new Date(startDate);
-    carePlanDue.setDate(carePlanDue.getDate() + 30);
 
     const [episode] = await db
       .insert(episodes)
       .values({
         participantId: participant.id,
         startDate: isoDate(startDate),
-        carePlanDueDate: isoDate(carePlanDue),
+        carePlanDueDate: addDays(isoDate(startDate), 30),
         createdAt: startDate,
         ...(fixture.closed && closedAt
           ? { status: "closed" as const, endDate: isoDate(closedAt), closureReason: fixture.closed.reason }
@@ -389,8 +390,6 @@ async function main() {
       // backdated so its window has already closed.
       const anchor =
         fixture.release === "expired" ? daysAgo(CONSENT_VALID_DAYS + 40) : startDate;
-      const expires = new Date(anchor);
-      expires.setDate(expires.getDate() + CONSENT_VALID_DAYS);
 
       const [consent] = await db
         .insert(consents)
@@ -400,7 +399,7 @@ async function main() {
           type: "release_of_information",
           formName: "Authorization to release information",
           signedDate: isoDate(signed),
-          expiresDate: isoDate(expires),
+          expiresDate: addDays(isoDate(anchor), CONSENT_VALID_DAYS),
           recordedById: workerId,
         })
         .returning();
@@ -427,14 +426,12 @@ async function main() {
     }
 
     if (fixture.carePlan) {
-      const reviewDue = new Date();
-      reviewDue.setDate(reviewDue.getDate() - fixture.carePlan.reviewDueDaysAgo);
       await db.insert(carePlans).values({
         participantId: participant.id,
         episodeId: episode.id,
         status: fixture.carePlan.status,
         goals: fixture.carePlan.goals,
-        nextReviewDue: isoDate(reviewDue),
+        nextReviewDue: addDays(todayInOrg(), -fixture.carePlan.reviewDueDaysAgo),
         reviewNote:
           fixture.carePlan.status === "needs_revision"
             ? "Goals need measurable targets and a review date before I can approve."

@@ -2,7 +2,7 @@ import type { Db } from "@nmbm/db";
 import { consents, episodes, users } from "@nmbm/db";
 import { eq, and, desc } from "drizzle-orm";
 import type { ConsentCreate, ConsentType } from "@nmbm/shared";
-import { CONSENT_VALID_DAYS } from "@nmbm/shared";
+import { addDays, CONSENT_VALID_DAYS, todayInOrg } from "@nmbm/shared";
 import { notFound, conflict, badRequest } from "../../plugins/errors.js";
 import { writeAudit } from "../../plugins/audit.js";
 
@@ -18,9 +18,9 @@ export type ConsentRow = {
   documentUrl: string | null;
 };
 
-function today() {
-  return new Date().toISOString().slice(0, 10);
-}
+// Long Beach's day. In UTC, a consent expiring today showed as expired from
+// 4pm, and one dated tomorrow could be recorded as already signed.
+const today = () => todayInOrg();
 
 // Whether a consent authorizes anything right now. Derived rather than
 // read off the stored status: a row that says "active" with a date in
@@ -76,8 +76,6 @@ export async function recordConsent(db: Db, input: ConsentCreate, recordedById: 
     throw badRequest("A consent can't be signed in the future");
   }
 
-  const expires = new Date(episode.startDate);
-  expires.setDate(expires.getDate() + CONSENT_VALID_DAYS);
 
   const [row] = await db
     .insert(consents)
@@ -87,7 +85,7 @@ export async function recordConsent(db: Db, input: ConsentCreate, recordedById: 
       type: input.type,
       formName: input.formName,
       signedDate: input.signedDate,
-      expiresDate: expires.toISOString().slice(0, 10),
+      expiresDate: addDays(episode.startDate, CONSENT_VALID_DAYS),
       recordedById,
     })
     .returning();

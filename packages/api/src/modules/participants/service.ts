@@ -1,6 +1,7 @@
 import type { Db } from "@nmbm/db";
 import { assignments } from "@nmbm/db";
 import {
+  todayInOrg,
   PARTICIPANT_DETAIL_LABELS,
   type ParticipantCreate,
   type ParticipantDetails,
@@ -49,7 +50,9 @@ export async function listClosedParticipants(db: Db, caller: CallerScope) {
   const until = new Map(former.map((f) => [f.participantId, f.accessUntil]));
   return rows
     .filter((r) => until.has(r.id))
-    .map((r) => ({ ...r, accessUntil: until.get(r.id)!.toISOString().slice(0, 10) }));
+    // The Long Beach day access ends, not the UTC one, which ran a day late
+    // for a window ending after 4pm there.
+    .map((r) => ({ ...r, accessUntil: todayInOrg(until.get(r.id)!) }));
 }
 
 export async function listParticipants(db: Db, caller: CallerScope, query: ParticipantListQuery) {
