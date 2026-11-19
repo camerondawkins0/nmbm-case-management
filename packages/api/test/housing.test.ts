@@ -1,11 +1,11 @@
 import { describe, it, expect, beforeAll, afterAll } from "vitest";
 import type { FastifyInstance } from "fastify";
 import type { Db } from "@nmbm/db";
-import { auditLog, housingDeposits } from "@nmbm/db";
+import { auditLog, episodes, housingDeposits } from "@nmbm/db";
 import { and, eq } from "drizzle-orm";
 import { authorizationState, unitsUsed, type CsService } from "@nmbm/shared";
 import { startApp, signIn, type Client } from "./support/app.js";
-import { staff, admit, isoDaysAgo, unique } from "./support/fixtures.js";
+import { staff, admit, orgDaysAgo, unique } from "./support/fixtures.js";
 
 let app: FastifyInstance;
 let db: Db;
@@ -30,10 +30,10 @@ beforeAll(async () => {
 afterAll(async () => app?.close());
 
 type Ids = { participantId: string; episodeId: string };
-const client = () => admit(db, { workerId: chwId, actorId: directorId, startDate: isoDaysAgo(60) });
+const client = () => admit(db, { workerId: chwId, actorId: directorId, startDate: orgDaysAgo(60) });
 
 async function requested(p: Ids, service: CsService, as: Client = director) {
-  const res = await as.post(`/api/participants/${p.participantId}/cs-authorizations`, { service, requestedDate: isoDaysAgo(20), plan: "kaiser" });
+  const res = await as.post(`/api/participants/${p.participantId}/cs-authorizations`, { service, requestedDate: orgDaysAgo(20), plan: "kaiser" });
   expect(res.status).toBe(201);
   return res.body.id as string;
 }
@@ -42,10 +42,10 @@ async function approved(p: Ids, service: CsService, extra: Record<string, unknow
   const id = await requested(p, service);
   const res = await director.post(`/api/cs-authorizations/${id}/decision`, {
     decision: "approved",
-    decisionDate: isoDaysAgo(15),
+    decisionDate: orgDaysAgo(15),
     authorizationNumber: unique("ILS-"),
-    startDate: isoDaysAgo(15),
-    endDate: isoDaysAgo(-90),
+    startDate: orgDaysAgo(15),
+    endDate: orgDaysAgo(-90),
     ...(service === "housing_deposits" ? { amountAuthorized: "2000.00" } : {}),
     ...extra,
   });
@@ -56,7 +56,7 @@ async function approved(p: Ids, service: CsService, extra: Record<string, unknow
 const logWork = (p: Ids, authorizationId: string, extra: Record<string, unknown> = {}, as: Client = chw) =>
   as.post(`/api/participants/${p.participantId}/housing-services`, {
     authorizationId,
-    serviceDate: isoDaysAgo(2),
+    serviceDate: orgDaysAgo(2),
     minutes: 50,
     activity: "housing_search",
     contactMethod: "in_person",
@@ -96,21 +96,21 @@ describe("what an authorization's state is, derived", () => {
 describe("authorizations are asked for, then decided", () => {
   it("are recorded by whoever handles authorizations, on an open stay", async () => {
     const p = await client();
-    expect((await chw.post(`/api/participants/${p.participantId}/cs-authorizations`, { service: "housing_deposits", requestedDate: isoDaysAgo(1) })).status).toBe(403);
+    expect((await chw.post(`/api/participants/${p.participantId}/cs-authorizations`, { service: "housing_deposits", requestedDate: orgDaysAgo(1) })).status).toBe(403);
     await requested(p, "housing_transition_navigation", billing);
-    const future = await director.post(`/api/participants/${p.participantId}/cs-authorizations`, { service: "housing_deposits", requestedDate: isoDaysAgo(-3) });
+    const future = await director.post(`/api/participants/${p.participantId}/cs-authorizations`, { service: "housing_deposits", requestedDate: orgDaysAgo(-3) });
     expect(future.status).toBe(422);
   });
 
   it("approves with a number and a period; deposits as money, time services in units", async () => {
     const p = await client();
     const htns = await requested(p, "housing_transition_navigation");
-    const base = { decision: "approved", decisionDate: isoDaysAgo(10), authorizationNumber: "A1", startDate: isoDaysAgo(10), endDate: isoDaysAgo(-30) };
+    const base = { decision: "approved", decisionDate: orgDaysAgo(10), authorizationNumber: "A1", startDate: orgDaysAgo(10), endDate: orgDaysAgo(-30) };
     expect((await director.post(`/api/cs-authorizations/${htns}/decision`, { ...base, authorizationNumber: undefined })).status).toBe(400);
     expect((await director.post(`/api/cs-authorizations/${htns}/decision`, { ...base, amountAuthorized: "100" })).status).toBe(422);
     expect((await director.post(`/api/cs-authorizations/${htns}/decision`, { ...base, unitsAuthorized: 40 })).status).toBe(422);
-    expect((await director.post(`/api/cs-authorizations/${htns}/decision`, { ...base, endDate: isoDaysAgo(20) })).status).toBe(422);
-    expect((await director.post(`/api/cs-authorizations/${htns}/decision`, { ...base, decisionDate: isoDaysAgo(30) })).status).toBe(422);
+    expect((await director.post(`/api/cs-authorizations/${htns}/decision`, { ...base, endDate: orgDaysAgo(20) })).status).toBe(422);
+    expect((await director.post(`/api/cs-authorizations/${htns}/decision`, { ...base, decisionDate: orgDaysAgo(30) })).status).toBe(422);
     const ok = await director.post(`/api/cs-authorizations/${htns}/decision`, { ...base, unitType: "fifteen_minutes", unitsAuthorized: 40 });
     expect(ok.status).toBe(200);
     expect((await director.post(`/api/cs-authorizations/${htns}/decision`, { ...base })).status).toBe(409);
@@ -125,14 +125,14 @@ describe("authorizations are asked for, then decided", () => {
   it("records a denial with its reason", async () => {
     const p = await client();
     const id = await requested(p, "housing_tenancy_sustaining");
-    expect((await director.post(`/api/cs-authorizations/${id}/decision`, { decision: "denied", decisionDate: isoDaysAgo(1) })).status).toBe(400);
-    expect((await director.post(`/api/cs-authorizations/${id}/decision`, { decision: "denied", decisionDate: isoDaysAgo(1), note: "Not eligible" })).status).toBe(200);
+    expect((await director.post(`/api/cs-authorizations/${id}/decision`, { decision: "denied", decisionDate: orgDaysAgo(1) })).status).toBe(400);
+    expect((await director.post(`/api/cs-authorizations/${id}/decision`, { decision: "denied", decisionDate: orgDaysAgo(1), note: "Not eligible" })).status).toBe(200);
     expect((await housing(p)).authorizations[0]).toMatchObject({ status: "denied", state: "denied", decidedByName: expect.any(String) });
   });
 
   it("flags one ending within the configured window", async () => {
     const p = await client();
-    const id = await approved(p, "housing_transition_navigation", { endDate: isoDaysAgo(-20) });
+    const id = await approved(p, "housing_transition_navigation", { endDate: orgDaysAgo(-20) });
     expect((await housing(p)).authorizations.find((a: { id: string }) => a.id === id).state).toBe("expiring");
     expect((await admin.put("/api/admin/settings/cs_authorization_warning_days", { value: 10 })).status).toBe(200);
     try {
@@ -160,7 +160,7 @@ describe("housing work is logged against an authorization that covers it", () =>
     const p = await client();
     const id = await approved(p, "housing_tenancy_sustaining", { unitType: "visit", unitsAuthorized: 1 });
     expect((await logWork(p, id)).body.overAuthorized).toBe(false);
-    const over = await logWork(p, id, { serviceDate: isoDaysAgo(1) });
+    const over = await logWork(p, id, { serviceDate: orgDaysAgo(1) });
     expect(over.status).toBe(201);
     expect(over.body.overAuthorized).toBe(true);
   });
@@ -177,8 +177,8 @@ describe("housing work is logged against an authorization that covers it", () =>
     const crossed = await logWork(p, theirs);
     expect(crossed.status).toBe(422);
     expect(crossed.body.message).toBe("Choose one of this client's authorizations");
-    expect((await logWork(p, good, { serviceDate: isoDaysAgo(30) })).status).toBe(422);
-    expect((await logWork(p, good, { serviceDate: isoDaysAgo(-1) })).status).toBe(422);
+    expect((await logWork(p, good, { serviceDate: orgDaysAgo(30) })).status).toBe(422);
+    expect((await logWork(p, good, { serviceDate: orgDaysAgo(-1) })).status).toBe(422);
     expect((await logWork(p, good, { minutes: 0 })).status).toBe(400);
     expect((await logWork(p, good)).status).toBe(201);
   });
@@ -189,19 +189,27 @@ describe("housing work is logged against an authorization that covers it", () =>
     expect((await director.post(`/api/episodes/${p.episodeId}/close`, { closureReason: "completed" })).status).toBe(200);
     // Somebody who can still write on a closed record is told why.
     expect((await logWork(p, id, {}, director)).status).toBe(409);
-    expect((await director.post("/api/episodes", { participantId: p.participantId, startDate: isoDaysAgo(0), assignedWorkerId: chwId })).status).toBe(201);
-    expect((await logWork(p, id, { serviceDate: isoDaysAgo(0) })).status).toBe(422);
+    // Closing still dates a case by UTC (a known server bug), so from 4pm
+    // in Long Beach a stay closed today ends "tomorrow" and nothing can be
+    // readmitted or logged on Long Beach's today. This test is about housing,
+    // so it sets the end date itself and works at any hour. The exact message
+    // matters: in the evening this used to pass on "can't be in the future".
+    await db.update(episodes).set({ endDate: orgDaysAgo(1) }).where(eq(episodes.id, p.episodeId));
+    expect((await director.post("/api/episodes", { participantId: p.participantId, startDate: orgDaysAgo(0), assignedWorkerId: chwId })).status).toBe(201);
+    const refused = await logWork(p, id, { serviceDate: orgDaysAgo(0) });
+    expect(refused.status).toBe(422);
+    expect(refused.body.message).toBe("That authorization was for an earlier stay");
   });
 
   it("ends an authorization early, and nothing goes on it after", async () => {
     const p = await client();
     const id = await approved(p, "housing_transition_navigation");
-    expect((await logWork(p, id, { serviceDate: isoDaysAgo(2) })).status).toBe(201);
-    const tooEarly = await director.post(`/api/cs-authorizations/${id}/end`, { endedDate: isoDaysAgo(5), reason: "Moved away" });
+    expect((await logWork(p, id, { serviceDate: orgDaysAgo(2) })).status).toBe(201);
+    const tooEarly = await director.post(`/api/cs-authorizations/${id}/end`, { endedDate: orgDaysAgo(5), reason: "Moved away" });
     expect(tooEarly.status).toBe(409);
     expect(tooEarly.body.message).toMatch(/1 service\(s\) are logged after/);
-    expect((await director.post(`/api/cs-authorizations/${id}/end`, { endedDate: isoDaysAgo(2), reason: "Moved away" })).status).toBe(200);
-    expect((await logWork(p, id, { serviceDate: isoDaysAgo(1) })).status).toBe(422);
+    expect((await director.post(`/api/cs-authorizations/${id}/end`, { endedDate: orgDaysAgo(2), reason: "Moved away" })).status).toBe(200);
+    expect((await logWork(p, id, { serviceDate: orgDaysAgo(1) })).status).toBe(422);
     expect((await housing(p)).authorizations.find((a: { id: string }) => a.id === id).state).toBe("ended");
   });
 
@@ -223,11 +231,11 @@ describe("housing situation and tenancies", () => {
     const p = await client();
     const post = (situation: string, effectiveDate: string) =>
       chw.post(`/api/participants/${p.participantId}/housing-statuses`, { situation, effectiveDate });
-    expect((await post("unsheltered", isoDaysAgo(30))).status).toBe(201);
-    const later = (await post("emergency_shelter", isoDaysAgo(10))).body.id;
+    expect((await post("unsheltered", orgDaysAgo(30))).status).toBe(201);
+    const later = (await post("emergency_shelter", orgDaysAgo(10))).body.id;
     // Entered late, but earlier in time: not current.
-    expect((await post("temporarily_with_others", isoDaysAgo(20))).status).toBe(201);
-    expect((await post("unsheltered", isoDaysAgo(-1))).status).toBe(422);
+    expect((await post("temporarily_with_others", orgDaysAgo(20))).status).toBe(201);
+    expect((await post("unsheltered", orgDaysAgo(-1))).status).toBe(422);
     expect((await housing(p)).current.situation).toBe("emergency_shelter");
     await chw.post(`/api/housing-statuses/${later}/void`, { reason: "Wrong date" });
     expect((await housing(p)).current.situation).toBe("temporarily_with_others");
@@ -235,17 +243,17 @@ describe("housing situation and tenancies", () => {
 
   it("records a move-in as a tenancy and a housing situation, one home at a time", async () => {
     const p = await client();
-    const home = { moveInDate: isoDaysAgo(5), addressLine1: "10 Pine Ave", city: "Long Beach", state: "ca", postalCode: "90802", subsidy: "housing_choice_voucher", monthlyRent: "1650", tenantPortion: "495.00" };
+    const home = { moveInDate: orgDaysAgo(5), addressLine1: "10 Pine Ave", city: "Long Beach", state: "ca", postalCode: "90802", subsidy: "housing_choice_voucher", monthlyRent: "1650", tenantPortion: "495.00" };
     const first = await chw.post(`/api/participants/${p.participantId}/tenancies`, home);
     expect(first.status).toBe(201);
     expect(first.body).toMatchObject({ state: "CA", monthlyRent: "1650.00", tenantPortion: "495.00" });
     const h = await housing(p);
-    expect(h.current).toMatchObject({ situation: "permanent_subsidized", effectiveDate: isoDaysAgo(5) });
+    expect(h.current).toMatchObject({ situation: "permanent_subsidized", effectiveDate: orgDaysAgo(5) });
 
     expect((await chw.post(`/api/participants/${p.participantId}/tenancies`, { ...home, addressLine1: "20 Elm" })).status).toBe(409);
-    expect((await chw.post(`/api/tenancies/${first.body.id}/move-out`, { moveOutDate: isoDaysAgo(6), reason: "x" })).status).toBe(422);
-    expect((await chw.post(`/api/tenancies/${first.body.id}/move-out`, { moveOutDate: isoDaysAgo(1), reason: "Moved to family" })).status).toBe(200);
-    expect((await chw.post(`/api/participants/${p.participantId}/tenancies`, { ...home, moveInDate: isoDaysAgo(1), addressLine1: "20 Elm" })).status).toBe(201);
+    expect((await chw.post(`/api/tenancies/${first.body.id}/move-out`, { moveOutDate: orgDaysAgo(6), reason: "x" })).status).toBe(422);
+    expect((await chw.post(`/api/tenancies/${first.body.id}/move-out`, { moveOutDate: orgDaysAgo(1), reason: "Moved to family" })).status).toBe(200);
+    expect((await chw.post(`/api/participants/${p.participantId}/tenancies`, { ...home, moveInDate: orgDaysAgo(1), addressLine1: "20 Elm" })).status).toBe(201);
   });
 });
 
@@ -285,10 +293,10 @@ describe("deposits are asked for, decided by somebody else, then paid", () => {
     expect((await billing.post(`/api/housing-deposits/${own}/decision`, { decision: "declined", note: "Use the other quote" })).status).toBe(200);
 
     const dep = (await ask(p, id, "1000")).body.id;
-    expect((await billing.post(`/api/housing-deposits/${dep}/paid`, { paidDate: isoDaysAgo(0), paymentReference: "CHK-1" })).status).toBe(409);
+    expect((await billing.post(`/api/housing-deposits/${dep}/paid`, { paidDate: orgDaysAgo(0), paymentReference: "CHK-1" })).status).toBe(409);
     expect((await billing.post(`/api/housing-deposits/${dep}/decision`, { decision: "approved" })).status).toBe(200);
-    expect((await billing.post(`/api/housing-deposits/${dep}/paid`, { paidDate: isoDaysAgo(3), paymentReference: "CHK-1" })).status).toBe(422);
-    expect((await billing.post(`/api/housing-deposits/${dep}/paid`, { paidDate: isoDaysAgo(0), paymentReference: "CHK-1" })).status).toBe(200);
+    expect((await billing.post(`/api/housing-deposits/${dep}/paid`, { paidDate: orgDaysAgo(3), paymentReference: "CHK-1" })).status).toBe(422);
+    expect((await billing.post(`/api/housing-deposits/${dep}/paid`, { paidDate: orgDaysAgo(0), paymentReference: "CHK-1" })).status).toBe(200);
     const auth = (await housing(p)).authorizations.find((a: { id: string }) => a.id === id);
     expect(auth).toMatchObject({ amountCommitted: "1000.00", amountPaid: "1000.00" });
   });
@@ -301,7 +309,7 @@ describe("deposits are asked for, decided by somebody else, then paid", () => {
     const b = (await ask(p, id, "100")).body.id;
     await billing.post(`/api/housing-deposits/${b}/decision`, { decision: "approved" });
     expect((await chw.post(`/api/housing-deposits/${b}/void`, { reason: "x" })).status).toBe(409);
-    await billing.post(`/api/housing-deposits/${b}/paid`, { paidDate: isoDaysAgo(0), paymentReference: "CHK-2" });
+    await billing.post(`/api/housing-deposits/${b}/paid`, { paidDate: orgDaysAgo(0), paymentReference: "CHK-2" });
     expect((await billing.post(`/api/housing-deposits/${b}/void`, { reason: "x" })).status).toBe(409);
     const [row] = await db.select().from(housingDeposits).where(eq(housingDeposits.id, b));
     expect(row).toMatchObject({ status: "paid", voidedAt: null, amount: "100.00" });
@@ -326,17 +334,17 @@ describe("across the caseload", () => {
   });
 
   it("exports the service log for a period: by permission, scoped, safe in a spreadsheet, and audited", async () => {
-    const p = await admit(db, { workerId: chwId, actorId: directorId, startDate: isoDaysAgo(60) });
+    const p = await admit(db, { workerId: chwId, actorId: directorId, startDate: orgDaysAgo(60) });
     // A name a spreadsheet would run as a formula.
     await director.patch(`/api/participants/${p.participantId}/details`, { mediCalCin: "91234567Q" });
     const { participants } = await import("@nmbm/db");
     await db.update(participants).set({ firstName: "=HYPERLINK(\"x\")" }).where(eq(participants.id, p.participantId));
     const id = await approved(p, "housing_transition_navigation");
-    await logWork(p, id, { serviceDate: isoDaysAgo(3) });
+    await logWork(p, id, { serviceDate: orgDaysAgo(3) });
 
-    const range = { from: isoDaysAgo(4), to: isoDaysAgo(0) };
+    const range = { from: orgDaysAgo(4), to: orgDaysAgo(0) };
     expect((await chw.post("/api/housing/service-export", range)).status).toBe(403);
-    expect((await billing.post("/api/housing/service-export", { from: isoDaysAgo(0), to: isoDaysAgo(4) })).status).toBe(400);
+    expect((await billing.post("/api/housing/service-export", { from: orgDaysAgo(0), to: orgDaysAgo(4) })).status).toBe(400);
     const res = await app.inject({ method: "POST", url: "/api/housing/service-export", payload: range, headers: { cookie: billing.cookie! } });
     expect(res.statusCode).toBe(200);
     expect(res.headers["content-type"]).toContain("text/csv");
@@ -357,7 +365,7 @@ describe("across the caseload", () => {
   it("is part of the whole-record export", async () => {
     const p = await client();
     await approved(p, "housing_transition_navigation");
-    await chw.post(`/api/participants/${p.participantId}/housing-statuses`, { situation: "emergency_shelter", effectiveDate: isoDaysAgo(3) });
+    await chw.post(`/api/participants/${p.participantId}/housing-statuses`, { situation: "emergency_shelter", effectiveDate: orgDaysAgo(3) });
     const doc = (await director.post(`/api/participants/${p.participantId}/record-export`, { purpose: "participant_request" })).body;
     expect(doc.housing.current.situation).toBe("emergency_shelter");
     expect(doc.housing.authorizations).toHaveLength(1);

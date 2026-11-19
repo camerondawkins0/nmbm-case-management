@@ -7,7 +7,7 @@ import DashboardPage from "./pages/dashboard-page.js";
 import ParticipantsPage from "./pages/participants-page.js";
 import ParticipantDetailPage from "./pages/participant-detail-page.js";
 import CarePlanReviewPage from "./pages/care-plan-review-page.js";
-import NoteReviewPage from "./pages/note-review-page.js";
+import NoteReviewPage, { CaseManagerNotesPage } from "./pages/note-review-page.js";
 import IntakePage from "./pages/intake-page.js";
 import AdminUsersPage from "./pages/admin/users-page.js";
 import ProgramsPage from "./pages/programs-page.js";
@@ -96,6 +96,7 @@ function StaffApp() {
         <Route path="/referrals-in/:id" element={<IncomingReferralPage />} />
         <Route path="/care-plans/review" element={<CarePlanReviewPage />} />
         <Route path="/notes/review" element={<NoteReviewPage />} />
+        <Route path="/notes/review/:caseManagerId" element={<CaseManagerNotesPage />} />
         <Route path="/programs" element={<ProgramsPage me={me} />} />
         <Route path="/cohorts/:id" element={<CohortPage me={me} />} />
         <Route path="/enrollments/:id/participation" element={<ParticipationRecordPage />} />

@@ -1,7 +1,7 @@
 import { eq } from "drizzle-orm";
 import type { Db } from "@nmbm/db";
 import { users, roles, userRoles, notes, assignments, episodes, permissions, rolePermissions } from "@nmbm/db";
-import type { Payer, Permission, Role, ContactResult } from "@nmbm/shared";
+import { todayInOrg, type Payer, type Permission, type Role, type ContactResult } from "@nmbm/shared";
 import { admitParticipant } from "../../src/modules/participants/intake.js";
 
 // Every test builds the people it needs, with names nobody else uses, so
@@ -14,6 +14,16 @@ export function unique(prefix = "t") {
 
 export function isoDaysAgo(days: number) {
   const d = new Date();
+  d.setUTCDate(d.getUTCDate() - days);
+  return d.toISOString().slice(0, 10);
+}
+
+// Days counted from Long Beach's today, for code that checks dates against
+// todayInOrg() (housing). From 4pm (5pm in winter) Pacific, isoDaysAgo(0) is
+// already tomorrow there, so "paid today" read as a date in the future and
+// those tests failed every evening, in CI too.
+export function orgDaysAgo(days: number) {
+  const d = new Date(`${todayInOrg()}T00:00:00Z`);
   d.setUTCDate(d.getUTCDate() - days);
   return d.toISOString().slice(0, 10);
 }

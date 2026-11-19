@@ -277,13 +277,14 @@ textarea.nmbm-control { resize: vertical; min-height: 80px; }
 @media (prefers-reduced-motion: reduce) { .ds-side { transition: none !important; } }
 @media print { .ds-app { display: block; } .ds-app__main { padding: 0; } }
 
-/* A collapsible group of cards under a heading: the note queue's caseloads. */
-.ds-group__head { display: flex; align-items: baseline; gap: var(--space-3); padding-bottom: var(--space-2); border-bottom: 1px solid var(--border); cursor: pointer; list-style: none; }
-.ds-group__head::-webkit-details-marker { display: none; }
-.ds-group__head::before { content: ""; width: 7px; height: 7px; flex-shrink: 0; align-self: center; border-right: 1.5px solid var(--ink-muted); border-bottom: 1.5px solid var(--ink-muted); transform: rotate(-45deg); transition: transform 120ms ease; }
-.ds-group[open] > .ds-group__head::before { transform: rotate(45deg); }
-.ds-group__head:focus-visible { outline: none; box-shadow: var(--focus-ring); border-radius: var(--radius-sm); }
-.nmbm-btn .nmbm-pill { margin-left: var(--space-1); }
+/* A row in a list that opens a page of its own: the note queue's case
+   managers. The whole row is the link, so it is one Tab stop. */
+.ds-queue-row { display: flex; align-items: center; gap: var(--space-4); padding: var(--space-3) var(--space-4); color: inherit; text-decoration: none; }
+.ds-queue-row:hover { background: var(--surface-subtle); }
+.ds-queue-row:focus-visible { outline: 2px solid var(--ink); outline-offset: -3px; border-radius: var(--radius-lg); }
+[data-theme="high-contrast"] .ds-queue-row:hover .font-semibold { text-decoration: underline; }
+.ds-queue-row__count { display: flex; flex-direction: column; align-items: flex-end; text-align: right; }
+.ds-queue-row__go { width: 16px; height: 16px; flex-shrink: 0; color: var(--ink-muted); }
 
 /* A value that is shown but locked until its Edit button is pressed: the
    control's disabled look, with a lock inside it, but still read-only rather

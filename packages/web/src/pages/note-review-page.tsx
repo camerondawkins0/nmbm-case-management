@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useParams } from "react-router-dom";
 import { api, ApiError } from "../lib/api.js";
 import type { PendingNote } from "../lib/types.js";
 import { Pill } from "../components/flags.js";
@@ -9,20 +9,25 @@ import { DateText } from "../components/dates.js";
 // return them for revision." The permission was granted from the start;
 // this is the first screen that can act on it.
 //
-// Grouped by case manager because that is how a supervisor works the
-// queue: one worker's notes at a time, alongside what they know of that
-// worker's caseload. A long flat list mixed everybody together.
+// Two levels, because that is how a supervisor works the queue: first who
+// has notes waiting and how many, then one case manager's notes at a time,
+// on a page of their own that can be linked to and left with Back. One list
+// of every note mixed everybody together.
 
 type Group = { key: string; name: string; notes: PendingNote[] };
 
+// Notes on closed cases have no case manager; they get a page of their own.
 const NO_CASE_MANAGER = "none";
+const NO_CASE_MANAGER_NAME = "No current case manager";
+
+const keyOf = (note: PendingNote) => note.caseManagerId ?? NO_CASE_MANAGER;
+const plural = (n: number, one: string, many: string) => `${n} ${n === 1 ? one : many}`;
 
 function groupByCaseManager(notes: PendingNote[]): Group[] {
   const groups = new Map<string, Group>();
   for (const note of notes) {
-    const key = note.caseManagerId ?? NO_CASE_MANAGER;
-    const name = note.caseManagerName ?? "No current case manager";
-    if (!groups.has(key)) groups.set(key, { key, name, notes: [] });
+    const key = keyOf(note);
+    if (!groups.has(key)) groups.set(key, { key, name: note.caseManagerName ?? NO_CASE_MANAGER_NAME, notes: [] });
     groups.get(key)!.notes.push(note);
   }
   // Alphabetical, so a worker is in the same place each visit; closed
@@ -32,87 +37,160 @@ function groupByCaseManager(notes: PendingNote[]): Group[] {
   );
 }
 
-const plural = (n: number, one: string, many: string) => `${n} ${n === 1 ? one : many}`;
-
-// Notes on closed cases aren't anybody's caseload, so they're counted apart.
-function summary(total: number, groups: Group[]) {
-  const caseloads = groups.filter((g) => g.key !== NO_CASE_MANAGER).length;
-  const closed = groups.find((g) => g.key === NO_CASE_MANAGER)?.notes.length ?? 0;
-  const parts = [caseloads > 0 && `across ${plural(caseloads, "caseload", "caseloads")}`, closed > 0 && `${closed} on closed cases`];
-  return `${plural(total, "note", "notes")} ${parts.filter(Boolean).join(", ")}.`;
+function useQueue() {
+  const [notes, setNotes] = useState<PendingNote[] | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const load = useCallback(
+    () =>
+      api<PendingNote[]>("/api/notes/awaiting-review")
+        .then(setNotes)
+        .catch((e) => setError(e instanceof ApiError ? e.message : "Could not load the queue")),
+    [],
+  );
+  useEffect(() => {
+    void load();
+  }, [load]);
+  return { notes, error, load };
 }
 
+// The queue: each case manager with notes waiting, and how many.
 export default function NoteReviewPage() {
-  const [notes, setNotes] = useState<PendingNote[] | null>(null);
-  const [reasons, setReasons] = useState<Record<string, string>>({});
-  const [error, setError] = useState<string | null>(null);
-
-  const load = useCallback(() => {
-    api<PendingNote[]>("/api/notes/awaiting-review")
-      .then(setNotes)
-      .catch(() => setNotes([]));
-  }, []);
-
-  useEffect(load, [load]);
-
+  const { notes, error } = useQueue();
   const groups = useMemo(() => groupByCaseManager(notes ?? []), [notes]);
 
-  async function act(id: string, action: "approve" | "return") {
-    setError(null);
-    try {
-      await api(`/api/notes/${id}/${action}`, {
-        method: "POST",
-        body: action === "return" ? JSON.stringify({ reviewNote: reasons[id] ?? "" }) : undefined,
-      });
-      load();
-    } catch (e) {
-      setError(e instanceof ApiError ? e.message : "Action failed");
-    }
-  }
-
+  if (error) return <p className="nmbm-alert nmbm-alert--alert">{error}</p>;
   if (!notes) return <p className="text-sm text-ds-muted">Loading…</p>;
 
   return (
     <div className="mx-auto max-w-3xl">
       <h1 className="ds-display">Notes awaiting review</h1>
       <p className="mt-1 text-sm text-ds-muted">
-        {notes.length === 0 ? "Nothing waiting." : summary(notes.length, groups)}
+        {notes.length === 0
+          ? "Nothing waiting."
+          : `${plural(notes.length, "note", "notes")} waiting. Choose a case manager to review theirs.`}
       </p>
 
-      {groups.length > 1 && (
-        <nav aria-label="Case managers" className="mt-4 flex flex-wrap gap-2">
-          {groups.map((g) => (
-            <a key={g.key} href={`#cm-${g.key}`} className="nmbm-btn nmbm-btn--secondary nmbm-btn--sm">
-              {g.name}
-              <span className="nmbm-pill nmbm-pill--muted">{g.notes.length}</span>
-            </a>
-          ))}
-        </nav>
+      {groups.length > 0 && (
+        <ul className="ds-list mt-6" aria-label="Case managers with notes waiting">
+          {groups.map((g) => {
+            // Newest first from the server, so the last is the longest waiting.
+            const oldest = g.notes[g.notes.length - 1].serviceDate;
+            return (
+              <li key={g.key}>
+                <Link to={`/notes/review/${g.key}`} className="ds-queue-row">
+                  <span className="min-w-0 flex-1">
+                    <span className="block font-semibold text-ds-ink">{g.name}</span>
+                    <span className="block text-xs text-ds-muted">
+                      {g.key === NO_CASE_MANAGER ? "Clients whose case has closed" : "Case manager"}
+                      {" · "}oldest from <DateText value={oldest} />
+                    </span>
+                  </span>
+                  <span className="ds-queue-row__count">
+                    <span className="ds-num text-lg font-semibold text-ds-ink">{g.notes.length}</span>
+                    <span className="text-xs text-ds-muted">awaiting approval</span>
+                  </span>
+                  <svg className="ds-queue-row__go" viewBox="0 0 16 16" aria-hidden="true">
+                    <path d="M6 3.5 10.5 8 6 12.5" fill="none" stroke="currentColor" strokeWidth="1.5" />
+                  </svg>
+                </Link>
+              </li>
+            );
+          })}
+        </ul>
       )}
+    </div>
+  );
+}
 
-      {error && <p className="nmbm-alert nmbm-alert--alert mt-4">{error}</p>}
+// One case manager's notes, to approve or return.
+export function CaseManagerNotesPage() {
+  const { caseManagerId = "" } = useParams<{ caseManagerId: string }>();
+  const { notes, error, load } = useQueue();
+  const [reasons, setReasons] = useState<Record<string, string>>({});
+  const [actionError, setActionError] = useState<string | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
+  // Kept once known, so the heading still names the person after their
+  // last note is approved and the list is empty.
+  const [name, setName] = useState<string | null>(null);
 
-      <div className="mt-6 flex flex-col gap-6">
-        {groups.map((g) => (
-          <details key={g.key} id={`cm-${g.key}`} open className="ds-group scroll-mt-4">
-            <summary className="ds-group__head">
-              <h2 className="ds-section-heading">{g.name}</h2>
-              <span className="text-sm text-ds-muted">{plural(g.notes.length, "note", "notes")}</span>
-            </summary>
-            <ul className="mt-3 flex flex-col gap-3">
-              {g.notes.map((note) => (
-                <NoteCard
-                  key={note.id}
-                  note={note}
-                  reason={reasons[note.id] ?? ""}
-                  onReason={(v) => setReasons({ ...reasons, [note.id]: v })}
-                  onAct={(action) => act(note.id, action)}
-                />
-              ))}
-            </ul>
-          </details>
-        ))}
-      </div>
+  const theirs = useMemo(() => (notes ?? []).filter((n) => keyOf(n) === caseManagerId), [notes, caseManagerId]);
+  useEffect(() => {
+    if (theirs.length > 0 && !name) setName(theirs[0].caseManagerName ?? NO_CASE_MANAGER_NAME);
+  }, [theirs, name]);
+
+  async function act(note: PendingNote, action: "approve" | "return") {
+    setActionError(null);
+    setNotice(null);
+    // The server refuses a return with no reason too, but in words meant
+    // for a developer; say here what the reviewer needs to do.
+    if (action === "return" && !(reasons[note.id] ?? "").trim()) {
+      setActionError(`Say why the note on ${note.firstName} ${note.lastName} is going back, so ${note.authorName} knows what to fix.`);
+      document.getElementById(`reason-${note.id}`)?.focus();
+      return;
+    }
+    try {
+      await api(`/api/notes/${note.id}/${action}`, {
+        method: "POST",
+        body: action === "return" ? JSON.stringify({ reviewNote: reasons[note.id] ?? "" }) : undefined,
+      });
+      // The list is refreshed first, so the message and the note leaving
+      // the list arrive together.
+      await load();
+      setNotice(
+        action === "approve"
+          ? `Approved the note on ${note.firstName} ${note.lastName}.`
+          : `Returned the note on ${note.firstName} ${note.lastName} to ${note.authorName}.`,
+      );
+    } catch (e) {
+      setActionError(e instanceof ApiError ? e.message : "Action failed");
+    }
+  }
+
+  if (error) return <p className="nmbm-alert nmbm-alert--alert">{error}</p>;
+  if (!notes) return <p className="text-sm text-ds-muted">Loading…</p>;
+
+  const heading = name ?? (caseManagerId === NO_CASE_MANAGER ? NO_CASE_MANAGER_NAME : "This case manager");
+
+  return (
+    <div className="mx-auto max-w-3xl">
+      <Link to="/notes/review" className="ds-link text-sm">
+        ← All case managers
+      </Link>
+      <h1 className="ds-display mt-2">{heading}</h1>
+      <p className="mt-1 text-sm text-ds-muted">
+        {theirs.length === 0
+          ? "Nothing waiting for review here."
+          : `${plural(theirs.length, "note", "notes")} awaiting approval${
+              caseManagerId === NO_CASE_MANAGER ? ", on clients whose case has closed" : ` on ${heading}'s caseload`
+            }.`}
+      </p>
+
+      {notice && (
+        <p className="nmbm-alert nmbm-alert--ok mt-4" role="status">
+          {notice}
+        </p>
+      )}
+      {actionError && <p className="nmbm-alert nmbm-alert--alert mt-4">{actionError}</p>}
+
+      {theirs.length === 0 ? (
+        <p className="mt-6">
+          <Link to="/notes/review" className="nmbm-btn nmbm-btn--secondary nmbm-btn--md">
+            Back to all case managers
+          </Link>
+        </p>
+      ) : (
+        <ul className="mt-6 flex flex-col gap-3">
+          {theirs.map((note) => (
+            <NoteCard
+              key={note.id}
+              note={note}
+              reason={reasons[note.id] ?? ""}
+              onReason={(v) => setReasons({ ...reasons, [note.id]: v })}
+              onAct={(action) => act(note, action)}
+            />
+          ))}
+        </ul>
+      )}
     </div>
   );
 }
@@ -128,8 +206,8 @@ function NoteCard({
   onReason: (v: string) => void;
   onAct: (action: "approve" | "return") => void;
 }) {
-  // The author is said only when it isn't the case manager the group is
-  // already named after: an intern, or someone covering.
+  // The author is said only when it isn't the case manager the page is
+  // already about: an intern, or someone covering.
   const byOther = note.authorName !== note.caseManagerName;
   return (
     <li className="nmbm-card nmbm-card--dense">
@@ -155,10 +233,11 @@ function NoteCard({
           Approve
         </button>
         <input
+          id={`reason-${note.id}`}
           value={reason}
           onChange={(e) => onReason(e.target.value)}
           placeholder="Reason for returning"
-          aria-label={`Reason for returning ${note.firstName} ${note.lastName}'s note`}
+          aria-label={`Reason for returning the note on ${note.firstName} ${note.lastName}`}
           className="nmbm-control min-w-[14rem] flex-1"
         />
         <button onClick={() => onAct("return")} className="nmbm-btn nmbm-btn--secondary nmbm-btn--md">
