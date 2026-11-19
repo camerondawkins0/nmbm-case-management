@@ -46,7 +46,10 @@ export class PostgresSessionStore implements SessionStore {
     this.db
       .select({ data: sessions.data })
       .from(sessions)
-      .where(sql`${sessions.idHash} = ${key(sessionId)} and ${sessions.expiresAt} > now()`)
+      // Compared with the app's clock, the one that set expiresAt and that
+      // prunes; mixing it with the database's now() made one decision rest on
+      // two clocks (and tests that hold the app's clock could never sign in).
+      .where(sql`${sessions.idHash} = ${key(sessionId)} and ${sessions.expiresAt} > ${new Date().toISOString()}::timestamptz`)
       .then(([row]) => callback(null, (row?.data as Session | undefined) ?? null), (err) => callback(err));
   }
 

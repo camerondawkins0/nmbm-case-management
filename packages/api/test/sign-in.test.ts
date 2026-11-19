@@ -1,6 +1,8 @@
 import { describe, it, expect, beforeAll, afterAll } from "vitest";
 import type { FastifyInstance } from "fastify";
 import type { Db } from "@nmbm/db";
+import { sessions } from "@nmbm/db";
+import { sql } from "drizzle-orm";
 import { startApp, signIn, client, sessionCookie } from "./support/app.js";
 import { staff } from "./support/fixtures.js";
 
@@ -82,6 +84,19 @@ describe("sessions", () => {
       app.inject({ method: "GET", url: `/auth/dev-login?email=${user.email}&returnTo=${encodeURIComponent(returnTo)}` });
     expect(location(await go("/programs"))).toBe("/programs");
     expect(location(await go("//evil.example"))).toBe("/");
+  });
+
+  // The store's own check, behind the idle limit above: a stored session
+  // past its expiry is not handed back, whatever the cookie says.
+  it("won't use a stored session past its expiry", async () => {
+    const user = await staff(db, "community_health_worker");
+    const as = await signIn(app, user.email);
+    expect((await as.get("/api/me")).status).toBe(200);
+    await db
+      .update(sessions)
+      .set({ expiresAt: new Date(Date.now() - 60_000) })
+      .where(sql`${sessions.data}->>'userId' = ${user.id}`);
+    expect((await as.get("/api/me")).status).toBe(401);
   });
 
   it("ends a session after the idle limit, and says why", async () => {
