@@ -116,8 +116,9 @@ Two consequences to work with:
   deploy, the *old* version runs against the *new* schema. A migration
   must work with both: add a column or a table, and don't rename or drop
   one in the same deploy that stops using it — do that in a later one.
-- **`main` is production** once the trigger exists. Work on a branch and
-  merge when it's ready (`CLAUDE.md`).
+- **`main` is production** once the trigger exists. Work is committed to
+  `dev`, and `dev` is merged into `main` by pull request when it's ready
+  (`CLAUDE.md`).
 
 ## When something goes wrong
 

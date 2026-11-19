@@ -101,10 +101,10 @@ behind it (`/auth/dev-login?email=…`) is never registered when
   docs and stored values (program, enrollment, canceled, -ize). NMBM is
   in California. The applied migrations keep their original spelling,
   because they're never edited.
-- Branch: `main` is still safe to push to directly, because the Cloud
-  Build trigger doesn't exist yet. **Once it does, a push to `main`
-  deploys production** — tests, migration and all — and work moves to
-  branches merged when ready. `docs/DEPLOY.md`.
+- Branch: commit and push to **`dev`**. Never push to `main`: the
+  repository owner merges `dev` into it by pull request. Once the Cloud
+  Build trigger exists, **a push to `main` deploys production** — tests,
+  migration and all. `docs/DEPLOY.md`.
 - A migration runs before the code that needs it goes live, so for the
   length of a deploy the old version runs against the new schema. Add
   columns and tables; rename or drop only in a later deploy, once
